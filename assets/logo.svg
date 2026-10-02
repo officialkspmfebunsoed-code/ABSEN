@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <!-- GI (Galeri Investasi / KSPM) Clean Vector Logo -->
+  <!-- Outer Red 'G' Curve -->
+  <path d="M 405 102 A 200 200 0 1 0 318 485 L 318 395 A 118 118 0 1 1 338 178 Z" 
+        fill="#E53935" />
+
+  <!-- Inner Dark Gray 'i' bar & core -->
+  <path d="M 230 205 C 315 205 440 205 488 205 C 475 228 468 255 468 285 C 468 335 480 395 405 455 L 400 375 C 400 282 342 282 245 282 C 190 282 165 300 165 338 C 165 372 188 395 245 395 L 305 395 L 305 455 L 230 455 C 120 455 90 395 90 338 C 90 245 150 205 230 205 Z" 
+        fill="#3A3A3C" />
+
+  <!-- Red Dot for 'i' -->
+  <circle cx="450" cy="150" r="32" fill="#E53935" />
+</svg>

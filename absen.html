@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Absensi Piket KSPM - Kelompok Studi Pasar Modal</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap"
+    rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Supabase Realtime SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body
+  class="font-sans min-h-screen bg-gray-50 text-gray-900 dark:bg-[#0b0e14] dark:text-gray-100 flex flex-col justify-between p-3 sm:p-6 transition-colors duration-300 relative selection:bg-red-600 selection:text-white antialiased">
+
+  <!-- ================= TOP HEADER (DYNAMIC FULL-WIDTH TO DUAL-ISLAND FLOATING NAVBAR) ================= -->
+  <header id="dynamicHeader" class="dynamic-header header-at-top z-40 mb-3 sm:mb-5">
+    <div class="header-inner-container max-w-xl mx-auto flex items-center justify-between gap-2">
+      <!-- Island Kiri -->
+      <div class="header-island-left flex items-center gap-2 sm:gap-2.5">
+        <a href="index.html"
+          class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 header-glass-btn text-gray-700 dark:text-gray-300 hover:text-red-500 text-xs font-bold shadow-xs transition active:scale-95">
+          <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Beranda</span>
+        </a>
+        <div
+          class="w-8 h-8 rounded-full bg-white/90 dark:bg-[#181d28]/90 border border-gray-200/80 dark:border-white/10 p-1 flex items-center justify-center shadow-xs flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain">
+        </div>
+      </div>
+
+      <!-- Island Kanan -->
+      <div class="header-island-right flex items-center gap-1.5 sm:gap-2">
+
+        <a href="dashboard.html"
+          class="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white rounded-full text-xs font-extrabold shadow-md shadow-red-600/20 transition active:scale-95">
+          <i data-feather="lock" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Admin</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Card Utama Rekam Absensi KSPM -->
+  <main id="mainAttendanceCard"
+    class="w-full max-w-xl mx-auto my-auto bg-white/90 dark:bg-[#131823]/90 backdrop-blur-xl rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-xl border border-gray-200 dark:border-gray-800 space-y-4 sm:space-y-5 transition-all duration-300">
+
+    <div id="kioskCardTopBar"
+      class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-red-600 via-rose-500 to-red-600"></div>
+
+    <div id="kioskCardTitleBox" class="text-center space-y-1">
+      <span
+        class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800/40">
+        Galeri Investasi • Universitas Jenderal Soedirman
+      </span>
+      <h1 class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white tracking-tight pt-1">
+        Absensi Piket <span class="text-red-600 dark:text-red-500">KSPM</span>
+      </h1>
+      <p class="text-gray-500 dark:text-gray-400 text-xs">Pilih Kategori Piket & Verifikasi Identitas Anggota</p>
+    </div>
+
+    <!-- ================= KARTU PEMBERITAHUAN JEDA SISTEM (LIBUR KULIAH) ================= -->
+    <div id="attendanceSystemPausedCard"
+      class="hidden p-6 sm:p-8 rounded-3xl bg-amber-500/10 border-2 border-amber-500/40 text-center space-y-4 animate-scaleUp">
+      <div
+        class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
+        <i data-feather="coffee" class="w-8 h-8"></i>
+      </div>
+      <div class="space-y-1.5">
+        <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white">Sistem Presensi Sedang Dijeda</h3>
+        <p class="text-xs font-bold text-amber-600 dark:text-amber-400" id="pausedReasonText">
+          Masa Libur Perkuliahan / Kegiatan Ditangguhkan
+        </p>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 max-w-sm mx-auto leading-relaxed pt-1">
+          Kegiatan piket dan rekam absensi Galeri Investasi ditangguhkan sementara waktu oleh BPH KSPM. Sistem akan
+          dibuka kembali saat masa perkuliahan aktif.
+        </p>
+      </div>
+      <div class="pt-2">
+        <a href="index.html"
+          class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-extrabold text-xs shadow-lg transition transform hover:-translate-y-0.5">
+          <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
+          <span>Kembali ke Beranda</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- WRAPPER FORM ABSENSI (DISEMBUNYIKAN SAAT SISTEM DIJEDA) -->
+    <div id="attendanceActiveFormWrapper" class="space-y-4 sm:space-y-5">
+
+      <!-- STEP PROGRESS INDICATOR -->
+      <div id="kioskStepProgBox"
+        class="flex items-center justify-between px-1 pb-1 border-b border-gray-100 dark:border-gray-800/80">
+        <div class="flex items-center gap-2">
+          <span id="stepBadge"
+            class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white shadow-xs">
+            Langkah 1
+          </span>
+          <span id="stepTitle" class="text-xs font-bold text-gray-700 dark:text-gray-300">
+            Kategori & Data Pengurus
+          </span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <div id="stepDot1" class="w-2.5 h-2.5 rounded-full bg-red-600 transition-all duration-300"></div>
+          <div id="stepDot2" class="w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300">
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= VIEW LANGKAH 1: INPUT DATA PIKET ================= -->
+      <div id="step1Container" class="space-y-4 sm:space-y-5">
+
+        <!-- 1. PILIH KATEGORI PIKET -->
+        <div class="space-y-1.5">
+          <label class="block text-[11px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            1. Pilih Kategori Piket
+          </label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <button type="button" onclick="setKioskCategory('biasa')" id="btnCatBiasa"
+              class="p-2.5 rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold text-xs flex flex-col items-center gap-1 transition shadow-sm">
+              <i data-feather="calendar" class="w-4 h-4"></i>
+              <span>Piket Biasa</span>
+              <span class="text-[9px] font-normal opacity-80">Jadwal Reguler</span>
+            </button>
+            <button type="button" onclick="setKioskCategory('izin')" id="btnCatIzin"
+              class="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition">
+              <i data-feather="file-text" class="w-4 h-4"></i>
+              <span>Izin Piket</span>
+              <span class="text-[9px] font-normal opacity-80">Kuliah / Sakit</span>
+            </button>
+            <button type="button" onclick="setKioskCategory('pengganti')" id="btnCatPengganti"
+              class="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition">
+              <i data-feather="repeat" class="w-4 h-4"></i>
+              <span>Pengganti</span>
+              <span class="text-[9px] font-normal opacity-80">Ganti Alfa (≤ 1 Bln)</span>
+            </button>
+            <button type="button" onclick="setKioskCategory('sukarela')" id="btnCatSukarela"
+              class="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold text-xs flex flex-col items-center gap-1 transition">
+              <i data-feather="heart" class="w-4 h-4 text-blue-600 dark:text-blue-400"></i>
+              <span>Sukarela / Main</span>
+              <span class="text-[9px] font-normal opacity-80">Masuk Tanpa Jadwal</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. FORM IDENTITAS 2 KOLOM CASCADING -->
+        <div class="p-4 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <p
+              class="text-[11px] font-extrabold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-feather="user-check" class="w-3.5 h-3.5 text-blue-500"></i>
+              2. Identitas Pengurus / Anggota
+            </p>
+            <span id="savedIdentityChip"
+              class="hidden text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
+              <i data-feather="check" class="w-2.5 h-2.5"></i> Tersimpan
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
+                Kolom 1: Departemen / Divisi
+              </label>
+              <select id="kioskSelectDept" onchange="onKioskDeptChange(this.value)" required
+                class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 shadow-sm transition">
+                <option value="">-- Pilih Departemen --</option>
+                <option value="Director & Vice Director">Director & Vice Director</option>
+                <option value="Secretary">Secretary</option>
+                <option value="Finance">Finance</option>
+                <option value="Human Resource Management">Human Resource Management</option>
+                <option value="Project Management">Project Management</option>
+                <option value="Research Analyst">Research Analyst</option>
+                <option value="Public Relations">Public Relations</option>
+                <option value="Media & Technology">Media & Technology</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
+                Kolom 2: Nama Anggota
+              </label>
+              <select id="kioskSelectEmp" onchange="onKioskEmpChange(this.value)" required disabled
+                class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed">
+                <option value="">-- Pilih Departemen Dulu --</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Schedule Status Hint Bar -->
+          <div id="kioskScheduleHintBox"
+            class="hidden p-2.5 rounded-xl bg-blue-900/10 dark:bg-blue-950/40 border border-blue-600/30 text-xs text-blue-900 dark:text-blue-300 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0">
+              <i data-feather="sparkles" class="w-4 h-4 text-blue-600 dark:text-blue-400 flex-shrink-0"></i>
+              <span id="kioskScheduleHintText" class="text-[11px] font-medium leading-tight"></span>
+            </div>
+          </div>
+
+          <!-- Opsi Simpan Identitas & Reset -->
+          <div
+            class="pt-2 border-t border-gray-200/80 dark:border-gray-800 flex items-center justify-between text-xs flex-wrap gap-2">
+            <label
+              class="flex items-center gap-2 cursor-pointer select-none text-gray-600 dark:text-gray-300 text-[11px]">
+              <input type="checkbox" id="chkRememberMe" checked
+                class="w-4 h-4 rounded text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-700 bg-white dark:bg-[#141822]">
+              <span>Ingat nama & departemen saya di perangkat ini</span>
+            </label>
+
+            <button type="button" onclick="clearSavedUserIdentity()" id="btnClearIdentity"
+              class="hidden text-[10px] text-gray-400 hover:text-red-500 font-semibold transition">
+              Ganti Akun / Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- SUB-FORM PENGGANTI -->
+        <div id="kioskPenggantiSubForm"
+          class="hidden p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+          <div class="flex items-center justify-between">
+            <p
+              class="text-[11px] font-extrabold text-amber-600 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-feather="repeat" class="w-3.5 h-3.5"></i> Detail Piket Pengganti
+            </p>
+            <span
+              class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+              Maksimal 1 Bulan (31 Hari)
+            </span>
+          </div>
+
+          <div
+            class="p-2.5 rounded-xl bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-900/60 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2">
+            <i data-feather="alert-circle" class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5"></i>
+            <div>
+              <p><strong>Aturan SOP KSPM:</strong> Piket Pengganti <strong>hanya berlaku maksimal 1 bulan (31
+                  hari)</strong> sejak jadwal alfa/izin yang terlewat.</p>
+              <p class="text-[10px] text-amber-800 dark:text-amber-300 mt-1 font-semibold">⚡ <strong>Ketentuan
+                  Poin:</strong> Dihitung standar <strong>2 Jam di setiap sesinya</strong> untuk menggantikan 1 sesi
+                piket yang tertinggal.</p>
+            </div>
+          </div>
+
+          <div id="kioskEligibleBox" class="space-y-1.5">
+            <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
+              Daftar Jadwal Alfa / Izin Anda (≤ 1 Bulan Terakhir):
+            </label>
+            <div id="kioskEligibleListContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              <p class="text-xs text-gray-400 italic py-1">Pilih nama anggota di atas untuk melihat daftar tanggal yang
+                dapat digantikan.</p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300 mb-1">
+              Atau Tentukan Tanggal Manual (Maks. 31 Hari yang Lalu):
+            </label>
+            <input type="date" id="kioskReplacedDate" onchange="onManualReplacedDateChange(this.value)"
+              class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500">
+            <p id="replacedDateValidationFeedback" class="text-[10px] text-gray-500 dark:text-gray-400 mt-1"></p>
+          </div>
+        </div>
+
+        <!-- SUB-FORM SUKARELA / MAIN (BIRU TUA) -->
+        <div id="kioskSukarelaSubForm"
+          class="hidden p-4 rounded-2xl bg-blue-900/10 dark:bg-blue-950/40 border border-blue-600/40 dark:border-blue-700 space-y-2">
+          <div class="flex items-center justify-between">
+            <p
+              class="text-[11px] font-extrabold text-blue-900 dark:text-blue-300 uppercase tracking-wider flex items-center gap-1.5">
+              <i data-feather="heart" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i> Piket Sukarela / Main
+              (Tanpa Jadwal)
+            </p>
+            <span
+              class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-900/20 text-blue-900 dark:text-blue-200 border border-blue-600/40">
+              Masuk Ekstra
+            </span>
+          </div>
+          <p class="text-[11px] text-gray-700 dark:text-gray-300 leading-relaxed">
+            Presensi Anda hari ini akan dicatat resmi sebagai <strong>Piket Sukarela / Main</strong> untuk menambah jam
+            terbang dan poin keaktifan pengurus.
+          </p>
+        </div>
+
+        <!-- SUB-FORM IZIN -->
+        <div id="kioskIzinSubForm"
+          class="hidden p-3.5 rounded-2xl bg-blue-500/10 border border-blue-500/30 space-y-1.5">
+          <label class="block text-[11px] font-extrabold text-blue-500 uppercase">
+            Alasan Izin Piket
+          </label>
+          <input type="text" id="kioskIzinReason" placeholder="Contoh: Kuliah Pengganti, Lomba Pasar Modal, Sakit"
+            class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3.5 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-blue-500 placeholder-gray-400">
+        </div>
+
+        <!-- 3. JENIS PRESENSI -->
+        <div id="attendanceTypeBox" class="space-y-1.5">
+          <label class="block text-[11px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            3. Jenis Presensi Piket
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setAttendanceType('MASUK')" id="btnTypeMasuk"
+              class="p-2.5 rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold text-xs flex items-center justify-center gap-2 transition shadow-sm">
+              <i data-feather="log-in" class="w-4 h-4"></i>
+              <div class="text-left">
+                <p class="font-black leading-tight">Piket Berangkat</p>
+                <p class="text-[9px] font-normal opacity-80">Presensi Awal Masuk</p>
+              </div>
+            </button>
+
+            <button type="button" onclick="setAttendanceType('PULANG')" id="btnTypePulang"
+              class="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold text-xs flex items-center justify-center gap-2 transition">
+              <i data-feather="log-out" class="w-4 h-4"></i>
+              <div class="text-left">
+                <p class="font-black leading-tight">Piket Pulang</p>
+                <p class="text-[9px] font-normal opacity-80">Presensi Selesai Tugas</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- 4. SESI PIKET -->
+        <div id="shiftSelectBox" class="space-y-1.5">
+          <label class="block text-[11px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+            4. Pilih Sesi Piket
+          </label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setKioskShift('shift_pagi')" id="btnShiftPagi"
+              class="p-2.5 rounded-2xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold text-xs flex flex-col items-center gap-0.5 transition shadow-sm">
+              <span class="font-black">Sesi Pagi</span>
+              <span class="text-[10px] font-normal opacity-80">07:00 - 12:00 WIB (Min. 2 Jam)</span>
+            </button>
+            <button type="button" onclick="setKioskShift('shift_siang')" id="btnShiftSiang"
+              class="p-2.5 rounded-2xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold text-xs flex flex-col items-center gap-0.5 transition">
+              <span class="font-black">Sesi Siang</span>
+              <span class="text-[10px] font-normal opacity-80">12:00 - 18:00 WIB (Min. 2 Jam)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. CATATAN TAMBAHAN -->
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1">
+            5. Catatan Tambahan (Opsional):
+          </label>
+          <input type="text" id="kioskNotesInput"
+            placeholder="Contoh: Analisis Saham IDX, Edukasi Pembukaan Rekening RDN"
+            class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 placeholder-gray-400 shadow-sm transition">
+        </div>
+
+        <!-- BUTTON NEXT STEP 1 -->
+        <button onclick="handleStep1Submit()" id="btnStep1Action"
+          class="w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-red-600/30 transition transform hover:-translate-y-0.5 active:translate-y-0 uppercase text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2">
+          <span id="btnStep1Text">Lanjut ke Pengambilan Foto</span>
+          <i data-feather="arrow-right" class="w-4 h-4" id="btnStep1Icon"></i>
+        </button>
+
+      </div>
+
+
+      <!-- ================= VIEW LANGKAH 2: KAMERA FULL SE-HALAMAN ================= -->
+      <div id="step2Container"
+        class="hidden w-full min-h-[75vh] sm:min-h-[82vh] rounded-3xl overflow-hidden relative shadow-2xl border-2 border-red-500/30 flex flex-col justify-between p-3 sm:p-4 bg-black animate-scaleUp select-none">
+
+        <!-- Live Video Element (Clean Full Background Cover) -->
+        <video id="kamera" autoplay playsinline muted
+          class="absolute inset-0 w-full h-full object-cover object-center z-0 block transition-transform duration-300"></video>
+
+        <!-- Camera Flash Animation Overlay -->
+        <div id="cameraFlashOverlay"
+          class="absolute inset-0 bg-white z-40 opacity-0 pointer-events-none transition-opacity duration-150"></div>
+
+        <!-- Status Loading / Error Overlay -->
+        <div id="kioskCameraStatus"
+          class="absolute inset-0 flex items-center justify-center text-white bg-black/80 z-20 px-4 text-center font-bold">
+          <div class="space-y-2 flex flex-col items-center">
+            <div
+              class="w-10 h-10 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center animate-pulse">
+              <i data-feather="camera" class="w-5 h-5"></i>
+            </div>
+            <p class="text-xs text-red-400 font-extrabold">Menghubungkan Kamera...</p>
+          </div>
+        </div>
+
+        <!-- TOP BAR: Clean Minimal HUD (Back Button + User Profile Pill + Mirror Toggle) -->
+        <div class="relative z-20 w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
+
+          <!-- Tombol Kembali -->
+          <button type="button" onclick="goToStep1()"
+            class="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-lg">
+            <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Kembali</span>
+          </button>
+
+          <!-- Profile Badge (Top-Center) -->
+          <div
+            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-xl border border-white/20 shadow-xl select-none">
+            <i data-feather="user" class="w-3.5 h-3.5 text-red-400"></i>
+            <span id="step2EmpName" class="font-extrabold text-xs text-white truncate max-w-[160px]">-</span>
+          </div>
+
+          <!-- Mirror Toggle -->
+          <div class="flex items-center gap-1.5">
+            <button type="button" onclick="toggleCameraMirror()" id="btnToggleMirror"
+              class="p-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white font-bold transition active:scale-95 shadow-lg flex items-center justify-center"
+              title="Mode Cermin">
+              <i data-feather="repeat" class="w-3.5 h-3.5 text-red-400"></i>
+            </button>
+            <div id="mirrorModeToast" class="hidden"></div>
+          </div>
+
+        </div>
+
+        <!-- HIDDEN / COMPATIBILITY REFERENCES -->
+        <div id="step2CategoryBadge" class="hidden"></div>
+        <div id="step2SubDetails" class="hidden"></div>
+
+        <!-- BOTTOM BAR: Clean Minimal Shutter Button & GPS -->
+        <div class="relative z-20 w-full max-w-sm mx-auto space-y-2">
+
+          <!-- Status Message (Subtle) -->
+          <p id="statusMesej" class="text-center text-xs font-semibold text-white/90 min-h-[1rem] drop-shadow-md"></p>
+
+          <!-- CLEAN SHUTTER BUTTON -->
+          <button onclick="mintaLokasiLaluKirim()" id="btnScanKiosk"
+            class="w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold py-3.5 rounded-2xl shadow-2xl shadow-red-600/50 border border-white/20 transition transform hover:-translate-y-0.5 active:scale-[0.98] text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2">
+            <i data-feather="camera" class="w-4 h-4"></i>
+            <span id="btnScanText">Jepret Foto Presensi</span>
+          </button>
+
+          <!-- Simple Clickable GPS Tag -->
+          <div id="kioskGpsBar" onclick="detectKioskGPS()"
+            class="w-full bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] text-gray-300 font-medium flex items-center justify-between border border-white/10 shadow cursor-pointer hover:text-white transition">
+            <div class="flex items-center gap-1.5 truncate">
+              <i data-feather="map-pin" class="w-3 h-3 text-red-500 flex-shrink-0"></i>
+              <span id="kioskGpsText" class="truncate text-gray-300">Galeri Investasi Unsoed</span>
+            </div>
+            <span class="text-gray-400 text-[9px] flex-shrink-0">GPS Aktif</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <canvas id="kanvas" class="hidden"></canvas>
+      <input type="file" id="cameraFileInput" accept="image/*" capture="user" onchange="handleCameraFileUpload(event)"
+        class="hidden">
+    </div>
+  </main>
+
+  <!-- Clean Minimal Footer & Watermark -->
+  <footer
+    class="w-full max-w-xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 py-4 px-2 text-[11px] text-gray-500">
+    <p>© 2026 <strong>Kelompok Studi Pasar Modal (KSPM)</strong> • Galeri Investasi</p>
+
+    <!-- Watermark Media and Technology -->
+    <div
+      class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-gray-100/80 dark:bg-[#151a24]/80 border border-gray-200 dark:border-gray-700/80 text-[10px] font-semibold text-gray-600 dark:text-gray-300">
+      <i data-feather="code" class="w-3 h-3 text-red-500"></i>
+      <span>Develop by <strong class="text-gray-900 dark:text-white">Department of Media and Technology</strong></span>
+    </div>
+  </footer>
+
+  <!-- ================= POPUP PERINGATAN DURASI PIKET KURANG DARI 2 JAM (ULTRA-GLASSY) ================= -->
+  <div id="earlyCheckoutWarningModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden transition-opacity duration-300">
+    <div
+      class="glass-modal-card rounded-3xl p-6 sm:p-7 max-w-sm w-full text-center space-y-4 animate-scaleUp relative overflow-hidden border-2 border-amber-500/30">
+
+      <!-- Ambient Glow Decorator -->
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-red-500/15 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Icon Warning Pulsing -->
+      <div
+        class="w-16 h-16 rounded-full bg-amber-500/15 backdrop-blur-md text-amber-500 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/25 border border-amber-400/40 relative z-10 animate-bounce">
+        <i data-feather="clock" class="w-8 h-8"></i>
+      </div>
+
+      <div class="relative z-10 space-y-1">
+        <span
+          class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-100/80 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700/60 uppercase tracking-wider">
+          Durasi Belum Mencukupi
+        </span>
+        <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white pt-1">
+          Durasi Piket Kurang dari 2 Jam!
+        </h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+          1 Sesi piket wajib adalah minimal <strong>2 Jam (120 Menit)</strong> agar sah dihitung dalam rekapitulasi
+          kuota pengurus.
+        </p>
+      </div>
+
+      <!-- Detail Durasi Card (Frosted Glass) -->
+      <div
+        class="p-4 rounded-2xl bg-amber-50/60 dark:bg-[#1f1d18]/70 backdrop-blur-md border border-amber-200/80 dark:border-amber-500/20 text-left text-xs space-y-2 relative z-10 shadow-inner">
+        <div class="flex justify-between items-center border-b border-amber-200/50 dark:border-white/5 pb-1.5">
+          <span class="text-gray-500 dark:text-gray-400">Jam Datang (Masuk):</span>
+          <span class="font-mono font-bold text-gray-900 dark:text-white" id="warnMasukTime">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-amber-200/50 dark:border-white/5 pb-1.5">
+          <span class="text-gray-500 dark:text-gray-400">Waktu Saat Ini:</span>
+          <span class="font-mono font-bold text-gray-900 dark:text-white" id="warnCurrentTime">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-amber-200/50 dark:border-white/5 pb-1.5">
+          <span class="text-gray-500 dark:text-gray-400">Durasi Terlaksana:</span>
+          <span class="font-bold text-amber-600 dark:text-amber-400" id="warnElapsedDuration">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-500 dark:text-gray-400">Kekurangan Durasi:</span>
+          <span class="font-extrabold text-red-600 dark:text-red-400" id="warnRemainingDuration">-</span>
+        </div>
+      </div>
+
+      <!-- Input Keterangan Keperluan Mendesak (Wajib Diisi jika Pulang Awal) -->
+      <div class="text-left space-y-1 relative z-10">
+        <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300">
+          Keterangan Keperluan Mendesak: <span class="text-red-500">*</span>
+        </label>
+        <input type="text" id="earlyCheckoutReasonInput"
+          placeholder="Contoh: Ada kuliah pengganti / panggilan dosen / urusan urgent"
+          class="w-full bg-white/70 dark:bg-[#181d26]/80 backdrop-blur-md border border-amber-300/80 dark:border-amber-500/30 rounded-xl px-3.5 py-2 text-xs text-gray-900 dark:text-white outline-none focus:border-red-500 shadow-inner placeholder-gray-400">
+        <p id="earlyReasonError" class="hidden text-[10px] text-red-500 font-bold mt-0.5">
+          *Silakan tuliskan alasan keperluan mendesak Anda.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="space-y-2 pt-1 relative z-10">
+        <!-- Tombol Utama: Lanjut Piket -->
+        <button type="button" onclick="closeEarlyWarningModal()"
+          class="w-full py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-600/30 transition transform hover:-translate-y-0.5 active:scale-95 flex items-center justify-center gap-1.5">
+          <i data-feather="arrow-left" class="w-4 h-4"></i>
+          <span>Lanjutkan Bertugas Piket</span>
+        </button>
+
+        <!-- Tombol Sekunder: Tetap Absen Pulang dengan Catatan -->
+        <button type="button" onclick="proceedEarlyCheckout()"
+          class="w-full py-2.5 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-300 dark:border-white/10 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95">
+          <i data-feather="file-text" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>Tetap Rekam Absen Pulang</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ================= POPUP MODAL SUKSES & UCAPAN TERIMA KASIH (ULTRA-GLASSY) ================= -->
+  <div id="successPopupModal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden transition-opacity duration-300">
+    <div
+      class="glass-modal-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 animate-scaleUp relative overflow-hidden">
+
+      <!-- Ambient Glow Decorator -->
+      <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none">
+      </div>
+      <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-rose-500/15 rounded-full blur-2xl pointer-events-none">
+      </div>
+
+      <!-- Icon Success Pulsing -->
+      <div
+        class="w-16 h-16 rounded-full bg-emerald-500/15 backdrop-blur-md text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25 border border-emerald-400/40 relative z-10 animate-bounce">
+        <i data-feather="check-circle" class="w-8 h-8"></i>
+      </div>
+
+      <div class="relative z-10">
+        <h3 class="text-lg font-black text-gray-900 dark:text-white" id="successPopupTitle">Presensi Berhasil!</h3>
+        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1" id="successGreetingMessage">
+          Terima kasih, jangan lupa absen pulang nanti ya!
+        </p>
+      </div>
+
+      <!-- Detail Card (Frosted Glass) -->
+      <div
+        class="p-4 rounded-2xl bg-white/60 dark:bg-[#181d28]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-left text-xs space-y-2 shadow-inner relative z-10">
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
+          <span class="text-gray-400">Nama:</span>
+          <span class="font-bold text-gray-900 dark:text-white truncate max-w-[170px]" id="successEmpName">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
+          <span class="text-gray-400">Divisi:</span>
+          <span class="font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[170px]"
+            id="successEmpDept">-</span>
+        </div>
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
+          <span class="text-gray-400">Jenis:</span>
+          <span class="font-black text-red-600 dark:text-red-400 uppercase tracking-wide" id="successTypeLabel">-</span>
+        </div>
+        <div class="flex justify-between items-center">
+          <span class="text-gray-400">Waktu:</span>
+          <span class="font-mono font-bold text-gray-900 dark:text-white" id="successTime">-</span>
+        </div>
+      </div>
+
+      <!-- Action & Auto-Redirect Notice -->
+      <div class="space-y-2 pt-1 relative z-10">
+        <a href="index.html"
+          class="w-full block py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 transition transform hover:-translate-y-0.5 active:scale-95">
+          Kembali ke Beranda Sekarang (<span id="redirectCountdown">5</span>s)
+        </a>
+        <p class="text-[10px] text-gray-400 font-mono">Otomatis dialihkan ke beranda...</p>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="js/attendance-db.js"></script>
+  <script>
+    let kioskCoords = 'Galeri Investasi Unsoed [-7.403280, 109.246801]';
+    let videoStream = null;
+    let uploadedPhotoBase64 = null;
+    let currentStep = 1;
+    let currentCategory = 'biasa'; // 'biasa' | 'izin' | 'pengganti' | 'sukarela'
+    let currentShift = 'shift_pagi';
+    let currentAttendanceType = 'MASUK'; // 'MASUK' (Berangkat) | 'PULANG' (Pulang)
+    let pendingAttendancePayload = null;
+    let isCameraMirrored = false; // Default: Non-mirror (Normal / Asli)
+    let mirrorToastTimeout = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
+
+
+      const savedMirror = localStorage.getItem('kspm_camera_mirror');
+      isCameraMirrored = savedMirror === '1';
+      applyCameraMirrorState();
+
+      const isPaused = checkSystemPauseState();
+      if (!isPaused) {
+        populateDeptSelect();
+        loadSavedIdentity();
+      }
+
+      const repDateInput = document.getElementById('kioskReplacedDate');
+      if (repDateInput) {
+        const maxStr = (typeof window.getTodayString === 'function') ? window.getTodayString(-1) : '';
+        const minStr = (typeof window.getTodayString === 'function') ? window.getTodayString(-31) : '';
+        repDateInput.max = maxStr;
+        repDateInput.min = minStr;
+        repDateInput.value = maxStr;
+      }
+
+      // Dynamic Header Scroll Initialization
+      initDynamicHeaderScroll();
+
+      // Sinkronisasi data anggota & status jeda dari Google Cloud Database
+      AttendanceDB.syncFromCloud().then(data => {
+        if (data) {
+          const paused = checkSystemPauseState();
+          if (!paused) {
+            populateDeptSelect();
+            loadSavedIdentity();
+          }
+        }
+      });
+    });
+
+    function initDynamicHeaderScroll() {
+      const header = document.getElementById('dynamicHeader');
+      if (!header) return;
+
+      const handleScroll = () => {
+        if (window.scrollY > 25) {
+          header.classList.remove('header-at-top');
+          header.classList.add('header-scrolled');
+        } else {
+          header.classList.remove('header-scrolled');
+          header.classList.add('header-at-top');
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll();
+    }
+
+    // --- STEP 1 TO STEP 2 MULTI-STEP NAVIGATION ---
+    function handleStep1Submit() {
+      const deptName = document.getElementById('kioskSelectDept') ? document.getElementById('kioskSelectDept').value : '';
+      const empId = document.getElementById('kioskSelectEmp') ? document.getElementById('kioskSelectEmp').value : '';
+      const chkRemember = document.getElementById('chkRememberMe');
+
+      if (!deptName || !empId) {
+        alert("Silakan pilih Departemen di Kolom 1 dan Nama Anggota di Kolom 2 terlebih dahulu!");
+        return;
+      }
+
+      const emp = AttendanceDB.getEmployeeById(empId);
+      if (!emp) {
+        alert("Data anggota tidak valid!");
+        return;
+      }
+
+      // Simpan identitas ke LocalStorage jika dicentang
+      if (chkRemember && chkRemember.checked) {
+        AttendanceDB.saveIdentity(deptName, empId);
+      } else {
+        AttendanceDB.clearSavedIdentity();
+      }
+
+      // Validasi Piket Pengganti (Aturan 1 Bulan)
+      if (currentCategory === 'pengganti') {
+        const replacedDate = document.getElementById('kioskReplacedDate') ? document.getElementById('kioskReplacedDate').value : '';
+        if (!replacedDate) {
+          alert("Silakan pilih tanggal piket sebelumnya yang ingin Anda gantikan!");
+          return;
+        }
+
+        const valRes = AttendanceDB.validateReplacementDate(replacedDate);
+        if (!valRes.valid) {
+          alert(`❌ Penggantian Ditolak:\n${valRes.message}`);
+          return;
+        }
+      }
+
+      // Validasi Wajib: Tidak bisa Presensi Pulang jika belum melakukan Presensi Masuk hari ini
+      if (currentAttendanceType === 'PULANG' && currentCategory !== 'izin') {
+        const todayStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+        const todayLogs = AttendanceDB.getAttendanceLogs(todayStr);
+        const masukLog = todayLogs.find(l => l.empId === emp.id && l.type === 'MASUK');
+        if (!masukLog) {
+          alert(`❌ Presensi Pulang Ditolak!\n\n${emp.name} belum tercatat melakukan "Piket Berangkat" (Absen Masuk) hari ini.\n\nSilakan pilih jenis "Piket Berangkat" terlebih dahulu.`);
+          return;
+        }
+
+        const pulangLog = todayLogs.find(l => l.empId === emp.id && l.type === 'PULANG');
+        if (pulangLog) {
+          const reconfirm = confirm(`⚠️ Perhatian:\n${emp.name} sudah tercatat melakukan Presensi Pulang hari ini pada pukul ${pulangLog.time} WIB.\n\nApakah Anda ingin memperbarui foto/data Presensi Pulang?`);
+          if (!reconfirm) return;
+        }
+      }
+
+      // Lanjut ke Step 2 (Ambil Foto)
+      goToStep2(emp);
+    }
+
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioContextClass) audioCtx = new AudioContextClass();
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch(() => { });
+      }
+      return audioCtx;
+    }
+
+    function playShutterClickSound() {
+      try {
+        const ctx = getAudioContext();
+        if (!ctx) return;
+        const bufferSize = Math.floor(ctx.sampleRate * 0.08);
+        const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.015));
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = buffer;
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 1800;
+        filter.Q.value = 3;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(0.4, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        noise.start();
+      } catch (e) { }
+    }
+
+    function triggerCameraFlash() {
+      const flash = document.getElementById('cameraFlashOverlay');
+      if (!flash) return;
+      flash.classList.remove('opacity-0');
+      flash.classList.add('opacity-100');
+      setTimeout(() => {
+        flash.classList.remove('opacity-100');
+        flash.classList.add('opacity-0');
+      }, 150);
+    }
+
+    function goToStep2(emp = null) {
+      if (!emp) {
+        const empId = document.getElementById('kioskSelectEmp').value;
+        emp = AttendanceDB.getEmployeeById(empId);
+      }
+      if (!emp) return;
+
+      currentStep = 2;
+
+      // Update Header & Indicator
+      const stepBadge = document.getElementById('stepBadge');
+      const stepTitle = document.getElementById('stepTitle');
+      const dot1 = document.getElementById('stepDot1');
+      const dot2 = document.getElementById('stepDot2');
+
+      if (stepBadge) stepBadge.innerText = 'Langkah 2';
+      if (stepTitle) stepTitle.innerText = 'Ambil Foto Presensi';
+      if (dot1) {
+        dot1.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300';
+      }
+      if (dot2) {
+        dot2.className = 'w-2.5 h-2.5 rounded-full bg-red-600 transition-all duration-300';
+      }
+
+      // Isi mini profile info di Step 2
+      const step2Name = document.getElementById('step2EmpName');
+      const step2Details = document.getElementById('step2SubDetails');
+      const step2Badge = document.getElementById('step2CategoryBadge');
+
+      if (step2Name) step2Name.innerText = emp.name;
+
+      const shiftName = currentShift === 'shift_pagi' ? 'Sesi Pagi' : 'Sesi Siang';
+      const typeText = currentAttendanceType === 'PULANG' ? 'Pulang' : 'Berangkat';
+      if (step2Details) step2Details.innerText = `${emp.dept} • ${shiftName} • ${typeText}`;
+
+      if (step2Badge) {
+        if (currentCategory === 'sukarela') {
+          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-900/20 text-blue-900 dark:text-blue-200 border border-blue-600/40">Sukarela / Main</span>`;
+        } else if (currentCategory === 'pengganti') {
+          const repDate = document.getElementById('kioskReplacedDate').value || '';
+          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">Pengganti (${repDate})</span>`;
+        } else {
+          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-800">Piket Biasa</span>`;
+        }
+      }
+
+      // Update text tombol jepret di atas kamera
+      updateActionButtonText();
+
+      // Melebarkan card utama menjadi full se-halaman
+      const mainCard = document.getElementById('mainAttendanceCard');
+      if (mainCard) {
+        mainCard.className = 'w-full max-w-5xl mx-auto my-auto bg-transparent border-0 shadow-none p-0 relative transition-all duration-300 space-y-0';
+      }
+      const titleBox = document.getElementById('kioskCardTitleBox');
+      if (titleBox) titleBox.classList.add('hidden');
+      const stepProg = document.getElementById('kioskStepProgBox');
+      if (stepProg) stepProg.classList.add('hidden');
+      const topBar = document.getElementById('kioskCardTopBar');
+      if (topBar) topBar.classList.add('hidden');
+
+      // Transisi view ke mode kamera full se-halaman
+      document.getElementById('step1Container').classList.add('hidden');
+      document.getElementById('step2Container').classList.remove('hidden');
+
+      // Reset state foto manual jika ada
+      uploadedPhotoBase64 = null;
+      const previewImg = document.getElementById('uploadedPhotoPreview');
+      if (previewImg) previewImg.remove();
+
+      // Nyalakan kamera & GPS
+      startKioskCamera();
+      detectKioskGPS();
+      showMirrorToast(isCameraMirrored ? 'Mode Cermin: Aktif' : 'Mode Cermin: Nonaktif (Normal)');
+
+      feather.replace();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStep1() {
+      currentStep = 1;
+
+      // Reset state foto manual jika ada
+      uploadedPhotoBase64 = null;
+      const oldPreview = document.getElementById('uploadedPhotoPreview');
+      if (oldPreview) oldPreview.remove();
+
+      // Hentikan stream kamera saat kembali ke Step 1
+      if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      }
+
+      // Mengembalikan card utama ke ukuran semula
+      const mainCard = document.getElementById('mainAttendanceCard');
+      if (mainCard) {
+        mainCard.className = 'w-full max-w-xl mx-auto my-auto bg-white/90 dark:bg-[#131823]/90 backdrop-blur-xl rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-xl border border-gray-200 dark:border-gray-800 space-y-4 sm:space-y-5 transition-all duration-300';
+      }
+      const titleBox = document.getElementById('kioskCardTitleBox');
+      if (titleBox) titleBox.classList.remove('hidden');
+      const stepProg = document.getElementById('kioskStepProgBox');
+      if (stepProg) stepProg.classList.remove('hidden');
+      const topBar = document.getElementById('kioskCardTopBar');
+      if (topBar) topBar.classList.remove('hidden');
+
+      // Update Step Indicators
+      const stepBadge = document.getElementById('stepBadge');
+      const stepTitle = document.getElementById('stepTitle');
+      const dot1 = document.getElementById('stepDot1');
+      const dot2 = document.getElementById('stepDot2');
+
+      if (stepBadge) stepBadge.innerText = 'Langkah 1';
+      if (stepTitle) stepTitle.innerText = 'Kategori & Data Pengurus';
+      if (dot1) {
+        dot1.className = 'w-2.5 h-2.5 rounded-full bg-red-600 transition-all duration-300';
+      }
+      if (dot2) {
+        dot2.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300';
+      }
+
+      document.getElementById('step2Container').classList.add('hidden');
+      document.getElementById('step1Container').classList.remove('hidden');
+
+      feather.replace();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // --- KAMERA MIRROR TOGGLE & AUTO-FADING TOAST ---
+    function toggleCameraMirror() {
+      isCameraMirrored = !isCameraMirrored;
+      localStorage.setItem('kspm_camera_mirror', isCameraMirrored ? '1' : '0');
+      applyCameraMirrorState();
+      showMirrorToast(isCameraMirrored ? 'Mode Cermin: Aktif' : 'Mode Cermin: Nonaktif (Normal)');
+    }
+
+    function applyCameraMirrorState() {
+      const video = document.getElementById('kamera');
+      if (video) {
+        video.style.transform = isCameraMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+      }
+    }
+
+    function showMirrorToast(text) {
+      const toast = document.getElementById('mirrorModeToast');
+      if (!toast) return;
+      toast.innerText = text;
+      toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-x-1');
+      toast.classList.add('opacity-100', 'translate-x-0');
+
+      if (mirrorToastTimeout) clearTimeout(mirrorToastTimeout);
+      mirrorToastTimeout = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-x-0');
+        toast.classList.add('opacity-0', 'pointer-events-none', '-translate-x-1');
+      }, 1600);
+    }
+
+    function checkSystemPauseState() {
+      const isPaused = AttendanceDB.isSystemPaused();
+      const pauseCard = document.getElementById('attendanceSystemPausedCard');
+      const formWrapper = document.getElementById('attendanceActiveFormWrapper');
+      const reasonText = document.getElementById('pausedReasonText');
+
+      if (isPaused) {
+        const info = AttendanceDB.getSystemPauseInfo();
+        if (pauseCard) pauseCard.classList.remove('hidden');
+        if (formWrapper) formWrapper.classList.add('hidden');
+        if (reasonText) reasonText.innerText = info.reason || 'Masa Libur Perkuliahan / Kegiatan Ditangguhkan';
+        feather.replace();
+        return true;
+      } else {
+        if (pauseCard) pauseCard.classList.add('hidden');
+        if (formWrapper) formWrapper.classList.remove('hidden');
+        return false;
+      }
+    }
+
+
+    // --- FITUR SIMPAN & INGAT IDENTITAS SAYA (LOCALSTORAGE) ---
+    function loadSavedIdentity() {
+      const saved = AttendanceDB.getSavedIdentity();
+      const chip = document.getElementById('savedIdentityChip');
+      const btnClear = document.getElementById('btnClearIdentity');
+
+      if (saved && saved.dept && saved.empId) {
+        const selectDept = document.getElementById('kioskSelectDept');
+        selectDept.value = saved.dept;
+        onKioskDeptChange(saved.dept);
+
+        const selectEmp = document.getElementById('kioskSelectEmp');
+        selectEmp.value = saved.empId;
+
+        if (chip) chip.classList.remove('hidden');
+        if (btnClear) btnClear.classList.remove('hidden');
+        onKioskEmpChange(saved.empId);
+      } else {
+        if (chip) chip.classList.add('hidden');
+        if (btnClear) btnClear.classList.add('hidden');
+      }
+      feather.replace();
+    }
+
+    function clearSavedUserIdentity() {
+      AttendanceDB.clearSavedIdentity();
+      document.getElementById('kioskSelectDept').value = '';
+      const selectEmp = document.getElementById('kioskSelectEmp');
+      selectEmp.innerHTML = '<option value="">-- Pilih Departemen Dulu --</option>';
+      selectEmp.disabled = true;
+      document.getElementById('savedIdentityChip').classList.add('hidden');
+      document.getElementById('btnClearIdentity').classList.add('hidden');
+      const hintBox = document.getElementById('kioskScheduleHintBox');
+      if (hintBox) hintBox.classList.add('hidden');
+      alert("Identitas tersimpan telah di-reset. Silakan pilih departemen dan nama baru.");
+    }
+
+    // --- PILIHAN JENIS ABSENSI: BERANGKAT VS PULANG ---
+    function setAttendanceType(type) {
+      currentAttendanceType = type;
+      const bMasuk = document.getElementById('btnTypeMasuk');
+      const bPulang = document.getElementById('btnTypePulang');
+
+      const activeClass = 'border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold';
+      const inactiveClass = 'border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold';
+
+      if (type === 'MASUK') {
+        bMasuk.className = 'p-2.5 rounded-2xl flex items-center justify-center gap-2 transition shadow-sm ' + activeClass;
+        bPulang.className = 'p-2.5 rounded-2xl flex items-center justify-center gap-2 transition ' + inactiveClass;
+      } else {
+        bMasuk.className = 'p-2.5 rounded-2xl flex items-center justify-center gap-2 transition ' + inactiveClass;
+        bPulang.className = 'p-2.5 rounded-2xl flex items-center justify-center gap-2 transition shadow-sm ' + activeClass;
+      }
+
+      updateActionButtonText();
+      feather.replace();
+    }
+
+    function updateActionButtonText() {
+      // Step 1 Button Text
+      const btnStep1Text = document.getElementById('btnStep1Text');
+      const btnStep1Icon = document.getElementById('btnStep1Icon');
+      if (btnStep1Text) {
+        if (currentCategory === 'izin') {
+          btnStep1Text.innerText = 'Ajukan Izin Piket Sekarang';
+          if (btnStep1Icon) btnStep1Icon.setAttribute('data-feather', 'send');
+        } else {
+          btnStep1Text.innerText = 'Lanjut ke Pengambilan Foto';
+          if (btnStep1Icon) btnStep1Icon.setAttribute('data-feather', 'arrow-right');
+        }
+      }
+
+      // Step 2 Button Text (Shutter)
+      const btnScanText = document.getElementById('btnScanText');
+      if (btnScanText) {
+        if (currentCategory === 'sukarela') {
+          btnScanText.innerText = currentAttendanceType === 'PULANG' ? 'Jepret Pulang (Sukarela)' : 'Jepret Masuk (Sukarela)';
+        } else if (currentCategory === 'pengganti') {
+          btnScanText.innerText = currentAttendanceType === 'PULANG' ? 'Jepret Pulang (Pengganti)' : 'Jepret Masuk (Pengganti)';
+        } else {
+          btnScanText.innerText = currentAttendanceType === 'PULANG' ? 'Jepret Pulang' : 'Jepret Masuk';
+        }
+      }
+      feather.replace();
+    }
+
+    // --- PENGELOMPOKAN KATEGORI PIKET (BIASA, IZIN, PENGGANTI, SUKARELA) ---
+    function setKioskCategory(cat) {
+      currentCategory = cat;
+      const bBiasa = document.getElementById('btnCatBiasa');
+      const bIzin = document.getElementById('btnCatIzin');
+      const bPengganti = document.getElementById('btnCatPengganti');
+      const bSukarela = document.getElementById('btnCatSukarela');
+      const penggantiForm = document.getElementById('kioskPenggantiSubForm');
+      const sukarelaForm = document.getElementById('kioskSukarelaSubForm');
+      const izinForm = document.getElementById('kioskIzinSubForm');
+      const typeBox = document.getElementById('attendanceTypeBox');
+      const shiftBox = document.getElementById('shiftSelectBox');
+
+      const activeClass = 'border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold';
+      const activeBlueNavyClass = 'border-2 border-blue-600 bg-blue-900/15 dark:bg-blue-950/70 text-blue-900 dark:text-blue-300 font-bold';
+      const activeAmberClass = 'border-2 border-amber-500 bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 font-bold';
+      const inactiveClass = 'border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold';
+
+      if (bBiasa) bBiasa.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-1 transition ' + (cat === 'biasa' ? activeClass : inactiveClass);
+      if (bIzin) bIzin.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-1 transition ' + (cat === 'izin' ? activeClass : inactiveClass);
+      if (bPengganti) bPengganti.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-1 transition ' + (cat === 'pengganti' ? activeAmberClass : inactiveClass);
+      if (bSukarela) bSukarela.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-1 transition ' + (cat === 'sukarela' ? activeBlueNavyClass : inactiveClass);
+
+      if (cat === 'biasa') {
+        if (penggantiForm) penggantiForm.classList.add('hidden');
+        if (sukarelaForm) sukarelaForm.classList.add('hidden');
+        if (izinForm) izinForm.classList.add('hidden');
+        if (typeBox) typeBox.classList.remove('hidden');
+        if (shiftBox) shiftBox.classList.remove('hidden');
+      } else if (cat === 'izin') {
+        if (penggantiForm) penggantiForm.classList.add('hidden');
+        if (sukarelaForm) sukarelaForm.classList.add('hidden');
+        if (izinForm) izinForm.classList.remove('hidden');
+        if (typeBox) typeBox.classList.add('hidden');
+        if (shiftBox) shiftBox.classList.add('hidden');
+      } else if (cat === 'pengganti') {
+        if (penggantiForm) penggantiForm.classList.remove('hidden');
+        if (sukarelaForm) sukarelaForm.classList.add('hidden');
+        if (izinForm) izinForm.classList.add('hidden');
+        if (typeBox) typeBox.classList.remove('hidden');
+        if (shiftBox) shiftBox.classList.remove('hidden');
+
+        // Muat daftar jadwal yang bisa diganti untuk anggota terpilih
+        const empId = document.getElementById('kioskSelectEmp') ? document.getElementById('kioskSelectEmp').value : '';
+        if (empId) populateEligibleReplacementList(empId);
+      } else if (cat === 'sukarela') {
+        if (penggantiForm) penggantiForm.classList.add('hidden');
+        if (sukarelaForm) sukarelaForm.classList.remove('hidden');
+        if (izinForm) izinForm.classList.add('hidden');
+        if (typeBox) typeBox.classList.remove('hidden');
+        if (shiftBox) shiftBox.classList.remove('hidden');
+      }
+
+      updateActionButtonText();
+      feather.replace();
+    }
+
+    function setKioskShift(shiftId) {
+      currentShift = shiftId;
+      const bPagi = document.getElementById('btnShiftPagi');
+      const bSiang = document.getElementById('btnShiftSiang');
+
+      const activeClass = 'border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold';
+      const inactiveClass = 'border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold';
+
+      bPagi.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-0.5 transition ' + (shiftId === 'shift_pagi' ? activeClass : inactiveClass);
+      bSiang.className = 'p-2.5 rounded-2xl text-xs flex flex-col items-center gap-0.5 transition ' + (shiftId === 'shift_siang' ? activeClass : inactiveClass);
+    }
+
+    // --- FORM IDENTITAS 2 KOLOM BERTINGKAT / CASCADING REALTIME ---
+    function populateDeptSelect() {
+      const depts = AttendanceDB.getDepartments();
+      const select = document.getElementById('kioskSelectDept');
+      if (!select) return;
+      const currentVal = select.value;
+      select.innerHTML = `<option value="">-- Pilih Departemen --</option>` +
+        depts.map(d => `<option value="${d}">${d}</option>`).join('');
+      if (currentVal && depts.includes(currentVal)) {
+        select.value = currentVal;
+      }
+    }
+
+    function onKioskDeptChange(deptName) {
+      const selectEmp = document.getElementById('kioskSelectEmp');
+      const hintBox = document.getElementById('kioskScheduleHintBox');
+      if (hintBox) hintBox.classList.add('hidden');
+
+      if (!deptName) {
+        selectEmp.innerHTML = `<option value="">-- Pilih Departemen Dulu --</option>`;
+        selectEmp.disabled = true;
+        return;
+      }
+
+      const members = AttendanceDB.getEmployeesByDept(deptName);
+      selectEmp.disabled = false;
+      selectEmp.innerHTML = `<option value="">-- Pilih Nama Anggota --</option>` +
+        members.map(m => `<option value="${m.id}">${m.name} (${m.role})</option>`).join('');
+    }
+
+    function onKioskEmpChange(empId) {
+      const chk = document.getElementById('chkRememberMe');
+      const dept = document.getElementById('kioskSelectDept').value;
+      if (chk && chk.checked && dept && empId) {
+        AttendanceDB.saveIdentity(dept, empId);
+        document.getElementById('savedIdentityChip').classList.remove('hidden');
+        document.getElementById('btnClearIdentity').classList.remove('hidden');
+      }
+
+      if (!empId) {
+        const hintBox = document.getElementById('kioskScheduleHintBox');
+        if (hintBox) hintBox.classList.add('hidden');
+        return;
+      }
+
+      const todayStr = window.getTodayString ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+      const todaySchedules = AttendanceDB.getSchedules(todayStr);
+      const memberTodaySchedule = todaySchedules.find(s => s.empId === empId);
+
+      const hintBox = document.getElementById('kioskScheduleHintBox');
+      const hintText = document.getElementById('kioskScheduleHintText');
+
+      if (memberTodaySchedule) {
+        const shifts = AttendanceDB.getShifts();
+        const sh = shifts.find(s => s.id === memberTodaySchedule.shiftId) || { name: 'Sesi Piket' };
+        if (hintBox && hintText) {
+          hintBox.className = 'p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-xs text-emerald-800 dark:text-emerald-300 flex items-center justify-between gap-2';
+          hintText.innerHTML = `✅ Terjadwal piket hari ini pada <strong>${sh.name} (${sh.start || '07:00'}-${sh.end || '12:00'} WIB)</strong>`;
+          hintBox.classList.remove('hidden');
+        }
+        // Jika sebelumnya sukarela, kembalikan ke biasa
+        if (currentCategory === 'sukarela') {
+          setKioskCategory('biasa');
+        }
+        if (memberTodaySchedule.shiftId) {
+          setKioskShift(memberTodaySchedule.shiftId);
+        }
+      } else {
+        // Tidak terjadwal hari ini (Sukarela / Main)
+        if (hintBox && hintText) {
+          hintBox.className = 'p-2.5 rounded-xl bg-blue-900/10 dark:bg-blue-950/40 border border-blue-600/30 text-xs text-blue-900 dark:text-blue-300 flex items-center justify-between gap-2';
+          hintText.innerHTML = `✨ <strong>Tidak ada jadwal reguler hari ini.</strong> Presensi akan tercatat sebagai <strong>Piket Sukarela / Main</strong> (atau Anda bisa memilih tombol <strong>Pengganti</strong>).`;
+          hintBox.classList.remove('hidden');
+        }
+        // Otomatis sesuaikan ke Sukarela jika pengguna sedang memilih Piket Biasa
+        if (currentCategory === 'biasa') {
+          setKioskCategory('sukarela');
+        }
+      }
+
+      // Perbarui smart selector jika di tab pengganti
+      populateEligibleReplacementList(empId);
+      feather.replace();
+    }
+
+    function populateEligibleReplacementList(empId) {
+      const container = document.getElementById('kioskEligibleListContainer');
+      if (!container) return;
+
+      if (!empId) {
+        container.innerHTML = `<p class="text-xs text-gray-400 italic py-1">Pilih nama anggota terlebih dahulu untuk melihat daftar jadwal alfa/izin.</p>`;
+        return;
+      }
+
+      const eligibleList = AttendanceDB.getEligibleReplacementSchedules(empId);
+      if (eligibleList.length === 0) {
+        container.innerHTML = `
+          <div class="p-2.5 rounded-xl bg-gray-50 dark:bg-[#141822] border border-gray-200 dark:border-gray-800 text-[11px] text-gray-500 space-y-1">
+            <p class="font-bold text-gray-700 dark:text-gray-300">Tidak ada jadwal Alfa/Izin dalam 1 bulan terakhir.</p>
+            <p class="text-[10px]">Semua kuota Anda terpenuhi atau sudah digantikan. Anda dapat melakukan presensi sebagai <strong class="text-blue-600 dark:text-blue-400">Piket Sukarela / Main</strong>.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = eligibleList.map((item, idx) => `
+        <div 
+          onclick="selectEligibleReplacementDate('${item.date}', '${item.shiftName}', ${item.daysAgo})" 
+          class="eligible-date-card p-2.5 rounded-xl bg-white dark:bg-[#141822] border border-amber-200 dark:border-amber-900/60 hover:border-amber-500 dark:hover:border-amber-400 cursor-pointer transition flex items-center justify-between text-xs shadow-xs"
+          data-date="${item.date}"
+        >
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-lg ${item.status === 'IZIN' ? 'bg-blue-100 text-blue-600 dark:bg-blue-950 dark:text-blue-400' : 'bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400'} font-bold flex items-center justify-center text-[10px]">
+              ${item.status === 'IZIN' ? 'IZN' : 'ALP'}
+            </div>
+            <div>
+              <p class="font-black text-gray-900 dark:text-white">${item.date} <span class="text-[10px] font-normal text-gray-400">(${item.daysAgo} hari yang lalu)</span></p>
+              <p class="text-[10px] text-gray-500">${item.shiftName} (${item.shiftTime})</p>
+            </div>
+          </div>
+          <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${item.status === 'IZIN' ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300' : 'bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300'}">
+            ${item.statusLabel}
+          </span>
+        </div>
+      `).join('');
+
+      // Auto-select first item if available
+      if (eligibleList.length > 0) {
+        selectEligibleReplacementDate(eligibleList[0].date, eligibleList[0].shiftName, eligibleList[0].daysAgo);
+      }
+    }
+
+    function selectEligibleReplacementDate(dateStr, shiftName, daysAgo) {
+      const repDateInput = document.getElementById('kioskReplacedDate');
+      if (repDateInput) {
+        repDateInput.value = dateStr;
+        onManualReplacedDateChange(dateStr);
+      }
+
+      document.querySelectorAll('.eligible-date-card').forEach(card => {
+        if (card.getAttribute('data-date') === dateStr) {
+          card.className = 'eligible-date-card p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-500 text-xs shadow-xs flex items-center justify-between';
+        } else {
+          card.className = 'eligible-date-card p-2.5 rounded-xl bg-white dark:bg-[#141822] border border-amber-200 dark:border-amber-900/60 hover:border-amber-500 cursor-pointer transition flex items-center justify-between text-xs shadow-xs';
+        }
+      });
+    }
+
+    function onManualReplacedDateChange(dateStr) {
+      const feedback = document.getElementById('replacedDateValidationFeedback');
+      if (!feedback) return;
+
+      if (!dateStr) {
+        feedback.innerText = '';
+        return;
+      }
+
+      const res = AttendanceDB.validateReplacementDate(dateStr);
+      if (res.valid) {
+        feedback.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-bold">✅ Sesuai aturan: ${res.daysDiff} hari yang lalu (Dalam batas 1 bulan).</span>`;
+      } else {
+        feedback.innerHTML = `<span class="text-red-600 dark:text-red-400 font-bold">❌ Ditolak: ${res.message}</span>`;
+      }
+    }
+
+    // --- KAMERA & GEOFENCING GPS (DENGAN PROGRESSIVE FALLBACK & DUKUNGAN UPLOAD FOTO HP) ---
+    async function startKioskCamera() {
+      const video = document.getElementById('kamera');
+      const statusText = document.getElementById('kioskCameraStatus');
+
+      // Bersihkan stream lama jika masih aktif
+      if (videoStream) {
+        try {
+          videoStream.getTracks().forEach(track => track.stop());
+        } catch (e) { }
+        videoStream = null;
+      }
+
+      if (statusText) {
+        statusText.innerHTML = `
+          <div class="space-y-3 flex flex-col items-center">
+            <div class="w-12 h-12 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center animate-pulse">
+              <i data-feather="camera" class="w-6 h-6"></i>
+            </div>
+            <p class="text-xs sm:text-sm text-red-400 font-extrabold">Mengaktifkan Kamera Presensi...</p>
+          </div>
+        `;
+        statusText.classList.remove('hidden');
+        feather.replace();
+      }
+
+      // Dukungan kompatibilitas API mediaDevices / getUserMedia standar & legacy
+      const getMedia = (navigator.mediaDevices && navigator.mediaDevices.getUserMedia)
+        ? navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
+        : (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia)?.bind(navigator);
+
+      if (!getMedia) {
+        showCameraError(
+          'Browser tidak mengizinkan akses kamera langsung (biasanya karena dibuka via IP/HTTP tanpa HTTPS). Anda tetap bisa mengambil foto menggunakan tombol Kamera HP / Upload File di bawah:',
+          true
+        );
+        return;
+      }
+
+      // Daftar kandidat constraints resolusi (dari Full HD hingga basic)
+      const constraintCandidates = [
+        { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
+        { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+        { video: { facingMode: 'user' }, audio: false },
+        { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+        { video: true, audio: false }
+      ];
+
+      let stream = null;
+      let lastError = null;
+
+      for (const candidate of constraintCandidates) {
+        try {
+          stream = await getMedia(candidate);
+          if (stream) break;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      if (!stream) {
+        console.warn('Gagal mendapatkan stream kamera:', lastError);
+        let errMsg = 'Tidak dapat mengakses perangkat kamera.';
+        if (lastError) {
+          if (lastError.name === 'NotAllowedError' || lastError.name === 'PermissionDeniedError') {
+            errMsg = 'Izin kamera diblokir browser. Klik ikon gembok/kamera di samping URL browser untuk mengizinkan kamera, lalu coba lagi:';
+          } else if (lastError.name === 'NotFoundError' || lastError.name === 'DevicesNotFoundError') {
+            errMsg = 'Perangkat kamera tidak ditemukan pada laptop/HP ini.';
+          } else if (lastError.name === 'NotReadableError' || lastError.name === 'TrackStartError') {
+            errMsg = 'Kamera sedang dipakai aplikasi lain (seperti Zoom/Meet). Tutup aplikasi tersebut dan coba lagi.';
+          }
+        }
+        showCameraError(errMsg, true);
+        return;
+      }
+
+      try {
+        videoStream = stream;
+        video.srcObject = stream;
+        video.setAttribute('playsinline', 'true');
+        video.setAttribute('autoplay', 'true');
+        video.muted = true;
+
+        // Pastikan video mulai diputar
+        await new Promise((resolve) => {
+          const p = video.play();
+          if (p !== undefined) {
+            p.then(resolve).catch(() => {
+              video.onloadedmetadata = () => video.play().then(resolve).catch(resolve);
+              setTimeout(resolve, 300);
+            });
+          } else {
+            resolve();
+          }
+        });
+
+        applyCameraMirrorState();
+        if (statusText) statusText.classList.add('hidden');
+      } catch (err) {
+        console.warn('Video stream play error:', err);
+        applyCameraMirrorState();
+        if (statusText) statusText.classList.add('hidden');
+      }
+    }
+
+    function showCameraError(errMsg, showUploadFallback = true) {
+      const statusText = document.getElementById('kioskCameraStatus');
+      if (!statusText) return;
+
+      statusText.innerHTML = `
+        <div class="space-y-3 text-center p-4 max-w-sm mx-auto bg-black/90 backdrop-blur-md rounded-3xl border border-red-500/40 z-30 shadow-2xl">
+          <div class="w-10 h-10 rounded-xl bg-red-600/20 text-red-500 flex items-center justify-center mx-auto">
+            <i data-feather="alert-triangle" class="w-5 h-5"></i>
+          </div>
+          <p class="text-red-400 font-bold text-xs leading-relaxed">${errMsg}</p>
+          <div class="flex flex-col sm:flex-row items-center justify-center gap-2 pt-1">
+            <button type="button" onclick="startKioskCamera()" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-extrabold shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+              <i data-feather="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Coba Lagi</span>
+            </button>
+            ${showUploadFallback ? `
+              <button type="button" onclick="document.getElementById('cameraFileInput').click()" class="w-full sm:w-auto px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-extrabold border border-white/20 shadow-md transition active:scale-95 flex items-center justify-center gap-1.5">
+                <i data-feather="upload" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>Kamera HP / File</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      statusText.classList.remove('hidden');
+      feather.replace();
+    }
+
+    function handleCameraFileUpload(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        uploadedPhotoBase64 = e.target.result;
+
+        // Sembunyikan status loading/error kamera
+        const statusText = document.getElementById('kioskCameraStatus');
+        if (statusText) statusText.classList.add('hidden');
+
+        // Tampilkan preview foto di dalam bingkai Step 2
+        let previewImg = document.getElementById('uploadedPhotoPreview');
+        if (!previewImg) {
+          previewImg = document.createElement('img');
+          previewImg.id = 'uploadedPhotoPreview';
+          previewImg.className = 'absolute inset-0 w-full h-full object-cover object-center z-10';
+          const container = document.getElementById('step2Container');
+          if (container) container.prepend(previewImg);
+        }
+        previewImg.src = uploadedPhotoBase64;
+        previewImg.classList.remove('hidden');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function detectKioskGPS() {
+      const gpsText = document.getElementById('kioskGpsText');
+
+      if (!navigator.geolocation) {
+        kioskCoords = `Galeri Investasi Unsoed [-7.403280, 109.246801]`;
+        if (gpsText) gpsText.innerHTML = `GPS: <span class="font-bold text-red-400">Galeri Investasi Unsoed</span>`;
+        return;
+      }
+
+      if (gpsText) {
+        gpsText.innerHTML = `<span class="text-red-400 animate-pulse flex items-center gap-1.5"><i data-feather="loader" class="w-3.5 h-3.5 animate-spin"></i> Mendeteksi koordinat GPS...</span>`;
+        feather.replace();
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          const geo = AttendanceDB.checkLocationGeofence(lat, lng);
+
+          kioskCoords = geo.formattedString;
+
+          if (geo.isInside) {
+            if (gpsText) {
+              gpsText.innerHTML = `<span class="text-red-400 font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> ${geo.label} (${geo.distanceMeters}m) • Akurat</span>`;
+            }
+          } else {
+            if (gpsText) {
+              gpsText.innerHTML = `<span class="text-red-400 font-extrabold">Luar Area (${geo.distanceMeters}m dari Galeri Investasi)</span>`;
+            }
+          }
+          feather.replace();
+        },
+        err => {
+          console.warn('Geolocation error / permission denied:', err);
+          kioskCoords = `Galeri Investasi Unsoed [-7.403280, 109.246801]`;
+          if (gpsText) {
+            gpsText.innerHTML = `<span class="text-red-400 font-extrabold">Galeri Investasi Unsoed (Default)</span>`;
+          }
+          feather.replace();
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+      );
+    }
+
+    // --- PROSES SUBMIT ABSENSI & AUTO REDIRECT DENGAN UCAPAN KHUSUS ---
+    function mintaLokasiLaluKirim(isAutoSnap = false) {
+      const pesan = document.getElementById('statusMesej');
+      const empId = document.getElementById('kioskSelectEmp').value;
+      const deptName = document.getElementById('kioskSelectDept').value;
+      const btn = document.getElementById('btnScanKiosk');
+      let notes = document.getElementById('kioskNotesInput').value;
+      const chkRemember = document.getElementById('chkRememberMe');
+
+      // Efek shutter kamera
+      if (currentStep === 2) {
+        playShutterClickSound();
+        triggerCameraFlash();
+      }
+
+      if (!deptName || !empId) {
+        alert("Silakan pilih Departemen di Kolom 1 dan Nama Anggota di Kolom 2 terlebih dahulu!");
+        return;
+      }
+
+      const emp = AttendanceDB.getEmployeeById(empId);
+      if (!emp) {
+        alert("Data anggota tidak valid!");
+        return;
+      }
+
+      // Simpan identitas ke LocalStorage jika dicentang
+      if (chkRemember && chkRemember.checked) {
+        AttendanceDB.saveIdentity(deptName, empId);
+      } else {
+        AttendanceDB.clearSavedIdentity();
+      }
+
+      let replacedDate = null;
+      let reason = '';
+
+      if (currentCategory === 'pengganti') {
+        replacedDate = document.getElementById('kioskReplacedDate').value;
+        if (!replacedDate) {
+          alert("Silakan pilih tanggal piket sebelumnya yang ingin Anda gantikan!");
+          return;
+        }
+
+        // Validasi Aturan 1 Bulan
+        const valRes = AttendanceDB.validateReplacementDate(replacedDate);
+        if (!valRes.valid) {
+          alert(`❌ Penggantian Ditolak:\n${valRes.message}`);
+          return;
+        }
+      } else if (currentCategory === 'izin') {
+        reason = document.getElementById('kioskIzinReason').value;
+        if (!reason) {
+          reason = 'Izin Piket Terdaftar';
+        }
+      }
+
+      const recordType = currentCategory === 'izin' ? 'IZIN' : currentAttendanceType;
+
+      let pendingPayload = {
+        emp,
+        recordType,
+        currentCategory,
+        replacedDate,
+        reason,
+        currentShift,
+        kioskCoords,
+        notes
+      };
+
+      // Verifikasi 1 Sesi Piket (Minimal 2 Jam & Validasi Absen Masuk)
+      if (recordType === 'PULANG') {
+        const todayStr = window.getTodayString ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+        const todayLogs = AttendanceDB.getAttendanceLogs(todayStr);
+        const masukLog = todayLogs.find(l => l.empId === emp.id && l.type === 'MASUK');
+
+        if (!masukLog) {
+          alert(`❌ Presensi Pulang Ditolak:\n\n${emp.name} belum tercatat melakukan Presensi Masuk (Piket Berangkat) hari ini.\n\nSilakan kembali ke Langkah 1 dan pilih "Piket Berangkat".`);
+          return;
+        }
+
+        const now = new Date();
+        const curH = String(now.getHours()).padStart(2, '0');
+        const curM = String(now.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${curH}:${curM}`;
+
+        try {
+          const [hM, mM] = masukLog.time.split(':').map(Number);
+          const currentMinutes = now.getHours() * 60 + now.getMinutes();
+          const masukMinutes = hM * 60 + mM;
+          const elapsed = Math.max(0, currentMinutes - masukMinutes);
+
+          if (elapsed < 120) {
+            const remaining = 120 - elapsed;
+            pendingAttendancePayload = pendingPayload;
+            showEarlyWarningModal({
+              masukTime: masukLog.time,
+              currentTime: currentTimeStr,
+              elapsedMinutes: elapsed,
+              remainingMinutes: remaining
+            });
+            return;
+          }
+        } catch (e) { }
+      }
+
+      executeAttendanceSubmission(pendingPayload);
+    }
+
+    function showEarlyWarningModal({ masukTime, currentTime, elapsedMinutes, remainingMinutes }) {
+      const modal = document.getElementById('earlyCheckoutWarningModal');
+      if (!modal) return;
+
+      const elMasuk = document.getElementById('warnMasukTime');
+      const elCurrent = document.getElementById('warnCurrentTime');
+      const elElapsed = document.getElementById('warnElapsedDuration');
+      const elRemaining = document.getElementById('warnRemainingDuration');
+
+      const hours = Math.floor(elapsedMinutes / 60);
+      const mins = elapsedMinutes % 60;
+      const durText = hours > 0 ? `${hours} Jam ${mins} Menit` : `${mins} Menit`;
+
+      const remHours = Math.floor(remainingMinutes / 60);
+      const remMins = remainingMinutes % 60;
+      const remText = remHours > 0 ? `${remHours} Jam ${remMins} Menit` : `${remMins} Menit`;
+
+      if (elMasuk) elMasuk.innerText = `${masukTime} WIB`;
+      if (elCurrent) elCurrent.innerText = `${currentTime} WIB`;
+      if (elElapsed) elElapsed.innerText = durText;
+      if (elRemaining) elRemaining.innerText = `Kurang ${remText}`;
+
+      const reasonInput = document.getElementById('earlyCheckoutReasonInput');
+      const errText = document.getElementById('earlyReasonError');
+      if (reasonInput) {
+        reasonInput.value = '';
+        reasonInput.classList.remove('border-red-500', 'ring-2', 'ring-red-500/20');
+      }
+      if (errText) errText.classList.add('hidden');
+
+      modal.classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeEarlyWarningModal() {
+      const modal = document.getElementById('earlyCheckoutWarningModal');
+      if (!modal) return;
+      modal.classList.add('hidden');
+      pendingAttendancePayload = null;
+    }
+
+    function proceedEarlyCheckout() {
+      const reasonInput = document.getElementById('earlyCheckoutReasonInput');
+      const errText = document.getElementById('earlyReasonError');
+      const reasonVal = (reasonInput ? reasonInput.value : '').trim();
+
+      if (!reasonVal) {
+        if (errText) errText.classList.remove('hidden');
+        if (reasonInput) {
+          reasonInput.focus();
+          reasonInput.classList.add('border-red-500', 'ring-2', 'ring-red-500/20');
+        }
+        return;
+      }
+
+      if (errText) errText.classList.add('hidden');
+
+      const payload = pendingAttendancePayload;
+      closeEarlyWarningModal();
+      if (payload) {
+        payload.notes = `Pulang Awal (< 2 Jam): ${reasonVal}` + (payload.notes ? ` • ${payload.notes}` : '');
+        executeAttendanceSubmission(payload);
+      }
+    }
+
+    function executeAttendanceSubmission(payload) {
+      stopPoseExpressionDetectionLoop();
+
+      const { emp, recordType, currentCategory, replacedDate, reason, currentShift, kioskCoords, notes } = payload;
+      const btn = document.getElementById('btnScanKiosk');
+      const btnStep1 = document.getElementById('btnStep1Action');
+      const pesan = document.getElementById('statusMesej');
+
+      if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-75');
+      }
+      if (btnStep1) {
+        btnStep1.disabled = true;
+        btnStep1.classList.add('opacity-75');
+      }
+      if (pesan) {
+        pesan.innerHTML = "<span class='text-red-500 animate-pulse font-bold'>Memverifikasi & merekam presensi KSPM...</span>";
+      }
+
+      const video = document.getElementById('kamera');
+      const canvas = document.getElementById('kanvas');
+      let photoBase64 = '';
+
+      if (uploadedPhotoBase64) {
+        photoBase64 = uploadedPhotoBase64;
+      } else if (videoStream && video && video.videoWidth > 0) {
+        // Tangkap resolusi tajam Full HD (maks 1920px untuk kejelasan wajah & teks)
+        const maxWidth = 1920;
+        const scale = Math.min(1, maxWidth / Math.max(video.videoWidth, video.videoHeight));
+        const targetWidth = Math.round(video.videoWidth * scale);
+        const targetHeight = Math.round(video.videoHeight * scale);
+
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        if (isCameraMirrored) {
+          ctx.save();
+          ctx.scale(-1, 1);
+          ctx.drawImage(video, -targetWidth, 0, targetWidth, targetHeight);
+          ctx.restore();
+        } else {
+          ctx.drawImage(video, 0, 0, targetWidth, targetHeight);
+        }
+        // Kompresi JPEG 0.85 (Sangat tajam, detail wajah jelas, ukuran optimal ~250KB - 350KB)
+        photoBase64 = canvas.toDataURL('image/jpeg', 0.85);
+
+        // Hentikan stream kamera setelah foto berhasil di-capture
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+      } else {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="#dc2626"/><circle cx="100" cy="75" r="40" fill="#ffffff" opacity="0.85"/><ellipse cx="100" cy="165" rx="60" ry="35" fill="#ffffff" opacity="0.85"/><text x="100" y="105" font-family="Arial,sans-serif" font-size="28" font-weight="bold" fill="#333333" text-anchor="middle">${emp.avatar}</text></svg>`;
+        photoBase64 = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+      }
+
+      document.body.classList.remove('overflow-hidden');
+
+      // Simpan instan (< 10ms) & kirim sync di latar belakang
+      const log = AttendanceDB.recordAttendance({
+        empId: emp.id,
+        name: emp.name,
+        type: recordType,
+        category: currentCategory,
+        replacedDate: replacedDate,
+        reason: reason,
+        shiftId: currentShift,
+        photo: photoBase64,
+        location: kioskCoords,
+        notes: notes
+      });
+
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('opacity-75');
+      }
+      if (btnStep1) {
+        btnStep1.disabled = false;
+        btnStep1.classList.remove('opacity-75');
+      }
+
+      const typeLabel = recordType === 'PULANG' ? 'Piket Pulang' : (recordType === 'IZIN' ? 'Izin Piket' : 'Piket Berangkat');
+      const statusText = recordType === 'PULANG' ? 'SELESAI' : (recordType === 'IZIN' ? 'IZIN (BELUM PIKET)' : 'SEDANG BERTUGAS');
+
+      // Ucapan Terima Kasih Sesuai Jenis & Kategori Presensi
+      let greetingMsg = '';
+      if (currentCategory === 'sukarela') {
+        if (recordType === 'PULANG') {
+          greetingMsg = 'Terima kasih telah piket Sukarela / Main hari ini! Sesi ini resmi menambah jam terbang dan keaktifan Anda di KSPM. Hati-hati di jalan! ✨';
+        } else {
+          greetingMsg = 'Presensi Piket Sukarela / Main berhasil dicatat! Semangat bertugas ekstra di Galeri Investasi KSPM! 🌟';
+        }
+      } else if (currentCategory === 'pengganti') {
+        greetingMsg = `Presensi Piket Pengganti (Mengganti tanggal ${replacedDate || '-'}) berhasil dicatat! Status alfa/izin sebelumnya telah terkompensasi. ✨`;
+      } else if (recordType === 'PULANG') {
+        greetingMsg = 'Terima kasih, hati-hati di jalan! ✨';
+      } else if (recordType === 'IZIN') {
+        greetingMsg = 'Pengajuan izin piket telah tercatat! Status hari ini: IZIN (Belum Terhitung Hadir). Silakan penuhi kuota mingguan dengan Piket Pengganti (maks. 1 bulan) ya! 📄';
+      } else {
+        // Absen Datang / Berangkat
+        greetingMsg = 'Terima kasih, jangan lupa absen pulang nanti yaw! 🌟';
+      }
+
+      // Tampilkan Custom Success Modal
+      document.getElementById('successGreetingMessage').innerText = greetingMsg;
+      document.getElementById('successEmpName').innerText = emp.name;
+      document.getElementById('successEmpDept').innerText = emp.dept;
+      document.getElementById('successTypeLabel').innerText = `${typeLabel.toUpperCase()} (${statusText})`;
+      document.getElementById('successTime').innerText = `${log.time} WIB`;
+
+      const modal = document.getElementById('successPopupModal');
+      modal.classList.remove('hidden');
+      feather.replace();
+
+      // Hitung mundur & alihkan ke Beranda / Dashboard (5 detik)
+      let countdown = 5;
+      const countdownEl = document.getElementById('redirectCountdown');
+      if (countdownEl) countdownEl.innerText = countdown;
+      const interval = setInterval(() => {
+        countdown--;
+        if (countdownEl) countdownEl.innerText = countdown;
+        if (countdown <= 0) {
+          clearInterval(interval);
+          window.location.href = 'index.html';
+        }
+      }, 1000);
+    }
+  </script>
+</body>
+
+</html>

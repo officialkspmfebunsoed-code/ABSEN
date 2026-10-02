@@ -1,0 +1,427 @@
+/* Custom Styling & Mobile/Tablet/Desktop Responsive Enhancements */
+
+/* Animations */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 22px rgba(239, 68, 68, 0.45);
+  }
+}
+
+@keyframes floatSlow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes scaleUpGlass {
+  0% { opacity: 0; transform: scale(0.95) translateY(10px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
+
+.animate-float {
+  animation: floatSlow 4s ease-in-out infinite;
+}
+
+.animate-scaleUp {
+  animation: scaleUpGlass 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ================= ULTRA-GLASSMORPHISM UTILITIES ================= */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.dark .glass-panel {
+  background: rgba(18, 22, 29, 0.65);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Modal Backdrop Overlay with Deep Frosted Glass Blur */
+.modal-overlay {
+  background-color: rgba(11, 14, 20, 0.65) !important;
+  backdrop-filter: blur(16px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+}
+
+/* Glass Modal Card Container */
+.glass-modal-card {
+  background: rgba(255, 255, 255, 0.75) !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.3) !important;
+}
+
+.dark .glass-modal-card {
+  background: rgba(18, 23, 32, 0.75) !important;
+  backdrop-filter: blur(32px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(190%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 35px rgba(239, 68, 68, 0.08) !important;
+}
+
+/* Calendar Grid Custom Responsive Styles */
+.calendar-day-cell {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 52px;
+}
+
+@media (min-width: 640px) {
+  .calendar-day-cell {
+    min-height: 72px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .calendar-day-cell {
+    min-height: 80px;
+  }
+}
+
+.calendar-day-cell:hover {
+  transform: translateY(-2px);
+  z-index: 5;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.4);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(239, 68, 68, 0.6);
+}
+
+/* Corner Scan Brackets */
+.corner-bracket {
+  position: absolute;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-color: #ef4444;
+}
+
+.touch-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ================= DRAG & DROP SCHEDULE BUILDER STYLES ================= */
+.drag-card-item {
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.18s ease, opacity 0.18s ease, border-color 0.18s ease;
+}
+
+.drag-card-item:hover {
+  transform: translateY(-2px);
+}
+
+.drag-card-item:active {
+  cursor: grabbing;
+}
+
+.drag-card-item.is-dragging {
+  opacity: 0.35 !important;
+  transform: scale(0.92) !important;
+  box-shadow: 0 0 0 2px #ef4444, 0 10px 25px -5px rgba(239, 68, 68, 0.3) !important;
+}
+
+.schedule-drop-zone {
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  min-height: 80px;
+}
+
+.schedule-drop-zone.drop-zone-hover {
+  border-color: #ef4444 !important;
+  background: rgba(239, 68, 68, 0.08) !important;
+  box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.4), 0 4px 20px rgba(239, 68, 68, 0.15) !important;
+  transform: scale(1.008);
+}
+
+.dark .schedule-drop-zone.drop-zone-hover {
+  border-color: #f87171 !important;
+  background: rgba(239, 68, 68, 0.15) !important;
+  box-shadow: inset 0 0 0 2px rgba(239, 68, 68, 0.5), 0 4px 25px rgba(239, 68, 68, 0.25) !important;
+}
+
+@keyframes dropCardPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  60% { transform: scale(1.05); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.animate-card-pop {
+  animation: dropCardPop 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Custom indicator pulse */
+@keyframes softPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(0.96); }
+}
+
+.animate-soft-pulse {
+  animation: softPulse 2s infinite ease-in-out;
+}
+
+/* ================= LIQUID GLASSY EFFECT ================= */
+.liquid-glass-red {
+  background: rgba(15, 20, 28, 0.75) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1.5px solid rgba(239, 68, 68, 0.5) !important;
+  box-shadow: 
+    0 8px 32px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px 0 rgba(255, 255, 255, 0.2),
+    0 0 16px -2px rgba(239, 68, 68, 0.4) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass-red::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 300%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(239, 68, 68, 0.15),
+    rgba(255, 255, 255, 0.15),
+    rgba(239, 68, 68, 0.15),
+    transparent
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  animation: liquidGlassSheen 6s infinite linear;
+}
+
+@keyframes liquidGlassSheen {
+  0% { transform: translateX(-100%) rotate(25deg); }
+  100% { transform: translateX(100%) rotate(25deg); }
+}
+
+/* ================= DYNAMIC MORPHING / DUAL-ISLAND FLOATING HEADER ================= */
+.dynamic-header {
+  position: sticky;
+  top: 0.65rem;
+  width: 100%;
+  padding-left: 0.75rem;
+  padding-right: 0.75rem;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  pointer-events: none;
+  z-index: 50;
+  transition: top 0.4s cubic-bezier(0.16, 1, 0.3, 1), padding 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 640px) {
+  .dynamic-header {
+    top: 1rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+.dynamic-header .header-inner-container {
+  max-width: 72rem; /* 6xl */
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.header-island-left,
+.header-island-right {
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* --- STATE 1: AT TOP (UNIFIED SINGLE FLOATING CAPSULE) --- */
+.dynamic-header.header-at-top .header-inner-container {
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  border-radius: 9999px;
+  padding: 0.45rem 0.85rem;
+  box-shadow: 0 10px 30px -6px rgba(0, 0, 0, 0.06), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  pointer-events: auto;
+}
+
+.dark .dynamic-header.header-at-top .header-inner-container {
+  background: rgba(18, 22, 34, 0.78);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.55), inset 0 1px 1px 0 rgba(255, 255, 255, 0.22), 0 0 20px 0 rgba(220, 38, 38, 0.05);
+}
+
+@media (min-width: 640px) {
+  .dynamic-header.header-at-top .header-inner-container {
+    padding: 0.55rem 1.4rem;
+  }
+}
+
+.dynamic-header.header-at-top .header-island-left,
+.dynamic-header.header-at-top .header-island-right {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* --- STATE 2: SCROLLED (SPLIT INTO 2 INDEPENDENT FLOATING ISLANDS) --- */
+.dynamic-header.header-scrolled .header-inner-container {
+  background: transparent !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  pointer-events: none;
+}
+
+.dynamic-header.header-scrolled .header-island-left {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  padding: 0.4rem 0.85rem;
+  box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.09), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(0) scale(0.98);
+}
+
+.dark .dynamic-header.header-scrolled .header-island-left {
+  background: rgba(18, 22, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 22px 42px -8px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), 0 0 20px 0 rgba(220, 38, 38, 0.08);
+}
+
+@media (min-width: 640px) {
+  .dynamic-header.header-scrolled .header-island-left {
+    padding: 0.45rem 1.15rem;
+  }
+}
+
+.dynamic-header.header-scrolled .header-island-right {
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 9999px;
+  padding: 0.4rem 0.65rem;
+  box-shadow: 0 14px 32px -6px rgba(0, 0, 0, 0.09), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
+  transform: translateY(0) scale(0.98);
+}
+
+.dark .dynamic-header.header-scrolled .header-island-right {
+  background: rgba(18, 22, 34, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 22px 42px -8px rgba(0, 0, 0, 0.65), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25), 0 0 20px 0 rgba(220, 38, 38, 0.08);
+}
+
+@media (min-width: 640px) {
+  .dynamic-header.header-scrolled .header-island-right {
+    padding: 0.45rem 0.85rem;
+  }
+}
+
+/* Glassy Control Buttons & Clock Capsule */
+.header-glass-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.header-glass-btn:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+.dark .header-glass-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.dark .header-glass-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+/* ================= INFINITE RUNNING DUTY MARQUEE TICKER ================= */
+.duty-marquee-wrapper {
+  mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 5%, black 95%, transparent 100%);
+}
+
+.duty-marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0.75rem;
+  animation: dutyMarqueeScroll 28s linear infinite;
+  will-change: transform;
+}
+
+.duty-marquee-wrapper:hover .duty-marquee-track,
+.duty-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+@keyframes dutyMarqueeScroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.duty-marquee-card {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease;
+}
+
+.duty-marquee-card:hover {
+  transform: translateY(-2px) scale(1.02);
+}
+
+
+
+

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Presensi Admin</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'media',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/feather-icons"></script>
+</head>
+
+<body class="font-sans text-gray-800 dark:text-gray-100 bg-gradient-to-br from-gray-50 to-gray-200 dark:from-black dark:to-gray-900 min-h-screen flex overflow-hidden transition-colors duration-500">
+
+  <!-- Sidebar Navigasi -->
+  <aside class="w-64 bg-white/70 dark:bg-black/60 backdrop-blur-xl border-r border-white/50 dark:border-red-900/40 flex flex-col shadow-2xl z-20">
+    <div class="p-6 border-b border-gray-200 dark:border-gray-800 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-red-600 to-red-400 flex items-center justify-center shadow-lg shadow-red-500/30">
+        <i data-feather="box" class="text-white w-5 h-5"></i>
+      </div>
+      <h1 class="text-xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-600 to-red-400 tracking-tight">Admin<span class="text-gray-800 dark:text-gray-200">Panel</span></h1>
+    </div>
+    
+    <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+      <a href="#" class="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-red-600 to-red-500 text-white rounded-xl shadow-lg shadow-red-500/30 font-medium transition-transform transform hover:-translate-y-0.5">
+        <i data-feather="grid" class="w-5 h-5"></i> Dashboard
+      </a>
+      <a href="absen.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-500 dark:hover:text-red-400 rounded-xl transition-colors font-medium">
+        <i data-feather="camera" class="w-5 h-5"></i> Form Presensi
+      </a>
+      <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-500 dark:hover:text-red-400 rounded-xl transition-colors font-medium">
+        <i data-feather="users" class="w-5 h-5"></i> Data Pegawai
+      </a>
+      <a href="#" class="flex items-center gap-3 px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-red-500 dark:hover:text-red-400 rounded-xl transition-colors font-medium">
+        <i data-feather="file-text" class="w-5 h-5"></i> Laporan
+      </a>
+    </nav>
+    
+    <div class="p-4 border-t border-gray-200 dark:border-gray-800">
+      <div class="flex items-center gap-3 px-4 py-3 bg-gray-100 dark:bg-gray-800/50 rounded-xl">
+        <div class="w-10 h-10 rounded-full bg-gradient-to-r from-red-500 to-red-400 flex items-center justify-center text-white font-bold shadow-md">
+          A
+        </div>
+        <div>
+          <p class="text-sm font-bold text-gray-800 dark:text-gray-200">Admin Utama</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">admin@presensi.com</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Area Konten Utama -->
+  <main class="flex-1 flex flex-col h-screen overflow-hidden relative">
+    
+    <header class="h-20 bg-white/50 dark:bg-black/30 backdrop-blur-md border-b border-white/50 dark:border-gray-800 flex items-center justify-between px-8 z-10">
+      <div>
+        <h2 class="text-2xl font-bold">Ringkasan Hari Ini</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400" id="currentDate">Memuat tanggal...</p>
+      </div>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-8 z-0">
+      
+      <!-- Kartu Statistik -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl dark:shadow-none relative overflow-hidden group">
+          <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/10 dark:bg-green-500/20 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
+          <p class="text-gray-500 dark:text-gray-400 font-medium mb-1">Hadir Tepat Waktu</p>
+          <div class="flex items-end gap-3">
+            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">45</h3>
+            <span class="text-green-500 text-sm font-semibold mb-1 flex items-center"><i data-feather="trending-up" class="w-4 h-4 mr-1"></i> +2</span>
+          </div>
+        </div>
+        
+        <div class="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl dark:shadow-none relative overflow-hidden group">
+          <div class="absolute -right-4 -top-4 w-24 h-24 bg-yellow-500/10 dark:bg-yellow-500/20 rounded-full blur-2xl group-hover:bg-yellow-500/20 transition-all"></div>
+          <p class="text-gray-500 dark:text-gray-400 font-medium mb-1">Terlambat</p>
+          <div class="flex items-end gap-3">
+            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">3</h3>
+          </div>
+        </div>
+
+        <div class="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl dark:shadow-none relative overflow-hidden group">
+          <div class="absolute -right-4 -top-4 w-24 h-24 bg-blue-500/10 dark:bg-blue-500/20 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+          <p class="text-gray-500 dark:text-gray-400 font-medium mb-1">Izin / Sakit</p>
+          <div class="flex items-end gap-3">
+            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">2</h3>
+          </div>
+        </div>
+
+        <div class="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-2xl p-6 shadow-xl dark:shadow-none relative overflow-hidden group">
+          <div class="absolute -right-4 -top-4 w-24 h-24 bg-red-500/10 dark:bg-red-500/20 rounded-full blur-2xl group-hover:bg-red-500/20 transition-all"></div>
+          <p class="text-gray-500 dark:text-gray-400 font-medium mb-1">Belum Absen / Alpha</p>
+          <div class="flex items-end gap-3">
+            <h3 class="text-4xl font-bold text-gray-800 dark:text-white">5</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabel Data Presensi Terbaru -->
+      <div class="bg-white/70 dark:bg-gray-800/60 backdrop-blur-xl border border-white/50 dark:border-gray-700/50 rounded-3xl shadow-xl dark:shadow-none overflow-hidden relative">
+        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-400"></div>
+        
+        <div class="px-8 py-6 border-b border-gray-200 dark:border-gray-700/50 flex justify-between items-center">
+          <h3 class="text-xl font-bold">Log Absensi Terbaru</h3>
+        </div>
+        
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="bg-gray-50/50 dark:bg-gray-900/50 text-gray-500 dark:text-gray-400 text-sm border-b border-gray-200 dark:border-gray-700/50">
+                <th class="px-8 py-4 font-semibold uppercase tracking-wider">Profil</th>
+                <th class="px-8 py-4 font-semibold uppercase tracking-wider">Waktu Absen</th>
+                <th class="px-8 py-4 font-semibold uppercase tracking-wider">Status</th>
+              </tr>
+            </thead>
+            <tbody class="text-gray-700 dark:text-gray-300 divide-y divide-gray-200 dark:divide-gray-700/50">
+              
+              <!-- Baris Data 1 -->
+              <tr class="hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <td class="px-8 py-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">BS</div>
+                    <div>
+                      <p class="font-bold">Budi Santoso</p>
+                      <p class="text-xs text-gray-500">ID: EMP-001</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-5 font-medium">07:45:12 WIB</td>
+                <td class="px-8 py-5">
+                  <span class="px-3 py-1 bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400 rounded-full text-xs font-bold tracking-wide">TEPAT WAKTU</span>
+                </td>
+              </tr>
+
+              <!-- Baris Data 2 -->
+              <tr class="hover:bg-white dark:hover:bg-gray-800 transition-colors cursor-pointer">
+                <td class="px-8 py-5">
+                  <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold">SR</div>
+                    <div>
+                      <p class="font-bold">Siti Rahma</p>
+                      <p class="text-xs text-gray-500">ID: EMP-002</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="px-8 py-5 font-medium">08:15:30 WIB</td>
+                <td class="px-8 py-5">
+                  <span class="px-3 py-1 bg-yellow-100 text-yellow-700 dark:bg-yellow-500/20 dark:text-yellow-400 rounded-full text-xs font-bold tracking-wide">TERLAMBAT</span>
+                </td>
+              </tr>
+
+            </tbody>
+          </table>
+        </div>
+      </div>
+      
+    </div>
+  </main>
+
+  <script>
+    // Memulai render untuk icon dari Feather Icons
+    feather.replace();
+
+    // Setup tanggal dinamis di header
+    const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('currentDate').innerText = new Date().toLocaleDateString('id-ID', dateOptions);
+  </script>
+</body>
+</html>

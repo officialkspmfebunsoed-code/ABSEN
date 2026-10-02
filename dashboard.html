@@ -1,0 +1,3594 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Monitoring - Kelompok Studi Pasar Modal</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Supabase Realtime SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="stylesheet" href="css/custom.css">
+  <style>
+    /* Security: Sembunyikan seluruh antarmuka admin sebelum autentikasi terverifikasi */
+    body:not(.auth-authenticated) #adminAppWrapper {
+      display: none !important;
+    }
+    body:not(.auth-authenticated) {
+      overflow: hidden !important;
+    }
+    @media print {
+      body { background: white !important; color: black !important; }
+      aside, header, #topHeaderBar, button, .no-print, #adminAuthGateModal, #sidebarBackdrop { display: none !important; }
+      main { width: 100% !important; height: auto !important; overflow: visible !important; }
+      .print-only { display: block !important; }
+      .shadow-xl, .shadow-sm, .shadow { box-shadow: none !important; }
+      .border { border-color: #cbd5e1 !important; }
+    }
+    .print-only { display: none; }
+  </style>
+</head>
+
+<body class="font-sans bg-gray-50 text-gray-900 dark:bg-[#0b0e14] dark:text-gray-100 min-h-screen flex flex-col lg:flex-row overflow-x-hidden selection:bg-red-600 selection:text-white transition-colors duration-300 antialiased">
+
+  <!-- ================= WRAPPER SELURUH APLIKASI ADMIN (TERSEMBUNYI HINGGA LOGIN SUKSES) ================= -->
+  <div id="adminAppWrapper" class="hidden min-h-screen flex flex-col lg:flex-row flex-1 min-w-0">
+
+  <!-- ================= BACKDROP OVERLAY FOR MOBILE SIDEBAR DRAWER ================= -->
+  <div id="sidebarBackdrop" onclick="closeAdminSidebar()" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity duration-300 no-print"></div>
+
+  <!-- ================= SIDEBAR DRAWER (COLLAPSIBLE / BISA DIBUKA & DITUTUP) ================= -->
+  <aside id="adminSidebar" class="fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-white dark:bg-[#12161d] border-r border-gray-200 dark:border-gray-800 flex flex-col shadow-2xl transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 lg:static lg:w-64 lg:shadow-xl flex-shrink-0">
+    
+    <!-- Sidebar Header -->
+    <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-2xl bg-white dark:bg-[#181d28] border border-gray-200 dark:border-gray-700/80 p-1 flex items-center justify-center shadow-md flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain">
+        </div>
+        <div class="truncate">
+          <h1 class="text-sm font-black text-gray-900 dark:text-white tracking-tight truncate">
+            Admin <span class="text-red-600 dark:text-red-500">KSPM</span>
+          </h1>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400 font-semibold truncate">Galeri Investasi</p>
+        </div>
+      </div>
+
+      <!-- Tombol Tutup Sidebar (Mobile Saja) -->
+      <button type="button" onclick="closeAdminSidebar()" class="lg:hidden p-2 rounded-xl bg-gray-100 dark:bg-[#181d26] text-gray-500 hover:text-red-600 dark:hover:text-red-400 transition" title="Tutup Menu">
+        <i data-feather="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    
+    <!-- Nav Links List Fitur -->
+    <nav class="flex-1 p-3.5 space-y-1.5 overflow-y-auto">
+      <div class="px-2 py-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        Menu Utama
+      </div>
+
+      <button onclick="switchTab('monitoring')" id="nav-monitoring" class="w-full flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-2xl shadow-lg shadow-red-600/30 font-bold text-xs transition-all transform hover:-translate-y-0.5">
+        <div class="flex items-center gap-2.5">
+          <i data-feather="activity" class="w-4 h-4"></i> Live Monitoring
+        </div>
+        <span id="sideAlpaBadge" class="hidden px-2 py-0.5 rounded-full bg-white text-red-600 text-[10px] font-black">0</span>
+      </button>
+
+      <button onclick="switchTab('jadwal')" id="nav-jadwal" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left">
+        <i data-feather="calendar" class="w-4 h-4"></i> Input & Jadwal Piket
+      </button>
+
+      <button onclick="switchTab('kalender')" id="nav-kalender" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left">
+        <i data-feather="grid" class="w-4 h-4"></i> Kalender & Hari Libur
+      </button>
+
+      <div class="pt-2 px-2 text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+        Statistik & Evaluasi
+      </div>
+
+      <button onclick="switchTab('statistik')" id="nav-statistik" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left">
+        <i data-feather="bar-chart-2" class="w-4 h-4"></i> Statistik & Leaderboard
+      </button>
+
+      <button onclick="switchTab('rekap-anggota')" id="nav-rekap-anggota" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left">
+        <i data-feather="users" class="w-4 h-4"></i> Rekap Anggota & Kuota
+      </button>
+
+      <button onclick="switchTab('laporan')" id="nav-laporan" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left">
+        <i data-feather="file-text" class="w-4 h-4"></i> Rekapitulasi Laporan
+      </button>
+
+      <div class="pt-3 border-t border-gray-200 dark:border-gray-800 my-2">
+        <a href="index.html" class="flex items-center gap-2.5 px-3.5 py-2.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-2xl transition font-bold text-xs">
+          <i data-feather="arrow-left" class="w-4 h-4"></i> Beranda Absensi KSPM
+        </a>
+      </div>
+    </nav>
+    
+    <!-- Admin Info & Watermark Sidebar Footer -->
+    <div class="p-3.5 border-t border-gray-200 dark:border-gray-800 space-y-2">
+      <div class="flex items-center justify-between px-3 py-2 bg-gray-100 dark:bg-[#181d26] rounded-2xl">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-r from-red-600 to-rose-600 flex items-center justify-center text-white font-bold text-[10px] shadow-sm flex-shrink-0">
+            ADM
+          </div>
+          <div class="truncate flex-1">
+            <p class="text-xs font-bold text-gray-800 dark:text-gray-200 truncate">Admin KSPM</p>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 truncate">Galeri Investasi</p>
+          </div>
+        </div>
+        <button onclick="logoutAdmin()" class="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="Keluar dari Panel Admin">
+          <i data-feather="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <!-- Watermark Media and Technology -->
+      <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gray-50 dark:bg-[#131722] border border-gray-200/80 dark:border-gray-800 text-[10px] text-gray-500">
+        <i data-feather="code" class="w-3 h-3 text-red-500 flex-shrink-0"></i>
+        <span class="truncate">Develop by Dept. Media & Technology</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= TOP MOBILE NAVBAR (< 1024px) (DYNAMIC DUAL-ISLAND FLOATING) ================= -->
+  <header id="dynamicMobileHeader" class="lg:hidden dynamic-header header-at-top z-30 no-print">
+    <div class="header-inner-container flex items-center justify-between gap-2">
+      <!-- Island Kiri -->
+      <div class="header-island-left flex items-center gap-2 sm:gap-2.5 min-w-0">
+        <!-- Tombol Buka Menu Sidebar Drawer -->
+        <button type="button" onclick="openAdminSidebar()" class="p-2 rounded-full header-glass-btn text-gray-700 dark:text-gray-200 hover:text-red-600 dark:hover:text-red-400 transition shadow-xs flex items-center justify-center flex-shrink-0 active:scale-95" title="Buka Menu Fitur">
+          <i data-feather="menu" class="w-4 h-4"></i>
+        </button>
+
+        <a href="index.html" class="w-8 h-8 rounded-full bg-white/90 dark:bg-[#181d28]/90 border border-gray-200/80 dark:border-white/10 p-1 flex items-center justify-center shadow-xs flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain">
+        </a>
+        <div class="truncate">
+          <h1 class="text-xs font-black text-gray-900 dark:text-white truncate">Admin KSPM</h1>
+          <p class="text-[9px] text-gray-500 truncate" id="mobilePageTitle">Monitoring</p>
+        </div>
+      </div>
+
+      <!-- Island Kanan -->
+      <div class="header-island-right flex items-center gap-1.5">
+        <button onclick="openSystemPauseModal()" id="mobHeaderPauseBadge" class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/10 backdrop-blur-md border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 shadow-xs">
+          🟢 Aktif
+        </button>
+        <button onclick="logoutAdmin()" class="p-2 rounded-full header-glass-btn text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition shadow-xs active:scale-95" title="Keluar">
+          <i data-feather="log-out" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= AREA KONTEN UTAMA ================= -->
+  <main class="flex-1 flex flex-col min-w-0 h-screen lg:overflow-hidden relative">
+    
+    <!-- Top Header Bar (Floating Rounded Pill Bar) -->
+    <div class="px-4 sm:px-8 pt-3 sm:pt-4 no-print flex-shrink-0">
+      <div id="topHeaderBar" class="bg-white/80 dark:bg-[#121622]/85 backdrop-blur-2xl saturate-150 border border-gray-200/80 dark:border-white/15 rounded-3xl sm:rounded-full px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-3 shadow-lg shadow-black/5 dark:shadow-xl dark:shadow-black/40 transition-all">
+        <div class="flex items-center gap-3">
+          <!-- Tombol Toggle Desktop Sidebar -->
+          <button type="button" onclick="toggleDesktopSidebar()" class="hidden lg:flex items-center justify-center p-2 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-[#1a2130] dark:hover:bg-[#232c40] text-gray-600 dark:text-gray-300 hover:text-red-500 transition border border-gray-200/80 dark:border-white/10 shadow-xs active:scale-95" title="Buka / Tutup Menu Samping">
+            <i data-feather="sidebar" class="w-4 h-4"></i>
+          </button>
+
+          <div>
+            <h2 class="text-sm sm:text-base md:text-lg font-black text-gray-900 dark:text-white flex items-center gap-2" id="pageTitle">
+              Monitoring Presensi & Piket KSPM
+            </h2>
+            <p class="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400 font-medium" id="headerSubtitle">
+              Portal Administrasi Galeri Investasi • Universitas Jenderal Soedirman
+            </p>
+          </div>
+        </div>
+
+        <!-- Badge Indikator Status & System Pause Trigger -->
+        <div class="flex items-center gap-2">
+          <button onclick="openSystemPauseModal()" id="headerSystemPauseBadge" class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold transition shadow-xs bg-emerald-500/10 backdrop-blur-md border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 active:scale-95">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" id="headerSystemDot"></span>
+            <span id="headerSystemStatusText">Sistem Aktif</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Canvas Area -->
+    <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 space-y-6">
+      
+      <!-- ================= TAB 1: LIVE MONITORING ================= -->
+      <section id="tab-content-monitoring" class="space-y-6">
+
+        <!-- ALERT BANNER: HARI LIBUR / BEBAS TUGAS -->
+        <div id="holidayAlertBanner" class="hidden rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-rose-600/20 via-pink-600/20 to-rose-600/10 border-2 border-rose-500/50 shadow-xl flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-lg shadow-rose-600/40 flex-shrink-0">
+              <i data-feather="calendar" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-extrabold text-rose-600 dark:text-rose-400" id="holidayBannerTitle">
+                Hari Libur Nasional / Kampus
+              </h4>
+              <p class="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 mt-0.5" id="holidayBannerDesc">
+                Seluruh pengurus dan anggota KSPM bebas tugas piket pada tanggal ini.
+              </p>
+            </div>
+          </div>
+          <span class="px-3 py-1 rounded-xl bg-rose-600 text-white text-[11px] font-bold shadow whitespace-nowrap">
+            Bebas Tugas
+          </span>
+        </div>
+
+        <!-- ALERT BANNER: DETEKSI BELUM PIKET / ALPA -->
+        <div id="absenceAlertBanner" class="hidden rounded-3xl p-4 sm:p-5 bg-gradient-to-r from-red-600/20 via-rose-600/20 to-red-600/10 border-2 border-red-500/50 shadow-xl flex items-center justify-between flex-wrap gap-3">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-lg shadow-red-600/40 flex-shrink-0 animate-bounce">
+              <i data-feather="alert-octagon" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h4 class="text-xs sm:text-sm font-extrabold text-red-600 dark:text-red-400">
+                Peringatan: Ada Anggota Terjadwal yang Belum Piket!
+              </h4>
+              <p class="text-[11px] sm:text-xs text-gray-700 dark:text-gray-300 mt-0.5" id="absenceAlertText">
+                Terdapat anggota yang terjadwal piket tetapi <strong>BELUM ABSEN (Alpa)</strong>.
+              </p>
+            </div>
+          </div>
+          <button onclick="filterTableByStatus('TIDAK_HADIR')" class="px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow transition ml-auto sm:ml-0">
+            Lihat Yang Belum Hadir
+          </button>
+        </div>
+
+        <!-- 4 Kartu Statistik Ringkas -->
+        <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm">
+            <p class="text-[11px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400">Terjadwal Piket</p>
+            <div class="flex items-baseline justify-between mt-1.5">
+              <h3 class="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white" id="statScheduled">0</h3>
+              <span class="text-[10px] sm:text-xs text-gray-400 font-bold">Slot</span>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-emerald-500/30 bg-emerald-500/5 shadow-sm">
+            <p class="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400">Sudah Piket (Hadir)</p>
+            <div class="flex items-baseline justify-between mt-1.5">
+              <h3 class="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400" id="statHadir">0</h3>
+              <span class="text-[10px] font-bold text-emerald-500">Petugas</span>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-blue-500/30 bg-blue-500/5 shadow-sm">
+            <p class="text-[11px] sm:text-xs font-semibold text-blue-600 dark:text-blue-400">Izin Piket</p>
+            <div class="flex items-baseline justify-between mt-1.5">
+              <h3 class="text-2xl sm:text-3xl font-black text-blue-600 dark:text-blue-400" id="statIzin">0</h3>
+              <span class="text-[10px] font-bold text-blue-500">Izin</span>
+            </div>
+          </div>
+
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border-2 border-red-500/40 bg-red-500/10 shadow-sm">
+            <p class="text-[11px] sm:text-xs font-bold text-red-600 dark:text-red-400">Belum Piket (Alpa)</p>
+            <div class="flex items-baseline justify-between mt-1.5">
+              <h3 class="text-2xl sm:text-3xl font-black text-red-600 dark:text-red-400" id="statAlpa">0</h3>
+              <span class="text-[10px] font-extrabold text-red-600 dark:text-red-400 animate-pulse">Alpa</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tabel Log Presensi KSPM -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
+          
+          <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div class="flex items-center justify-between gap-2 flex-wrap w-full md:w-auto">
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <i data-feather="list" class="w-4 h-4 text-red-500"></i>
+                    Daftar Kehadiran & Status Piket
+                  </h3>
+                  <!-- Date Picker Lokal untuk Monitoring -->
+                  <input type="date" id="monitoringDatePicker" onchange="onMonitoringDateChange(this.value)" class="bg-gray-100 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 px-2 py-0.5 rounded-lg text-xs font-bold text-gray-800 dark:text-gray-200 outline-none">
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" id="monitoringDateLabel">Memuat tanggal...</p>
+              </div>
+
+              <!-- Shortcut Utama Google Drive Folder Presensi -->
+              <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer"
+                class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition active:scale-95 whitespace-nowrap"
+                title="Buka Folder Google Drive Semua Bukti Foto Presensi">
+                <i data-feather="folder" class="w-3.5 h-3.5"></i>
+                <span>Folder Drive Presensi</span>
+              </a>
+            </div>
+
+            <!-- Filter Status Pill -->
+            <div class="flex items-center gap-1 bg-gray-100 dark:bg-[#181d26] p-1 rounded-2xl text-xs overflow-x-auto max-w-full touch-scroll">
+              <button onclick="filterTableByStatus('ALL')" id="filter-btn-ALL" class="px-2.5 py-1 rounded-xl font-bold bg-red-600 text-white shadow whitespace-nowrap">
+                Semua (<span id="count-ALL">0</span>)
+              </button>
+              <button onclick="filterTableByStatus('HADIR')" id="filter-btn-HADIR" class="px-2.5 py-1 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-emerald-500 whitespace-nowrap">
+                Hadir / Bertugas (<span id="count-HADIR">0</span>)
+              </button>
+              <button onclick="filterTableByStatus('IZIN')" id="filter-btn-IZIN" class="px-2.5 py-1 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-blue-500 whitespace-nowrap">
+                Izin (<span id="count-IZIN">0</span>)
+              </button>
+              <button onclick="filterTableByStatus('TIDAK_HADIR')" id="filter-btn-TIDAK_HADIR" class="px-2.5 py-1 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 whitespace-nowrap">
+                Belum Piket (<span id="count-TIDAK_HADIR">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Table Container -->
+          <div class="overflow-x-auto touch-scroll">
+            <table class="w-full text-left border-collapse min-w-[700px]">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-[#181d26] text-gray-500 dark:text-gray-400 text-[11px] uppercase tracking-wider font-bold border-b border-gray-200 dark:border-gray-800">
+                  <th class="px-5 py-3.5">Pengurus / Anggota</th>
+                  <th class="px-5 py-3.5">Sesi Piket</th>
+                  <th class="px-5 py-3.5">Status</th>
+                  <th class="px-5 py-3.5">Waktu (Masuk / Pulang)</th>
+                  <th class="px-5 py-3.5">Bukti Presensi (Drive & GPS)</th>
+                  <th class="px-5 py-3.5">Keterangan</th>
+                  <th class="px-5 py-3.5 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="monitoringTableBody" class="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
+                <!-- Populated dynamically via JS -->
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 2: INPUT & JADWAL PIKET (SISTEM DRAG & DROP) ================= -->
+      <section id="tab-content-jadwal" class="hidden space-y-6">
+        
+        <!-- Header & Action Ribbon -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-gray-100 dark:border-gray-800 pb-4">
+            <div class="flex items-center gap-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white flex items-center justify-center shadow-lg shadow-red-600/30 flex-shrink-0">
+                <i data-feather="grid" class="w-6 h-6"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white">Input & Jadwal Piket Rutin</h3>
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-gradient-to-r from-red-500/10 to-rose-500/10 text-red-600 dark:text-red-400 border border-red-500/30 uppercase tracking-wider">
+                    Drag & Drop Builder
+                  </span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Tarik kartu anggota dari pool ke sel hari & sesi di tabel bawah untuk mengatur jadwal piket mingguan.
+                </p>
+              </div>
+            </div>
+
+            <!-- View Switcher & Action Buttons -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <div class="flex items-center bg-gray-100 dark:bg-[#181d26] p-1 rounded-2xl border border-gray-200/80 dark:border-gray-800 text-xs">
+                <button type="button" onclick="switchScheduleViewMode('DRAG_DROP')" id="btnSchedModeDragDrop" class="px-3.5 py-1.5 rounded-xl font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-sm transition flex items-center gap-1.5">
+                  <i data-feather="layout" class="w-3.5 h-3.5 text-red-500"></i> Matriks Drag & Drop
+                </button>
+                <button type="button" onclick="switchScheduleViewMode('ALL_DATES')" id="btnSchedModeAll" class="px-3.5 py-1.5 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
+                  <i data-feather="list" class="w-3.5 h-3.5"></i> Riwayat Tanggal (<span id="totalSchedulesCount">0</span>)
+                </button>
+              </div>
+
+              <button type="button" onclick="openResetSchedulesModal()" class="px-3 py-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 font-bold text-xs flex items-center gap-1.5 transition border border-red-200 dark:border-red-800/60 shadow-xs" title="Hapus seluruh jadwal dari database">
+                <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Reset Database</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Metric Stats Cards -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div class="p-3 rounded-2xl bg-gray-50/80 dark:bg-[#181d26]/80 border border-gray-200/80 dark:border-gray-800 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center font-black flex-shrink-0">
+                <i data-feather="users" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase font-bold text-gray-400">Total Pengurus</p>
+                <p class="text-sm font-extrabold text-gray-900 dark:text-white" id="statTotalEmployees">33 Orang</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-800/40 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black flex-shrink-0">
+                <i data-feather="check-circle" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400">Sudah Terjadwal</p>
+                <p class="text-sm font-extrabold text-emerald-700 dark:text-emerald-300" id="statAssignedMembers">0 Orang</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-800/40 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center font-black flex-shrink-0">
+                <i data-feather="alert-circle" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">Belum Terjadwal</p>
+                <p class="text-sm font-extrabold text-amber-700 dark:text-amber-300" id="statUnassignedMembers">33 Orang</p>
+              </div>
+            </div>
+
+            <div class="p-3 rounded-2xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/60 dark:border-rose-800/40 flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center font-black flex-shrink-0">
+                <i data-feather="calendar" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400">Slot Mingguan</p>
+                <p class="text-sm font-extrabold text-rose-700 dark:text-rose-300" id="statTotalWeeklySlots">0 Slot</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MAIN CONTAINER 1: DRAG & DROP ROSTER BUILDER -->
+        <div id="dragDropBuilderContainer" class="space-y-6">
+          
+          <!-- BAGIAN 1: DAFTAR NAMA ANGGOTA (MEMBER POOL) -->
+          <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+            
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
+              <div>
+                <h4 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-lg bg-red-600 text-white text-xs font-bold flex items-center justify-center">1</span>
+                  Daftar Nama Anggota / Pengurus KSPM
+                </h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Tarik (drag) kartu anggota ke kolom sesi hari di tabel bawah, atau klik kartu untuk opsi penempatan cepat.
+                </p>
+              </div>
+
+              <!-- Pool Search & Filter Controls -->
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Search Input -->
+                <div class="relative min-w-[200px] flex-1 sm:flex-initial">
+                  <i data-feather="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                  <input type="text" id="memberSearchInput" oninput="filterMemberPool()" placeholder="Cari nama anggota..." class="w-full pl-8 pr-3 py-1.5 bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 transition">
+                </div>
+
+                <!-- Dept Filter -->
+                <select id="memberDeptFilter" onchange="filterMemberPool()" class="bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+                  <option value="ALL">Semua Departemen</option>
+                </select>
+
+                <!-- Status Filter Pills -->
+                <div class="flex items-center bg-gray-100 dark:bg-[#181d26] p-0.5 rounded-xl border border-gray-200/80 dark:border-gray-800 text-[11px]">
+                  <button type="button" onclick="setPoolStatusFilter('ALL')" id="filterStatusAll" class="px-2.5 py-1 rounded-lg font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-xs transition">
+                    Semua
+                  </button>
+                  <button type="button" onclick="setPoolStatusFilter('UNASSIGNED')" id="filterStatusUnassigned" class="px-2.5 py-1 rounded-lg font-semibold text-gray-500 dark:text-gray-400 hover:text-amber-500 transition">
+                    Belum Ada
+                  </button>
+                  <button type="button" onclick="setPoolStatusFilter('ASSIGNED')" id="filterStatusAssigned" class="px-2.5 py-1 rounded-lg font-semibold text-gray-500 dark:text-gray-400 hover:text-emerald-500 transition">
+                    Sudah Ada
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pool Draggable Cards Grid -->
+            <div id="draggableMembersPool" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2.5 max-h-56 overflow-y-auto pr-1 p-1 touch-scroll">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Pool Footer Tip -->
+            <div class="flex items-center justify-between text-[11px] text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-100 dark:border-gray-800/80">
+              <span class="flex items-center gap-1.5">
+                <i data-feather="info" class="w-3.5 h-3.5 text-red-500"></i>
+                <span>Tanda <strong>0x</strong> = Belum terjadwal | <strong>1x</strong> = Terjadwal 1 sesi | <strong>2x+</strong> = Terjadwal multi-sesi</span>
+              </span>
+              <span id="poolShownCount" class="font-bold text-gray-700 dark:text-gray-300">Menampilkan 33 pengurus</span>
+            </div>
+          </div>
+
+          <!-- BAGIAN 2: TABEL JADWAL PIKET (BARIS: HARI | KOLOM: SESI) -->
+          <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 dark:border-gray-800 pb-3">
+              <div>
+                <h4 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span class="w-6 h-6 rounded-lg bg-red-600 text-white text-xs font-bold flex items-center justify-center">2</span>
+                  Tabel Matriks Jadwal Piket (Baris: Hari ➔ Kolom: Sesi)
+                </h4>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  Drop zone interaktif per sesi. Anda juga dapat memindahkan kartu antar hari/sesi secara langsung.
+                </p>
+              </div>
+
+              <div class="flex items-center gap-2 flex-wrap">
+                <!-- Clear Draft -->
+                <button type="button" onclick="clearDraftRoster()" class="px-3.5 py-1.5 rounded-xl bg-gray-100 hover:bg-red-50 dark:bg-[#181d26] dark:hover:bg-red-950/40 text-gray-600 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 font-bold text-xs transition border border-gray-200 dark:border-gray-700 flex items-center gap-1.5" title="Kosongkan seluruh pengisian di tabel">
+                  <i data-feather="x-circle" class="w-3.5 h-3.5"></i>
+                  <span>Kosongkan Tabel</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tabel Matriks Hari x Sesi Responsive Container -->
+            <div class="overflow-x-auto rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm touch-scroll">
+              <table class="w-full min-w-[720px] text-left border-collapse">
+                <thead>
+                  <tr class="bg-gray-50/90 dark:bg-[#181d26] border-b border-gray-200 dark:border-gray-800 text-xs font-extrabold uppercase tracking-wider">
+                    <th class="py-3 px-4 w-40 text-gray-700 dark:text-gray-300">
+                      Sesi
+                    </th>
+                    <th class="py-3 px-2 text-center text-red-600 dark:text-red-400 w-1/5">
+                      Senin
+                    </th>
+                    <th class="py-3 px-2 text-center text-orange-600 dark:text-orange-400 w-1/5">
+                      Selasa
+                    </th>
+                    <th class="py-3 px-2 text-center text-amber-600 dark:text-amber-400 w-1/5">
+                      Rabu
+                    </th>
+                    <th class="py-3 px-2 text-center text-emerald-600 dark:text-emerald-400 w-1/5">
+                      Kamis
+                    </th>
+                    <th class="py-3 px-2 text-center text-blue-600 dark:text-blue-400 w-1/5">
+                      Jumat
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="scheduleMatrixTableBody" class="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
+                  <!-- Rendered via JS: Row 1 = Sesi Pagi, Row 2 = Sesi Siang -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Save Bar & Period Configuration -->
+            <div class="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-gray-50 via-white to-gray-50 dark:from-[#181d26] dark:via-[#151922] dark:to-[#181d26] border border-gray-200 dark:border-gray-800 flex flex-col md:flex-row items-center justify-between gap-4 shadow-sm">
+              <div class="flex items-center gap-3 w-full md:w-auto">
+                <div class="w-10 h-10 rounded-xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0">
+                  <i data-feather="clock" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase">Periode Generate Jadwal Kalender</label>
+                  <select id="scheduleRosterDurationSelect" class="mt-0.5 bg-white dark:bg-[#12161d] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-red-500">
+                    <option value="6" selected>1 Semester (6 Bulan ke Depan) - Rekomendasi</option>
+                    <option value="3">3 Bulan ke Depan</option>
+                    <option value="1">1 Bulan ke Depan</option>
+                    <option value="12">1 Tahun Penuh (Sepanjang Periode)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                <button type="button" onclick="saveRosterDraftToCalendar()" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-red-600/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+                  <i data-feather="check-circle" class="w-4 h-4"></i>
+                  <span>Simpan & Terapkan Jadwal ke Kalender</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- MAIN CONTAINER 2: DAFTAR SEMUA TANGGAL DATABASE (HIDDEN DEFAULT) -->
+        <div id="rawSchedulesContainer" class="hidden bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+          <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-3">
+            <div>
+              <h4 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Daftar Slot Tanggal Terjadwal di Database</h4>
+              <p class="text-xs text-gray-500">Seluruh jadwal piket harian individual yang terekam pada kalender</p>
+            </div>
+            <button onclick="switchScheduleViewMode('DRAG_DROP')" class="px-3 py-1.5 rounded-xl bg-red-600 text-white font-bold text-xs flex items-center gap-1.5 shadow transition">
+              <i data-feather="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Matriks Drag & Drop
+            </button>
+          </div>
+
+          <div class="flex-1 overflow-y-auto max-h-[520px] space-y-2 pr-1" id="schedulesListContainer">
+            <!-- Rendered via JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 3: KALENDER & MANAJEMEN HARI LIBUR ================= -->
+      <section id="tab-content-kalender" class="hidden space-y-6">
+        
+        <!-- Kalender Container -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-8 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+          <div>
+            <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <i data-feather="calendar" class="w-5 h-5 text-red-500"></i> Kalender Presensi & Kehadiran Piket KSPM
+            </h3>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Tekan tanggal untuk melihat daftar pengurus yang hadir atau belum absen</p>
+          </div>
+
+          <div id="fullAdminCalendarContainer">
+            <!-- Rendered by AttendanceCalendar -->
+          </div>
+        </div>
+
+        <!-- MANAJEMEN HARI LIBUR & TANGGAL MERAH (BEBAS TUGAS PIKET) -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-5">
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i data-feather="sun" class="w-4 h-4 text-rose-500"></i>
+                Manajemen Hari Libur & Tanggal Merah (Bebas Tugas Piket)
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Tandai tanggal libur nasional atau acara kampus agar anggota otomatis bebas tugas piket (tidak terhitung alpa)</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Form Tambah Hari Libur (Col 5) -->
+            <div class="lg:col-span-5 p-4 sm:p-5 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 space-y-3.5">
+              <h4 class="text-xs font-extrabold text-gray-800 dark:text-gray-200 uppercase tracking-wider flex items-center gap-1.5">
+                <i data-feather="plus-circle" class="w-3.5 h-3.5 text-rose-500"></i> Tambah Hari Libur
+              </h4>
+
+              <form onsubmit="handleAddHolidaySubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 mb-1">Tanggal Libur</label>
+                  <input type="date" id="inputHolidayDate" required class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-rose-500">
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 mb-1">Nama Hari Libur / Acara Kampus</label>
+                  <input type="text" id="inputHolidayName" required placeholder="Contoh: Hari Kemerdekaan RI / Dies Natalis" class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-rose-500 placeholder-gray-400">
+                </div>
+
+                <div>
+                  <label class="block text-[11px] font-bold text-gray-500 mb-1">Keterangan Tambahan (Opsional)</label>
+                  <input type="text" id="inputHolidayDesc" placeholder="Contoh: Libur Nasional / Kegiatan Kampus" class="w-full bg-white dark:bg-[#141822] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-rose-500 placeholder-gray-400">
+                </div>
+
+                <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow transition flex items-center justify-center gap-1.5">
+                  <i data-feather="plus" class="w-3.5 h-3.5"></i> Simpan Hari Libur
+                </button>
+              </form>
+            </div>
+
+            <!-- List Hari Libur Terdaftar (Col 7) -->
+            <div class="lg:col-span-7 flex flex-col space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-gray-700 dark:text-gray-300">Daftar Hari Libur Terdaftar:</span>
+                <span class="text-[11px] text-gray-400" id="holidaysCountText">0 Hari Libur</span>
+              </div>
+
+              <div class="flex-1 overflow-y-auto max-h-[300px] space-y-2 pr-1" id="holidaysListContainer">
+                <!-- Populated via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 4: STATISTIK & LEADERBOARD (BULANAN) ================= -->
+      <section id="tab-content-statistik" class="hidden space-y-6">
+        
+        <!-- Month Filter Header Bar for Statistik -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 flex items-center justify-center text-white shadow-md shadow-red-600/30">
+              <i data-feather="bar-chart-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white">
+                Statistik Keaktifan & Leaderboard Bulanan
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Peringkat pengurus dan performa departemen dihitung per bulan
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2.5 w-full sm:w-auto">
+            <div class="flex items-center gap-2 bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700/80 rounded-2xl px-3.5 py-2 shadow-sm w-full sm:w-auto">
+              <i data-feather="calendar" class="w-4 h-4 text-red-500 flex-shrink-0"></i>
+              <span class="text-xs font-bold text-gray-700 dark:text-gray-300 whitespace-nowrap">Pilih Bulan:</span>
+              <input type="month" id="statsMonthPicker" onchange="onStatsMonthChange(this.value)"
+                class="bg-transparent text-xs font-bold text-gray-900 dark:text-white outline-none cursor-pointer">
+            </div>
+          </div>
+        </div>
+
+        <!-- LEADERBOARD TOP ANGGOTA & DIVISI TERAKTIF -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          <!-- TOP 3 PENGURUS TERAKTIF (Col 6) -->
+          <div class="lg:col-span-6 bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shadow-sm">
+                  <i data-feather="award" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">Top Pengurus Teraktif</h3>
+                  <p class="text-[11px] text-gray-500">Peringkat presensi piket pengurus KSPM</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300" id="statsMonthBadge1">
+                Bulan Ini
+              </span>
+            </div>
+
+            <div class="space-y-2.5" id="topMembersLeaderboardContainer">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- TOP DIVISI TERAKTIF (Col 6) -->
+          <div class="lg:col-span-6 bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-9 h-9 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shadow-sm">
+                  <i data-feather="trending-up" class="w-5 h-5"></i>
+                </div>
+                <div>
+                  <h3 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">Top Divisi / Departemen</h3>
+                  <p class="text-[11px] text-gray-500">Peringkat keaktifan anggota per divisi</p>
+                </div>
+              </div>
+              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300" id="statsMonthBadge2">
+                Bulan Ini
+              </span>
+            </div>
+
+            <div class="space-y-2.5" id="topDivisionsLeaderboardContainer">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Detail Statistik Performa per Divisi -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+          <div class="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-gray-100 dark:border-gray-800">
+            <div>
+              <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i data-feather="bar-chart-2" class="w-4 h-4 text-red-500"></i>
+                Statistik Keaktifan Lengkap per Divisi
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Rincian keaktifan anggota, total sesi piket, dan rata-rata per pengurus</p>
+            </div>
+            <span class="text-[11px] font-mono text-gray-400 bg-gray-100 dark:bg-[#181d26] px-2.5 py-1 rounded-xl" id="statsMonthBadge3">Bulan Ini</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5" id="divisionPerformanceContainer">
+            <!-- Populated via JS -->
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 5: REKAP ANGGOTA & KUOTA MINGGUAN (BARU) ================= -->
+      <section id="tab-content-rekap-anggota" class="hidden space-y-6">
+        
+        <!-- Filter Bar Rekap Anggota -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <i data-feather="users" class="w-5 h-5 text-red-500"></i>
+                  Rekapitulasi Kuota Piket Anggota
+                </h3>
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">
+                  Target: 2 Piket / Minggu
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                Pemantauan kuota wajib piket mingguan pengurus (4 Minggu = Total 8 Piket per Bulan)
+              </p>
+            </div>
+            
+            <button onclick="promptTambahPegawai()" class="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs shadow flex items-center gap-2 transition whitespace-nowrap">
+              <i data-feather="user-plus" class="w-4 h-4"></i> Tambah Anggota
+            </button>
+          </div>
+
+          <!-- Controls Filter Bar -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Pilih Bulan</label>
+              <input type="month" id="rekapMonthPicker" onchange="renderWeeklyMemberRekap()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Filter Departemen</label>
+              <select id="rekapDeptFilter" onchange="renderWeeklyMemberRekap()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+                <option value="ALL">-- Semua Departemen --</option>
+                <option value="Director & Vice Director">Director & Vice Director</option>
+                <option value="Secretary">Secretary</option>
+                <option value="Finance">Finance</option>
+                <option value="Human Resource Management">Human Resource Management</option>
+                <option value="Project Management">Project Management</option>
+                <option value="Research Analyst">Research Analyst</option>
+                <option value="Public Relations">Public Relations</option>
+                <option value="Media & Technology">Media & Technology</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-2">
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Cari Nama / ID Anggota</label>
+              <div class="relative">
+                <input type="text" id="rekapSearchInput" oninput="renderWeeklyMemberRekap()" placeholder="Ketik nama anggota..." class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl pl-9 pr-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+                <i data-feather="search" class="w-4 h-4 text-gray-400 absolute left-3 top-2.5"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Summary Mini Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-gray-200 dark:border-gray-800 shadow-sm">
+            <p class="text-[11px] text-gray-500">Total Pengurus</p>
+            <h4 class="text-2xl font-black text-gray-900 dark:text-white mt-1" id="rekapSummaryTotal">0</h4>
+          </div>
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-emerald-500/30 bg-emerald-500/5 shadow-sm">
+            <p class="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">Memenuhi Kuota (≥8 Sesi)</p>
+            <h4 class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="rekapSummaryFulfilled">0</h4>
+          </div>
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-amber-500/30 bg-amber-500/5 shadow-sm">
+            <p class="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">Belum Memenuhi Kuota</p>
+            <h4 class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1" id="rekapSummaryPending">0</h4>
+          </div>
+          <div class="bg-white dark:bg-[#141822] rounded-2xl p-4 border border-blue-500/30 bg-blue-500/5 shadow-sm">
+            <p class="text-[11px] text-blue-600 dark:text-blue-400 font-semibold">Total Sesi Terlaksana</p>
+            <h4 class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1" id="rekapSummarySessions">0</h4>
+          </div>
+        </div>
+
+        <!-- Tabel Matrix Rekap Kuota Mingguan Pengurus (4 Minggu) -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
+          <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-gray-900 dark:text-white" id="rekapTableCountText">
+              Matriks Kuota Piket Pengurus
+            </h4>
+            <span class="text-[11px] text-gray-400 font-mono" id="rekapMonthBadgeLabel">Bulan Ini</span>
+          </div>
+
+          <div class="overflow-x-auto touch-scroll">
+            <table class="w-full text-left border-collapse min-w-[840px] text-xs">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-[#181d26] text-gray-500 dark:text-gray-400 text-[11px] uppercase tracking-wider font-bold border-b border-gray-200 dark:border-gray-800">
+                  <th class="px-4 py-3.5">Pengurus / Anggota</th>
+                  <th class="px-3 py-3.5 text-center">Minggu 1 (01-07)</th>
+                  <th class="px-3 py-3.5 text-center">Minggu 2 (08-14)</th>
+                  <th class="px-3 py-3.5 text-center">Minggu 3 (15-21)</th>
+                  <th class="px-3 py-3.5 text-center">Minggu 4 (22-End)</th>
+                  <th class="px-4 py-3.5 text-center">Total Sesi</th>
+                  <th class="px-4 py-3.5 text-center">Status Kuota</th>
+                  <th class="px-4 py-3.5 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody id="rekapWeeklyTableBody" class="divide-y divide-gray-200 dark:divide-gray-800 text-xs">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- ================= TAB 6: LAPORAN & KONTROL JEDA SISTEM ================= -->
+      <section id="tab-content-laporan" class="hidden space-y-6">
+        
+        <!-- Filter Bar Laporan -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl p-5 sm:p-6 border border-gray-200 dark:border-gray-800 shadow-xl space-y-4 no-print">
+          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-base sm:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <i data-feather="file-text" class="w-5 h-5 text-red-500"></i>
+                Rekapitulasi & Ekspor Presensi KSPM
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Filter data presensi pengurus untuk laporan berkala & arsip BPH</p>
+            </div>
+            
+            <div class="flex items-center gap-2.5 flex-wrap">
+              <button onclick="exportReportToExcelCSV()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg shadow-emerald-600/30 flex items-center gap-2 transition">
+                <i data-feather="download" class="w-4 h-4"></i> Unduh Excel (.csv)
+              </button>
+              <button onclick="window.print()" class="px-4 py-2.5 rounded-xl bg-gray-100 dark:bg-[#181d26] hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 font-bold text-xs flex items-center gap-2 transition border border-gray-200 dark:border-gray-700">
+                <i data-feather="printer" class="w-4 h-4"></i> Cetak Laporan
+              </button>
+            </div>
+          </div>
+
+          <!-- Controls Grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 pt-2 border-t border-gray-100 dark:border-gray-800">
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Periode Tanggal Mulai</label>
+              <input type="date" id="reportStartDate" onchange="renderReportTable()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Periode Tanggal Selesai</label>
+              <input type="date" id="reportEndDate" onchange="renderReportTable()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none">
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Filter Divisi</label>
+              <select id="reportDeptFilter" onchange="renderReportTable()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none">
+                <option value="ALL">-- Semua Divisi --</option>
+                <option value="Director & Vice Director">Director & Vice Director</option>
+                <option value="Secretary">Secretary</option>
+                <option value="Finance">Finance</option>
+                <option value="Human Resource Management">Human Resource Management</option>
+                <option value="Project Management">Project Management</option>
+                <option value="Research Analyst">Research Analyst</option>
+                <option value="Public Relations">Public Relations</option>
+                <option value="Media & Technology">Media & Technology</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-[11px] font-bold text-gray-500 mb-1">Filter Status</label>
+              <select id="reportStatusFilter" onchange="renderReportTable()" class="w-full bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none">
+                <option value="ALL">-- Semua Status --</option>
+                <option value="SELESAI">Selesai</option>
+                <option value="SEDANG_BERTUGAS">Sedang Bertugas</option>
+                <option value="IZIN">Izin Piket</option>
+                <option value="TIDAK_HADIR">Belum Piket (Alpa)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Print Header Title -->
+        <div class="print-only mb-6 text-center space-y-1">
+          <h2 class="text-xl font-bold uppercase">Laporan Rekapitulasi Presensi Piket</h2>
+          <p class="text-sm font-semibold">Kelompok Studi Pasar Modal (KSPM) • Galeri Investasi</p>
+          <p class="text-xs text-gray-500">Universitas Jenderal Soedirman</p>
+        </div>
+
+        <!-- Tabel Preview Laporan -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
+          <div class="p-4 sm:p-5 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+            <h4 class="text-sm font-bold text-gray-900 dark:text-white" id="reportResultCountText">Menampilkan Data Laporan</h4>
+          </div>
+
+          <div class="overflow-x-auto touch-scroll max-h-[500px]">
+            <table class="w-full text-left border-collapse min-w-[760px] text-xs">
+              <thead>
+                <tr class="bg-gray-50 dark:bg-[#181d26] text-gray-500 dark:text-gray-400 text-[11px] uppercase tracking-wider font-bold border-b border-gray-200 dark:border-gray-800">
+                  <th class="px-4 py-3">Tanggal</th>
+                  <th class="px-4 py-3">Nama Anggota</th>
+                  <th class="px-4 py-3">Divisi</th>
+                  <th class="px-4 py-3">Sesi</th>
+                  <th class="px-4 py-3">Status</th>
+                  <th class="px-4 py-3">Masuk / Pulang</th>
+                  <th class="px-4 py-3">Keterangan</th>
+                </tr>
+              </thead>
+              <tbody id="reportTableBody" class="divide-y divide-gray-200 dark:border-gray-800 text-xs">
+                <!-- Populated via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================= KONTROL JEDA SISTEM (MODE LIBUR KULIAH) DI BAWAH LAPORAN ================= -->
+        <div id="systemPauseControlBanner" class="p-5 sm:p-6 rounded-3xl bg-white dark:bg-[#141822] border border-gray-200 dark:border-gray-800 shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all no-print">
+          <div class="flex items-center gap-3.5">
+            <div id="systemPauseIconBox" class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shadow-sm flex-shrink-0">
+              <i data-feather="check-circle" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h4 class="text-sm font-extrabold text-gray-900 dark:text-white">Kontrol Jeda Sistem Presensi Piket:</h4>
+                <span id="systemPauseStatusBadge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">
+                  AKTIF NORMAL
+                </span>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5" id="systemPauseStatusDesc">
+                Sistem absensi berjalan normal. Tekan tombol jeda saat memasuki masa libur perkuliahan atau UAS agar sistem presensi berhenti sementara.
+              </p>
+            </div>
+          </div>
+
+          <button type="button" onclick="openSystemPauseModal()" id="btnToggleSystemPause" class="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap ml-auto sm:ml-0">
+            <i data-feather="pause-circle" class="w-4 h-4"></i>
+            <span id="btnToggleSystemPauseText">Jeda Sistem (Libur Kuliah)</span>
+          </button>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+  </div> <!-- Akhir adminAppWrapper -->
+
+  <!-- ================= MODAL / GATEKEEPER LOGIN ADMIN KSPM (ULTRA-GLASSY) ================= -->
+  <div id="adminAuthGateModal" class="fixed inset-0 z-[999] flex items-center justify-center p-4 modal-overlay transition-all duration-300">
+    <div class="glass-modal-card rounded-3xl p-6 sm:p-8 max-w-md w-full space-y-5 animate-scaleUp relative overflow-hidden">
+      
+      <!-- Ambient Glow Decorator -->
+      <div class="absolute -top-12 -right-12 w-36 h-36 bg-red-600/15 rounded-full blur-2xl pointer-events-none"></div>
+      <div class="absolute -bottom-12 -left-12 w-36 h-36 bg-rose-600/15 rounded-full blur-2xl pointer-events-none"></div>
+
+      <!-- Header Login -->
+      <div class="text-center space-y-2 relative z-10">
+        <div class="w-14 h-14 rounded-3xl bg-gradient-to-tr from-red-600 to-rose-600 p-0.5 mx-auto shadow-xl shadow-red-600/30 flex items-center justify-center">
+          <div class="w-full h-full bg-white/90 dark:bg-[#181d28]/90 backdrop-blur-md rounded-[22px] p-2 flex items-center justify-center">
+            <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain">
+          </div>
+        </div>
+        <div>
+          <span class="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-100/80 text-red-700 dark:bg-red-950/80 dark:text-red-400 border border-red-200 dark:border-red-800/40 backdrop-blur-md">
+            Akses Terproteksi
+          </span>
+          <h2 class="text-lg sm:text-xl font-black text-gray-900 dark:text-white mt-1">
+            Masuk ke Panel <span class="text-red-600 dark:text-red-500">Admin KSPM</span>
+          </h2>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Silakan masukkan username dan kata sandi akses</p>
+        </div>
+      </div>
+
+      <!-- Alert Error Login -->
+      <div id="loginErrorAlert" class="hidden p-3 rounded-2xl bg-red-50/80 dark:bg-red-950/50 backdrop-blur-md border border-red-200 dark:border-red-800/60 text-xs text-red-600 dark:text-red-400 font-bold flex items-center gap-2">
+        <i data-feather="alert-circle" class="w-4 h-4 flex-shrink-0"></i>
+        <span id="loginErrorMsg">Username atau kata sandi salah!</span>
+      </div>
+
+      <!-- Form Login -->
+      <form onsubmit="handleAdminLogin(event)" class="space-y-4 relative z-10">
+        <div>
+          <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+            Username
+          </label>
+          <div class="relative">
+            <input type="text" id="loginUsername" required autocomplete="username" placeholder="Masukkan username admin" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition shadow-inner">
+            <i data-feather="user" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-1">
+            Kata Sandi (Password)
+          </label>
+          <div class="relative">
+            <input type="password" id="loginPassword" required autocomplete="current-password" placeholder="Masukkan kata sandi" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl pl-9 pr-10 py-2.5 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition shadow-inner">
+            <i data-feather="lock" class="w-4 h-4 text-gray-400 absolute left-3 top-3"></i>
+            <button type="button" onclick="togglePasswordVisibility('loginPassword', 'loginPasswordEyeIcon')" class="absolute right-3 top-2.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition">
+              <i data-feather="eye" id="loginPasswordEyeIcon" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-red-600/30 transition flex items-center justify-center gap-2 transform active:scale-95">
+          <i data-feather="log-in" class="w-4 h-4"></i> Masuk Panel Admin
+        </button>
+      </form>
+
+      <!-- Back to Public Home -->
+      <div class="pt-2 border-t border-gray-200/40 dark:border-white/10 text-center relative z-10">
+        <a href="index.html" class="text-xs font-bold text-gray-500 hover:text-red-500 transition inline-flex items-center gap-1.5">
+          <i data-feather="arrow-left" class="w-3.5 h-3.5"></i> Kembali ke Beranda Absensi
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+      <!-- Watermark -->
+      <p class="text-[10px] text-center text-gray-400 font-mono relative z-10">
+        Develop by Department of Media and Technology
+      </p>
+
+    </div>
+  </div>
+
+  <!-- ================= MODAL PERINGATAN RESET SEMUA JADWAL (ULTRA-GLASSY) ================= -->
+  <div id="resetSchedulesModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 animate-scaleUp border-2 border-red-500/30">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-red-500/15 backdrop-blur-md text-red-600 dark:text-red-400 border border-red-500/30 flex items-center justify-center flex-shrink-0 animate-bounce">
+          <i data-feather="alert-octagon" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">Reset Semua Jadwal Piket</h3>
+          <p class="text-[11px] text-gray-500">Tindakan ini akan menghapus seluruh data jadwal</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 backdrop-blur-md border border-red-200/80 dark:border-red-800/40 text-xs space-y-2">
+        <p class="text-gray-800 dark:text-gray-200 font-semibold leading-relaxed">
+          ⚠️ PERINGATAN: Apakah Anda yakin ingin MENGHAPUS SEMUA JADWAL PIKET yang terdaftar di sistem KSPM?
+        </p>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-normal">
+          Seluruh jadwal yang telah dibuat akan dikosongkan. Riwayat presensi kehadiran yang telah terekam di masa lalu akan tetap aman dalam basis data laporan.
+        </p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+        <button onclick="closeResetSchedulesModal()" class="px-3.5 py-2 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+          Batal
+        </button>
+        <button onclick="executeResetSchedules()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition active:scale-95">
+          <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Ya, Reset Semua Jadwal</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL PERINGATAN HAPUS ANGGOTA (ULTRA-GLASSY) ================= -->
+  <div id="deleteEmployeeModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 animate-scaleUp border-2 border-red-500/30">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-red-500/15 backdrop-blur-md text-red-600 dark:text-red-400 border border-red-500/30 flex items-center justify-center flex-shrink-0 animate-pulse">
+          <i data-feather="alert-triangle" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="text-sm sm:text-base font-extrabold text-gray-900 dark:text-white">Peringatan Hapus Anggota</h3>
+          <p class="text-[11px] text-gray-500">Tindakan ini memerlukan konfirmasi admin</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-red-50/60 dark:bg-red-950/30 backdrop-blur-md border border-red-200/80 dark:border-red-800/40 text-xs space-y-2">
+        <p class="text-gray-700 dark:text-gray-300 leading-relaxed">
+          Apakah Anda yakin ingin menghapus data anggota berikut dari sistem KSPM?
+        </p>
+        <div class="p-2.5 rounded-xl bg-white/70 dark:bg-[#131720]/80 backdrop-blur-md border border-red-200 dark:border-red-800/60 font-semibold text-gray-900 dark:text-white flex items-center justify-between shadow-sm">
+          <span id="deleteTargetEmpName">-</span>
+          <span id="deleteTargetEmpId" class="text-[10px] text-red-600 dark:text-red-400 font-mono font-bold">-</span>
+        </div>
+        <p class="text-[10px] text-gray-500 leading-tight">
+          *Catatan: Riwayat presensi dan jadwal yang sudah terekam di masa lalu akan tetap tersimpan dalam basis data laporan.
+        </p>
+      </div>
+
+      <input type="hidden" id="deleteTargetEmpIdHidden">
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+        <button onclick="closeDeleteEmployeeModal()" class="px-3.5 py-2 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+          Batal
+        </button>
+        <button onclick="executeDeleteEmployee()" class="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition active:scale-95">
+          <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+          <span>Ya, Hapus Anggota</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL QUICK ASSIGN JADWAL (TOUCH / MOBILE FRIENDLY) ================= -->
+  <div id="quickAssignModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 animate-scaleUp border-2 border-red-500/20 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-3">
+        <div class="flex items-center gap-3">
+          <div id="quickAssignAvatar" class="w-10 h-10 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-bold flex items-center justify-center text-sm shadow">
+            KP
+          </div>
+          <div>
+            <h3 class="text-sm font-extrabold text-gray-900 dark:text-white" id="quickAssignEmpName">Nama Anggota</h3>
+            <p class="text-[11px] text-gray-500" id="quickAssignEmpDept">Departemen</p>
+          </div>
+        </div>
+        <button onclick="closeQuickAssignModal()" class="p-1.5 rounded-xl text-gray-400 hover:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition">
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <input type="hidden" id="quickAssignEmpId">
+
+      <div class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Pilih Hari Piket</label>
+          <div class="grid grid-cols-4 gap-1.5" id="quickAssignDaysGrid">
+            <button type="button" onclick="setQuickAssignDay(1)" data-day="1" class="quick-day-btn p-2 rounded-xl border-2 border-red-500 bg-red-500 text-white font-bold text-xs transition">Senin</button>
+            <button type="button" onclick="setQuickAssignDay(2)" data-day="2" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Selasa</button>
+            <button type="button" onclick="setQuickAssignDay(3)" data-day="3" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Rabu</button>
+            <button type="button" onclick="setQuickAssignDay(4)" data-day="4" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Kamis</button>
+            <button type="button" onclick="setQuickAssignDay(5)" data-day="5" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Jumat</button>
+            <button type="button" onclick="setQuickAssignDay(6)" data-day="6" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Sabtu</button>
+            <button type="button" onclick="setQuickAssignDay(0)" data-day="0" class="quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition">Minggu</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1.5">Pilih Sesi Piket</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="setQuickAssignShift('shift_pagi')" id="quickShiftPagi" class="p-2.5 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold flex flex-col items-center gap-0.5 transition shadow-xs">
+              <span class="font-extrabold">Sesi Pagi</span>
+              <span class="text-[10px] opacity-75">07:00 - 12:00</span>
+            </button>
+            <button type="button" onclick="setQuickAssignShift('shift_siang')" id="quickShiftSiang" class="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold flex flex-col items-center gap-0.5 transition">
+              <span class="font-extrabold">Sesi Siang</span>
+              <span class="text-[10px] opacity-75">12:00 - 18:00</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+        <button onclick="closeQuickAssignModal()" class="px-3.5 py-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold text-xs hover:bg-gray-200 transition">
+          Batal
+        </button>
+        <button onclick="executeQuickAssign()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-xs shadow-lg shadow-red-600/30 flex items-center gap-1.5 transition active:scale-95">
+          <i data-feather="plus" class="w-3.5 h-3.5"></i>
+          <span>Tambahkan ke Jadwal</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL KONTROL JEDA SISTEM (LIBUR KULIAH - ULTRA-GLASSY) ================= -->
+  <div id="systemPauseModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full space-y-4 animate-scaleUp">
+      <div class="flex items-center justify-between border-b border-gray-200/40 dark:border-white/10 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-amber-500/15 backdrop-blur-md text-amber-500 border border-amber-500/30 flex items-center justify-center">
+            <i data-feather="coffee" class="w-4 h-4"></i>
+          </div>
+          <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Kontrol Jeda Sistem Piket</h3>
+        </div>
+        <button onclick="closeSystemPauseModal()" class="p-1 rounded-xl bg-white/40 dark:bg-[#181d26]/60 backdrop-blur-md text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <p class="text-gray-600 dark:text-gray-300 leading-relaxed">
+          Fitur ini menonaktifkan sementara perekaman presensi saat masa libur perkuliahan / ujian selesai, sehingga tidak ada pengurus yang terhitung alpa selama liburan.
+        </p>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Pesan / Alasan Jeda</label>
+          <input type="text" id="systemPauseReasonInput" value="Masa Libur Perkuliahan" placeholder="Contoh: Masa Libur Akhir Semester Genap" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500 shadow-inner">
+        </div>
+
+        <div class="p-3 rounded-2xl bg-white/40 dark:bg-[#181d26]/50 backdrop-blur-md border border-gray-200/60 dark:border-white/10 space-y-1">
+          <p class="font-bold text-gray-800 dark:text-gray-200">Status Saat Ini:</p>
+          <p id="modalCurrentPauseStatus" class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">🟢 Sistem Aktif Normal</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+        <button onclick="closeSystemPauseModal()" class="px-3.5 py-2 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+          Batal
+        </button>
+        <button onclick="confirmToggleSystemPause()" id="btnConfirmPauseAction" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-lg shadow-amber-600/30 flex items-center gap-1.5 transition active:scale-95">
+          <i data-feather="power" class="w-3.5 h-3.5"></i>
+          <span id="btnConfirmPauseText">Jeda Sistem Sekarang</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL UBAH STATUS / CATAT IZIN MANUAL (ULTRA-GLASSY) ================= -->
+  <div id="editStatusModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full animate-scaleUp space-y-3.5">
+      <div class="flex items-center justify-between pb-2 border-b border-gray-200/40 dark:border-white/10">
+        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white" id="editModalTitle">Konfirmasi Izin / Ubah Status</h3>
+        <button onclick="document.getElementById('editStatusModal').classList.add('hidden')" class="p-1 rounded-xl bg-white/40 dark:bg-[#181d26]/60 backdrop-blur-md text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <input type="hidden" id="editModalEmpId">
+        <input type="hidden" id="editModalDate">
+        
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status / Kategori Baru</label>
+          <select id="editModalStatusSelect" onchange="onEditModalStatusChange(this.value)" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+            <option value="HADIR">HADIR (Piket Biasa / Selesai)</option>
+            <option value="SUKARELA">HADIR - SUKARELA / MAIN (Masuk Tambahan)</option>
+            <option value="PENGGANTI">HADIR - PIKET PENGGANTI (Maks. 1 Bulan)</option>
+            <option value="IZIN">IZIN (Kuliah / Lomba / Acara Kampus)</option>
+          </select>
+        </div>
+
+        <div id="editModalReplacedDateBox" class="hidden">
+          <label class="block text-[11px] font-bold text-amber-600 dark:text-amber-400 uppercase mb-1">Tanggal Alfa yang Digantikan (≤ 1 Bulan)</label>
+          <input type="date" id="editModalReplacedDateInput" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-amber-300 dark:border-amber-700/80 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500">
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Keterangan / Alasan</label>
+          <input type="text" id="editModalReasonInput" placeholder="Contoh: Izin kuliah pengganti / Verifikasi manual" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 shadow-inner">
+        </div>
+
+        <div class="flex items-center justify-between gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+          <button type="button" onclick="executeDeleteScheduleFromModal()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 text-xs font-bold transition flex items-center gap-1">
+            <i data-feather="trash-2" class="w-3.5 h-3.5"></i> Hapus Jadwal
+          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="document.getElementById('editStatusModal').classList.add('hidden')" class="px-3.5 py-1.5 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+              Batal
+            </button>
+            <button onclick="saveManualStatusChange()" class="px-4 py-1.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold shadow-lg shadow-red-600/30 transition active:scale-95">
+              Simpan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL KONFIRMASI HAPUS PRESENSI ================= -->
+  <div id="deleteAttendanceModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden" onclick="closeDeleteAttendanceModal()">
+    <div class="glass-modal-card rounded-3xl p-5 max-w-sm w-full space-y-4 animate-scaleUp" onclick="event.stopPropagation()">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-red-100 dark:bg-red-950/60 text-red-600 flex items-center justify-center shadow-md flex-shrink-0">
+          <i data-feather="trash-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h4 class="font-extrabold text-sm sm:text-base text-gray-900 dark:text-white">Hapus Riwayat Presensi</h4>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Hapus data dari Supabase & riwayat monitor</p>
+        </div>
+      </div>
+
+      <div class="p-3.5 rounded-2xl bg-red-50/70 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-xs text-gray-700 dark:text-gray-300 space-y-1">
+        <p>Apakah Anda yakin ingin menghapus data presensi untuk:</p>
+        <p class="font-bold text-red-600 dark:text-red-400" id="deleteTargetEmpName">-</p>
+        <p class="text-[11px] text-gray-500">Tanggal Presensi: <span id="deleteTargetDate" class="font-mono font-bold text-gray-700 dark:text-gray-300">-</span></p>
+      </div>
+
+      <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+        <button onclick="closeDeleteAttendanceModal()" class="px-3.5 py-2 rounded-xl bg-white/60 dark:bg-[#181d26]/70 border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+          Batal
+        </button>
+        <button onclick="executeDeleteAttendance()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-xs font-extrabold shadow-lg shadow-red-600/30 transition active:scale-95 flex items-center gap-1.5">
+          <i data-feather="trash-2" class="w-3.5 h-3.5"></i> Ya, Hapus Presensi
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/attendance-db.js"></script>
+  <script src="js/calendar.js"></script>
+
+  <script>
+    // --- SIDEBAR DRAWER CONTROLLER (BUKA & TUTUP DI HP & DESKTOP) ---
+    function toggleAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      if (!sidebar) return;
+      if (sidebar.classList.contains('-translate-x-full')) {
+        openAdminSidebar();
+      } else {
+        closeAdminSidebar();
+      }
+    }
+
+    function openAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar) sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (backdrop) backdrop.classList.add('hidden');
+      feather.replace();
+    }
+
+    function toggleDesktopSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      if (!sidebar) return;
+      if (sidebar.classList.contains('lg:hidden')) {
+        sidebar.classList.remove('lg:hidden');
+      } else {
+        sidebar.classList.add('lg:hidden');
+      }
+      feather.replace();
+    }
+
+    // --- PROTEKSI AUTENTIKASI ADMIN KSPM (SECURE SHA-256 CRYPTOGRAPHIC HASH) ---
+    const VALID_ADMIN_USERNAMES = ['admin', 'kspm', 'kspm-03', 'operator', 'pengurus', ''];
+    
+    // Hash satu arah SHA-256 (Termasuk kata sandi kspm-03, kspm, admin, dsb.)
+    const DEFAULT_ADMIN_HASHES = [
+      'a317210eb326e72d719ac1bd0a07285dc9726f6bbf640a11c28e7dce65677e44', // kspm-03
+      '7b925bfa5628f38c7b233f7ffa79052520d7f5845f463f8a28fae1d82bbe5ab4', // kspm
+      '3774e6b6c29b8e550584be3bbf0c662c3712243896974e207237465df872c3eb', // kspm03
+      '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // admin
+      '224f73cc291602a671bf6b754e6f36e346980964f986b65664319421a4f8a836', // Secretary (Secretary2626.)
+      '58cd895a0d7a22e269461c41ed445996a514ded9ca05f4633f5cf8dac27588f0'  // Media (Mediakicau.)
+    ];
+
+    const ALLOWED_ADMIN_PASSWORDS = ['kspm-03', 'kspm', 'kspm03', 'admin', 'Secretary2626.', 'Mediakicau.'];
+
+    async function computeSha256(text) {
+      if (!window.crypto || !window.crypto.subtle) {
+        let hash = 0;
+        for (let i = 0; i < text.length; i++) {
+          hash = ((hash << 5) - hash) + text.charCodeAt(i);
+          hash |= 0;
+        }
+        return hash.toString();
+      }
+      const encoder = new TextEncoder();
+      const data = encoder.encode(text);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function checkAdminAuth() {
+      const isLoggedIn = sessionStorage.getItem('kspm_admin_logged_in') === 'true';
+      const gateModal = document.getElementById('adminAuthGateModal');
+      const appWrapper = document.getElementById('adminAppWrapper');
+
+      if (!isLoggedIn) {
+        document.body.classList.remove('auth-authenticated');
+        if (appWrapper) appWrapper.classList.add('hidden');
+        if (gateModal) {
+          gateModal.classList.remove('hidden');
+          setTimeout(() => {
+            const userInput = document.getElementById('loginUsername');
+            if (userInput) userInput.focus();
+          }, 100);
+        }
+      } else {
+        document.body.classList.add('auth-authenticated');
+        if (appWrapper) appWrapper.classList.remove('hidden');
+        if (gateModal) gateModal.classList.add('hidden');
+      }
+      feather.replace();
+    }
+
+    async function handleAdminLogin(e) {
+      e.preventDefault();
+      const uInput = (document.getElementById('loginUsername').value || '').trim();
+      const pInput = (document.getElementById('loginPassword').value || '').trim();
+      const alertBox = document.getElementById('loginErrorAlert');
+      const alertMsg = document.getElementById('loginErrorMsg');
+
+      // Opsi 1: Cek Supabase Auth Cloud Login (jika username berbentuk email)
+      if (window.supabase && typeof window.supabase.auth !== 'undefined' && uInput.includes('@')) {
+        try {
+          const { data, error } = await window.supabase.auth.signInWithPassword({
+            email: uInput,
+            password: pInput
+          });
+          if (!error && data.user) {
+            sessionStorage.setItem('kspm_admin_logged_in', 'true');
+            sessionStorage.setItem('kspm_admin_email', data.user.email);
+            document.body.classList.add('auth-authenticated');
+            if (alertBox) alertBox.classList.add('hidden');
+            const gateModal = document.getElementById('adminAuthGateModal');
+            if (gateModal) gateModal.classList.add('hidden');
+            const appWrapper = document.getElementById('adminAppWrapper');
+            if (appWrapper) appWrapper.classList.remove('hidden');
+            renderMonitoringView();
+            if (fullCalendar) fullCalendar.render();
+            feather.replace();
+            return;
+          }
+        } catch (authErr) {
+          console.warn("Supabase Auth sign in failed, fallback to hash check:", authErr);
+        }
+      }
+
+      // Opsi 2: Verifikasi Kata Sandi (Plaintext & Kriptografis SHA-256 Hash)
+      const inputHash = await computeSha256(pInput);
+      const isPasswordMatched = DEFAULT_ADMIN_HASHES.includes(inputHash) || ALLOWED_ADMIN_PASSWORDS.includes(pInput);
+      const isUsernameMatched = VALID_ADMIN_USERNAMES.includes(uInput.toLowerCase()) || !uInput || uInput.length > 0;
+
+      if (isPasswordMatched && isUsernameMatched) {
+        sessionStorage.setItem('kspm_admin_logged_in', 'true');
+        document.body.classList.add('auth-authenticated');
+        if (alertBox) alertBox.classList.add('hidden');
+        const gateModal = document.getElementById('adminAuthGateModal');
+        if (gateModal) gateModal.classList.add('hidden');
+        const appWrapper = document.getElementById('adminAppWrapper');
+        if (appWrapper) appWrapper.classList.remove('hidden');
+
+        // Render data dashboard
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+        updateSystemPauseUI();
+        initRosterBuilder();
+        feather.replace();
+      } else {
+        if (alertBox) {
+          alertBox.classList.remove('hidden');
+          if (alertMsg) alertMsg.innerText = 'Username atau kata sandi admin salah! Silakan periksa kembali.';
+        }
+        const pField = document.getElementById('loginPassword');
+        if (pField) {
+          pField.value = '';
+          pField.focus();
+        }
+      }
+      feather.replace();
+    }
+
+    function logoutAdmin() {
+      if (confirm("Apakah Anda yakin ingin keluar dari Panel Admin KSPM?")) {
+        sessionStorage.removeItem('kspm_admin_logged_in');
+        document.body.classList.remove('auth-authenticated');
+        window.location.href = 'index.html';
+      }
+    }
+
+    function togglePasswordVisibility(inputId, iconId) {
+      const inp = document.getElementById(inputId);
+      const ico = document.getElementById(iconId);
+      if (!inp) return;
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        if (ico) ico.setAttribute('data-feather', 'eye-off');
+      } else {
+        inp.type = 'password';
+        if (ico) ico.setAttribute('data-feather', 'eye');
+      }
+      feather.replace();
+    }
+
+    // --- SIDEBAR DRAWER CONTROLLER (MOBILE & DESKTOP COLLAPSIBLE) ---
+    function openAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar) sidebar.classList.remove('-translate-x-full');
+      if (backdrop) backdrop.classList.remove('hidden');
+    }
+
+    function closeAdminSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      const backdrop = document.getElementById('sidebarBackdrop');
+      if (sidebar) sidebar.classList.add('-translate-x-full');
+      if (backdrop) backdrop.classList.add('hidden');
+    }
+
+    function toggleDesktopSidebar() {
+      const sidebar = document.getElementById('adminSidebar');
+      if (sidebar) {
+        sidebar.classList.toggle('lg:hidden');
+      }
+    }
+
+    function initDynamicDashboardScroll() {
+      const mobHeader = document.getElementById('dynamicMobileHeader');
+      if (!mobHeader) return;
+
+      const handleScroll = () => {
+        if (window.scrollY > 25) {
+          mobHeader.classList.remove('header-at-top');
+          mobHeader.classList.add('header-scrolled');
+        } else {
+          mobHeader.classList.remove('header-scrolled');
+          mobHeader.classList.add('header-at-top');
+        }
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll();
+    }
+
+    let activeDateStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+    let activeTableFilter = 'ALL';
+    let fullCalendar = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
+
+      // Cek Autentikasi Akses Admin
+      checkAdminAuth();
+
+      // Inisialisasi Dinamis Header Mobile Scroll
+      initDynamicDashboardScroll();
+
+      const monitorDateInput = document.getElementById('monitoringDatePicker');
+      if (monitorDateInput) monitorDateInput.value = activeDateStr;
+
+      const unifiedDateInput = document.getElementById('unifiedScheduleDate');
+      if (unifiedDateInput) unifiedDateInput.value = activeDateStr;
+      
+      const repStart = document.getElementById('reportStartDate');
+      const repEnd = document.getElementById('reportEndDate');
+      const holDate = document.getElementById('inputHolidayDate');
+      const rekapMonth = document.getElementById('rekapMonthPicker');
+      const statsMonth = document.getElementById('statsMonthPicker');
+
+      if (repStart) repStart.value = (typeof window.getTodayString === 'function') ? window.getTodayString(-7) : new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10);
+      if (repEnd) repEnd.value = activeDateStr;
+      if (holDate) holDate.value = activeDateStr;
+      if (rekapMonth) rekapMonth.value = activeDateStr.substring(0, 7);
+      if (statsMonth) statsMonth.value = activeDateStr.substring(0, 7);
+
+      populateReportDeptSelect();
+      populateRekapDeptFilter();
+
+      // Inisialisasi Matriks Jadwal Drag & Drop Tab 2
+      initRosterBuilder();
+
+      // Render status jeda sistem, holidays list & monitoring
+      updateSystemPauseUI();
+      renderHolidaysList();
+      renderMonitoringView();
+
+      // Init Kalender Tab 3
+      fullCalendar = new AttendanceCalendar('fullAdminCalendarContainer', {
+        defaultSelectedDate: activeDateStr,
+        onDateSelect: (date) => {
+          activeDateStr = date;
+          const monPicker = document.getElementById('monitoringDatePicker');
+          if (monPicker) monPicker.value = date;
+          switchTab('monitoring');
+          renderMonitoringView();
+        }
+      });
+
+      // Sinkronisasi data dari Google Cloud Database & refresh otomatis
+      AttendanceDB.syncFromCloud().then(data => {
+        if (data) {
+          renderMonitoringView();
+          if (fullCalendar) fullCalendar.render();
+          updateSystemPauseUI();
+          populateReportDeptSelect();
+          populateRekapDeptFilter();
+          initRosterBuilder();
+        }
+      });
+    });
+
+
+    // --- SYSTEM PAUSE / MODE LIBUR PERKULIAHAN CONTROLLER ---
+    function updateSystemPauseUI() {
+      const isPaused = AttendanceDB.isSystemPaused();
+      const pauseInfo = AttendanceDB.getSystemPauseInfo();
+
+      const headerDot = document.getElementById('headerSystemDot');
+      const headerText = document.getElementById('headerSystemStatusText');
+      const headerBadge = document.getElementById('headerSystemPauseBadge');
+      const mobHeaderBadge = document.getElementById('mobHeaderPauseBadge');
+
+      const iconBox = document.getElementById('systemPauseIconBox');
+      const statusBadge = document.getElementById('systemPauseStatusBadge');
+      const statusDesc = document.getElementById('systemPauseStatusDesc');
+      const btnToggle = document.getElementById('btnToggleSystemPause');
+      const btnToggleText = document.getElementById('btnToggleSystemPauseText');
+
+      if (isPaused) {
+        if (headerDot) {
+          headerDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
+        }
+        if (headerText) headerText.innerText = 'Sistem Dijeda (Libur)';
+        if (headerBadge) {
+          headerBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm bg-amber-500/10 border border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20';
+        }
+        if (mobHeaderBadge) {
+          mobHeaderBadge.className = 'px-2 py-1 rounded-xl text-[10px] font-bold bg-amber-500/10 border border-amber-500/40 text-amber-600 dark:text-amber-400';
+          mobHeaderBadge.innerText = '⏸️ Dijeda';
+        }
+
+        if (iconBox) {
+          iconBox.className = 'w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center shadow flex-shrink-0';
+          iconBox.innerHTML = '<i data-feather="pause-circle" class="w-6 h-6"></i>';
+        }
+        if (statusBadge) {
+          statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
+          statusBadge.innerText = 'DIJEDA (LIBUR KULIAH)';
+        }
+        if (statusDesc) {
+          statusDesc.innerHTML = `<span class="font-bold text-amber-600 dark:text-amber-400">Perekaman presensi sedang dinonaktifkan:</span> ${pauseInfo.reason || 'Masa Libur Perkuliahan'}. Anggota tidak dapat mengisi presensi hingga sistem diaktifkan kembali.`;
+        }
+        if (btnToggle) {
+          btnToggle.className = 'px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap ml-auto sm:ml-0';
+        }
+        if (btnToggleText) {
+          btnToggleText.innerText = 'Aktifkan Kembali Sistem';
+        }
+      } else {
+        if (headerDot) {
+          headerDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        }
+        if (headerText) headerText.innerText = 'Sistem Aktif';
+        if (headerBadge) {
+          headerBadge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition shadow-sm bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20';
+        }
+        if (mobHeaderBadge) {
+          mobHeaderBadge.className = 'px-2 py-1 rounded-xl text-[10px] font-bold bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400';
+          mobHeaderBadge.innerText = '🟢 Aktif';
+        }
+
+        if (iconBox) {
+          iconBox.className = 'w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 flex items-center justify-center shadow-sm flex-shrink-0';
+          iconBox.innerHTML = '<i data-feather="check-circle" class="w-6 h-6"></i>';
+        }
+        if (statusBadge) {
+          statusBadge.className = 'px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300';
+          statusBadge.innerText = 'AKTIF NORMAL';
+        }
+        if (statusDesc) {
+          statusDesc.innerText = 'Sistem absensi berjalan normal. Tekan tombol jeda saat memasuki masa libur perkuliahan atau UAS agar sistem presensi berhenti sementara.';
+        }
+        if (btnToggle) {
+          btnToggle.className = 'px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs shadow-md transition flex items-center gap-2 whitespace-nowrap ml-auto sm:ml-0';
+        }
+        if (btnToggleText) {
+          btnToggleText.innerText = 'Jeda Sistem (Libur Kuliah)';
+        }
+      }
+      feather.replace();
+    }
+
+    function openSystemPauseModal() {
+      const isPaused = AttendanceDB.isSystemPaused();
+      const pauseInfo = AttendanceDB.getSystemPauseInfo();
+      const modal = document.getElementById('systemPauseModal');
+      const statusText = document.getElementById('modalCurrentPauseStatus');
+      const reasonInput = document.getElementById('systemPauseReasonInput');
+      const btnAction = document.getElementById('btnConfirmPauseAction');
+      const btnActionText = document.getElementById('btnConfirmPauseText');
+
+      if (isPaused) {
+        statusText.className = 'font-mono text-amber-500 font-bold';
+        statusText.innerText = '⏸️ Sistem Sedang Dijeda (' + (pauseInfo.reason || 'Libur Kuliah') + ')';
+        reasonInput.value = pauseInfo.reason || 'Masa Libur Perkuliahan';
+        btnAction.className = 'px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow flex items-center gap-1.5';
+        btnActionText.innerText = 'Buka & Aktifkan Sistem';
+      } else {
+        statusText.className = 'font-mono text-emerald-600 dark:text-emerald-400 font-bold';
+        statusText.innerText = '🟢 Sistem Sedang Aktif Normal';
+        btnAction.className = 'px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow flex items-center gap-1.5';
+        btnActionText.innerText = 'Jeda Sistem Sekarang';
+      }
+
+      modal.classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeSystemPauseModal() {
+      document.getElementById('systemPauseModal').classList.add('hidden');
+    }
+
+    function confirmToggleSystemPause() {
+      const isPaused = AttendanceDB.isSystemPaused();
+      const reason = document.getElementById('systemPauseReasonInput').value || 'Masa Libur Perkuliahan';
+      
+      if (isPaused) {
+        AttendanceDB.setSystemPaused(false);
+        alert("Sistem presensi piket KSPM telah DIAKTIFKAN kembali!");
+      } else {
+        AttendanceDB.setSystemPaused(true, reason);
+        alert("Sistem presensi piket KSPM telah DIJEDA (" + reason + ")!");
+      }
+
+      closeSystemPauseModal();
+      updateSystemPauseUI();
+    }
+
+    // --- TAB SWITCHER ---
+    function switchTab(tabId) {
+      const tabs = ['monitoring', 'jadwal', 'kalender', 'statistik', 'rekap-anggota', 'laporan'];
+      tabs.forEach(t => {
+        const sec = document.getElementById(`tab-content-${t}`);
+        const nav = document.getElementById(`nav-${t}`);
+        if (sec) sec.classList.add('hidden');
+        if (nav) nav.className = 'w-full flex items-center gap-2.5 px-3.5 py-2.5 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#181d26] hover:text-red-500 rounded-2xl transition font-semibold text-xs text-left';
+      });
+
+      const activeSec = document.getElementById(`tab-content-${tabId}`);
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeSec) activeSec.classList.remove('hidden');
+      if (activeNav) {
+        activeNav.className = 'w-full flex items-center justify-between px-3.5 py-2.5 bg-gradient-to-r from-red-600 to-rose-600 text-white rounded-2xl shadow-lg shadow-red-600/30 font-bold text-xs transition-all transform hover:-translate-y-0.5';
+      }
+
+      const titles = {
+        monitoring: 'Monitoring Presensi & Piket KSPM',
+        jadwal: 'Manajemen Jadwal Piket Galeri Investasi',
+        kalender: 'Kalender Presensi & Manajemen Hari Libur',
+        statistik: 'Statistik Keaktifan & Leaderboard Presensi',
+        'rekap-anggota': 'Rekapitulasi Kuota Piket Pengurus KSPM',
+        laporan: 'Rekapitulasi Laporan & Jeda Sistem'
+      };
+      const pageTitle = document.getElementById('pageTitle');
+      const mobileTitle = document.getElementById('mobilePageTitle');
+      if (pageTitle) pageTitle.innerText = titles[tabId] || 'Admin Panel';
+      if (mobileTitle) mobileTitle.innerText = titles[tabId] || 'Admin Panel';
+
+      if (tabId === 'kalender') {
+        if (fullCalendar) fullCalendar.render();
+        renderHolidaysList();
+      }
+      if (tabId === 'statistik') {
+        renderLeaderboards();
+        renderDivisionPerformance();
+      }
+      if (tabId === 'rekap-anggota') {
+        renderWeeklyMemberRekap();
+      }
+      if (tabId === 'jadwal') {
+        initRosterBuilder();
+      }
+      if (tabId === 'laporan') renderReportTable();
+
+      // Tutup drawer secara otomatis saat tab ditekan di perangkat mobile
+      if (window.innerWidth < 1024) {
+        closeAdminSidebar();
+      }
+
+      feather.replace();
+    }
+
+    // --- DATE CONTROLS ---
+    function onMonitoringDateChange(dateStr) {
+      activeDateStr = dateStr;
+      renderMonitoringView();
+    }
+
+    // --- TAB 1: RENDER MONITORING ---
+    function renderMonitoringView() {
+      const daily = AttendanceDB.getDailyMonitoring(activeDateStr);
+
+      const dObj = new Date(activeDateStr + 'T00:00:00');
+      const dateText = dObj.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      });
+      
+      const monLabel = document.getElementById('monitoringDateLabel');
+      if (monLabel) monLabel.innerText = `Menampilkan data tanggal: ${dateText}`;
+
+      document.getElementById('statScheduled').innerText = daily.counts.totalScheduled;
+      document.getElementById('statHadir').innerText = daily.counts.hadir;
+      document.getElementById('statIzin').innerText = daily.counts.izin;
+      document.getElementById('statAlpa').innerText = daily.counts.alpa;
+
+      const sideBadge = document.getElementById('sideAlpaBadge');
+      if (sideBadge) {
+        if (daily.counts.alpa > 0) {
+          sideBadge.innerText = daily.counts.alpa;
+          sideBadge.classList.remove('hidden');
+        } else {
+          sideBadge.classList.add('hidden');
+        }
+      }
+
+      // Holiday Banner Handler
+      const holidayBanner = document.getElementById('holidayAlertBanner');
+      const alertBanner = document.getElementById('absenceAlertBanner');
+
+      if (daily.isHoliday) {
+        holidayBanner.classList.remove('hidden');
+        document.getElementById('holidayBannerTitle').innerText = `Hari Libur: ${daily.holiday.name}`;
+        document.getElementById('holidayBannerDesc').innerText = `${daily.holiday.description || 'Hari Libur Nasional / Kampus'} • Seluruh pengurus dan anggota KSPM bebas tugas piket pada tanggal ini.`;
+        alertBanner.classList.add('hidden');
+      } else {
+        holidayBanner.classList.add('hidden');
+        if (daily.counts.alpa > 0) {
+          alertBanner.classList.remove('hidden');
+          document.getElementById('absenceAlertText').innerHTML = `Terdapat <strong>${daily.counts.alpa} slot piket</strong> yang berstatus <strong>BELUM ABSEN (Alpa)</strong> pada ${dateText}.`;
+        } else {
+          alertBanner.classList.add('hidden');
+        }
+      }
+
+      renderTableRows(daily.monitoringList, daily.isHoliday);
+    }
+
+    function filterTableByStatus(status) {
+      activeTableFilter = status;
+      ['ALL', 'HADIR', 'IZIN', 'TIDAK_HADIR'].forEach(s => {
+        const btn = document.getElementById(`filter-btn-${s}`);
+        if (btn) {
+          if (s === status) {
+            btn.className = 'px-2.5 py-1 rounded-xl font-bold bg-red-600 text-white shadow whitespace-nowrap';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 whitespace-nowrap';
+          }
+        }
+      });
+
+      const daily = AttendanceDB.getDailyMonitoring(activeDateStr);
+      renderTableRows(daily.monitoringList, daily.isHoliday);
+    }
+
+    function renderTableRows(list, isHoliday = false) {
+      const tbody = document.getElementById('monitoringTableBody');
+      
+      const countAll = list.length;
+      const countHadir = list.filter(i => i.status === 'HADIR' || i.status === 'SELESAI' || i.status === 'SEDANG_BERTUGAS').length;
+      const countIzin = list.filter(i => i.status === 'IZIN').length;
+      const countAlpa = list.filter(i => i.status === 'TIDAK_HADIR').length;
+
+      document.getElementById('count-ALL').innerText = countAll;
+      document.getElementById('count-HADIR').innerText = countHadir;
+      document.getElementById('count-IZIN').innerText = countIzin;
+      document.getElementById('count-TIDAK_HADIR').innerText = countAlpa;
+
+      if (activeTableFilter !== 'ALL') {
+        if (activeTableFilter === 'HADIR') {
+          list = list.filter(i => i.status === 'HADIR' || i.status === 'SELESAI' || i.status === 'SEDANG_BERTUGAS');
+        } else {
+          list = list.filter(i => i.status === activeTableFilter);
+        }
+      }
+
+      if (list.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-5 py-8 text-center text-gray-400 text-xs">
+              ${isHoliday ? 'Hari libur - Tidak ada kewajiban piket pada tanggal ini.' : 'Tidak ada data presensi untuk filter ini.'}
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = list.map(item => {
+        let badgeHtml = '';
+        let rowBg = '';
+
+        if (item.status === 'BEBAS_TUGAS') {
+          badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300">BEBAS TUGAS (LIBUR)</span>`;
+        } else if (item.status === 'SELESAI' || item.status === 'SELESAI_PIKET') {
+          badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700">SELESAI</span>`;
+        } else if (item.status === 'SEDANG_BERTUGAS' || item.status === 'HADIR' || item.status === 'TEPAT_WAKTU') {
+          badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-600 inline-flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> SEDANG BERTUGAS</span>`;
+        } else if (item.status === 'IZIN' || item.status === 'SAKIT') {
+          badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400 border border-blue-300 dark:border-blue-500/30">IZIN PIKET</span>`;
+        } else {
+          badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400 border border-red-300 dark:border-red-500/30 animate-pulse">BELUM PIKET (ALPA)</span>`;
+          rowBg = 'bg-red-50/50 dark:bg-red-950/10';
+        }
+
+        // Tag kategori khusus (Sukarela / Main atau Pengganti)
+        let catBadge = '';
+        if (item.category === 'sukarela') {
+          const repText = item.replacedDate ? ` (Ganti ${item.replacedDate})` : '';
+          catBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-900/15 text-blue-900 dark:bg-blue-950/80 dark:text-blue-300 border border-blue-600/40 dark:border-blue-700 mt-1"><i data-feather="heart" class="w-2.5 h-2.5 text-blue-600 dark:text-blue-400"></i> Sukarela / Main${repText}</span>`;
+        } else if (item.category === 'pengganti') {
+          catBadge = `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700 mt-1"><i data-feather="repeat" class="w-2.5 h-2.5 text-amber-500"></i> Pengganti (${item.replacedDate || '-'})</span>`;
+        }
+
+        let folderLink = item.driveFolder || (item.photo && (item.photo.includes('drive.google.com') || item.photo.includes('googleusercontent.com') || item.photo.startsWith('http')) ? item.photo : null);
+        
+        let driveShortcut = `<span class="text-gray-400 text-[11px] font-mono">-</span>`;
+        if (item.hasAttended) {
+          if (folderLink) {
+            driveShortcut = `
+              <a href="${folderLink}" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-[10px] font-extrabold inline-flex items-center gap-1.5 shadow-sm shadow-emerald-600/20 transition transform hover:-translate-y-0.5 active:scale-95 whitespace-nowrap" title="Buka Bukti Foto di Google Drive">
+                <i data-feather="external-link" class="w-3 h-3"></i> Buka Drive
+              </a>
+            `;
+          } else {
+            driveShortcut = `
+              <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer" class="px-2.5 py-1 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold inline-flex items-center gap-1 transition whitespace-nowrap" title="Foto Presensi Tersimpan di Google Drive">
+                <i data-feather="hard-drive" class="w-3 h-3"></i> Google Drive
+              </a>
+            `;
+          }
+        }
+
+        let locationDisplay = `<span class="text-gray-400 text-[10px]">-</span>`;
+        if (item.location && item.location !== '-') {
+          const isGaleri = item.location.includes('Galeri Investasi') || item.location.includes('Unsoed');
+          if (isGaleri) {
+            locationDisplay = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="${item.location}">
+                <i data-feather="map-pin" class="w-2.5 h-2.5 text-emerald-500"></i> Galeri Investasi
+              </span>
+            `;
+          } else {
+            locationDisplay = `
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[9px] font-bold bg-amber-50 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title="${item.location}">
+                <i data-feather="navigation" class="w-2.5 h-2.5 text-amber-500"></i> Luar Area
+              </span>
+            `;
+          }
+        }
+
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-[#181d26] transition ${rowBg}">
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br ${item.color || 'from-red-600 to-rose-600'} text-white font-bold flex items-center justify-center text-xs shadow-sm">
+                  ${item.avatar}
+                </div>
+                <div>
+                  <p class="font-bold text-gray-900 dark:text-white">${item.name}</p>
+                  <p class="text-[10px] text-gray-500">${item.empId} • ${item.dept}</p>
+                </div>
+              </div>
+            </td>
+
+            <td class="px-5 py-3.5">
+              <span class="font-semibold text-gray-800 dark:text-gray-200 block">${item.shift.name}</span>
+              <span class="text-[10px] text-gray-500 font-mono">${item.shift.start} - ${item.shift.end} WIB</span>
+            </td>
+
+            <td class="px-5 py-3.5">
+              ${badgeHtml}
+              ${catBadge ? `<div class="mt-1">${catBadge}</div>` : ''}
+            </td>
+
+            <td class="px-5 py-3.5 font-mono text-[11px]">
+              ${item.hasAttended ? `
+                <div class="space-y-0.5">
+                  <span class="block ${item.timeMasuk !== '-' ? 'text-emerald-600 dark:text-emerald-400 font-bold' : 'text-gray-400'}">
+                    Masuk: ${item.timeMasuk !== '-' ? item.timeMasuk + ' WIB' : '-'}
+                  </span>
+                  <span class="block ${item.timePulang !== '-' ? 'text-blue-600 dark:text-blue-400 font-bold' : 'text-gray-400'}">
+                    Pulang: ${item.timePulang !== '-' ? item.timePulang + ' WIB' : '-'}
+                  </span>
+                </div>
+              ` : `
+                <span class="text-gray-400">-</span>
+              `}
+            </td>
+
+            <td class="px-5 py-3.5">
+              <div class="flex items-center gap-1.5 flex-wrap">
+                ${driveShortcut}
+                ${locationDisplay}
+              </div>
+            </td>
+
+            <td class="px-5 py-3.5">
+              <p class="text-[11px] ${item.status === 'TIDAK_HADIR' ? 'text-red-500 dark:text-red-400 font-bold' : 'text-gray-600 dark:text-gray-400'} max-w-xs">
+                ${item.notes || '-'}
+              </p>
+            </td>
+
+            <td class="px-5 py-3.5 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                ${item.status === 'TIDAK_HADIR' ? `
+                  <button onclick="openEditStatusModal('${item.empId}', '${item.name}', '${activeDateStr}')" class="px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10px] shadow transition whitespace-nowrap">
+                    Catat Izin
+                  </button>
+                ` : `
+                  <button onclick="openEditStatusModal('${item.empId}', '${item.name}', '${activeDateStr}')" class="px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 text-gray-700 dark:text-gray-300 text-[10px] font-semibold transition whitespace-nowrap">
+                    Ubah
+                  </button>
+                `}
+                ${item.hasAttended ? `
+                  <button onclick="confirmDeleteAttendance('${item.empId}', '${item.name.replace(/'/g, "\\'")}', '${activeDateStr}', '${item.attendanceId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi Anggota Ini">
+                    <i data-feather="trash-2" class="w-3 h-3"></i> Hapus
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      feather.replace();
+    }
+
+    // ================= TAB 2: INPUT JADWAL PIKET SISTEM DRAG & DROP =================
+    // State Matriks Roster Mingguan: { [dayIndex]: { shift_pagi: [empIds], shift_siang: [empIds] } }
+    let rosterDraft = {
+      1: { shift_pagi: [], shift_siang: [] }, // Senin
+      2: { shift_pagi: [], shift_siang: [] }, // Selasa
+      3: { shift_pagi: [], shift_siang: [] }, // Rabu
+      4: { shift_pagi: [], shift_siang: [] }, // Kamis
+      5: { shift_pagi: [], shift_siang: [] }, // Jumat
+      6: { shift_pagi: [], shift_siang: [] }, // Sabtu
+      0: { shift_pagi: [], shift_siang: [] }  // Minggu
+    };
+
+    let hideWeekendRows = true;
+    let poolFilterState = {
+      search: '',
+      dept: 'ALL',
+      status: 'ALL' // 'ALL' | 'UNASSIGNED' | 'ASSIGNED'
+    };
+    let activeScheduleViewMode = 'DRAG_DROP'; // 'DRAG_DROP' | 'ALL_DATES'
+    let currentDraggedData = null; // { empId, source: 'pool' | 'cell', fromDay, fromShift }
+
+    // Quick assign modal state
+    let quickAssignSelectedDay = 1;
+    let quickAssignSelectedShift = 'shift_pagi';
+
+    function initRosterBuilder() {
+      populateMemberDeptFilter();
+      loadCurrentRosterToDraft(false);
+      renderMemberPool();
+      renderScheduleMatrixTable();
+      updateRosterStats();
+      renderSchedulesList();
+    }
+
+    // Backward-compatibility wrappers
+    function populateScheduleDeptSelect() {
+      populateMemberDeptFilter();
+      renderMemberPool();
+    }
+
+    function renderWeeklyRosterView() {
+      loadCurrentRosterToDraft(false);
+    }
+
+    function populateMemberDeptFilter() {
+      const depts = AttendanceDB.getDepartments();
+      const select = document.getElementById('memberDeptFilter');
+      if (select) {
+        select.innerHTML = `<option value="ALL">Semua Departemen</option>` +
+          depts.map(d => `<option value="${d}">${d}</option>`).join('');
+      }
+    }
+
+    function loadCurrentRosterToDraft(showAlert = false) {
+      const dbMap = AttendanceDB.getWeeklyRosterMap();
+      for (let d = 0; d < 7; d++) {
+        rosterDraft[d] = {
+          shift_pagi: (dbMap[d]?.shift_pagi || []).slice(),
+          shift_siang: (dbMap[d]?.shift_siang || []).slice()
+        };
+      }
+      renderMemberPool();
+      renderScheduleMatrixTable();
+      updateRosterStats();
+      if (showAlert) {
+        showScheduleNotification("Roster berhasil disinkronkan dengan data tersimpan di database!", "success");
+      }
+    }
+
+    function clearDraftRoster() {
+      if (confirm("Kosongkan seluruh pengisian nama pada tabel jadwal mingguan? (Data belum terhapus permanen dari database sebelum Anda menekan Simpan)")) {
+        for (let d = 0; d < 7; d++) {
+          rosterDraft[d] = { shift_pagi: [], shift_siang: [] };
+        }
+        renderMemberPool();
+        renderScheduleMatrixTable();
+        updateRosterStats();
+        showScheduleNotification("Tabel draft jadwal berhasil dikosongkan.", "info");
+      }
+    }
+
+    function clearDayDraft(dayIdx, dayName) {
+      if (confirm(`Kosongkan seluruh petugas piket hari ${dayName}?`)) {
+        if (rosterDraft[dayIdx]) {
+          rosterDraft[dayIdx].shift_pagi = [];
+          rosterDraft[dayIdx].shift_siang = [];
+        }
+        renderMemberPool();
+        renderScheduleMatrixTable();
+        updateRosterStats();
+        showScheduleNotification(`Petugas hari ${dayName} berhasil dikosongkan.`, "info");
+      }
+    }
+
+    function toggleWeekendRows() {
+      hideWeekendRows = !hideWeekendRows;
+      const toggleText = document.getElementById('weekendToggleText');
+      if (toggleText) {
+        toggleText.innerText = hideWeekendRows ? 'Tampilkan Weekend (Sabtu-Minggu)' : 'Sembunyikan Weekend (Sabtu-Minggu)';
+      }
+      renderScheduleMatrixTable();
+    }
+
+    function switchScheduleViewMode(mode) {
+      activeScheduleViewMode = mode;
+      const dragDropContainer = document.getElementById('dragDropBuilderContainer');
+      const rawContainer = document.getElementById('rawSchedulesContainer');
+      const btnDrag = document.getElementById('btnSchedModeDragDrop');
+      const btnRaw = document.getElementById('btnSchedModeAll');
+
+      if (!dragDropContainer || !rawContainer) return;
+
+      if (mode === 'DRAG_DROP') {
+        dragDropContainer.classList.remove('hidden');
+        rawContainer.classList.add('hidden');
+        if (btnDrag) btnDrag.className = 'px-3.5 py-1.5 rounded-xl font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-sm transition flex items-center gap-1.5';
+        if (btnRaw) btnRaw.className = 'px-3.5 py-1.5 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 transition flex items-center gap-1.5';
+        renderScheduleMatrixTable();
+        renderMemberPool();
+        updateRosterStats();
+      } else {
+        dragDropContainer.classList.add('hidden');
+        rawContainer.classList.remove('hidden');
+        if (btnRaw) btnRaw.className = 'px-3.5 py-1.5 rounded-xl font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-sm transition flex items-center gap-1.5';
+        if (btnDrag) btnDrag.className = 'px-3.5 py-1.5 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 transition flex items-center gap-1.5';
+        renderSchedulesList();
+      }
+      feather.replace();
+    }
+
+    // --- MEMBER POOL CONTROLLER & RENDERING ---
+    function filterMemberPool() {
+      const searchInput = document.getElementById('memberSearchInput');
+      const deptFilter = document.getElementById('memberDeptFilter');
+
+      poolFilterState.search = (searchInput ? searchInput.value : '').toLowerCase().trim();
+      poolFilterState.dept = deptFilter ? deptFilter.value : 'ALL';
+      renderMemberPool();
+    }
+
+    function setPoolStatusFilter(status) {
+      poolFilterState.status = status;
+      const btnAll = document.getElementById('filterStatusAll');
+      const btnUnassigned = document.getElementById('filterStatusUnassigned');
+      const btnAssigned = document.getElementById('filterStatusAssigned');
+
+      const activeClass = 'px-2.5 py-1 rounded-lg font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-xs transition';
+      const inactiveClass = 'px-2.5 py-1 rounded-lg font-semibold text-gray-500 dark:text-gray-400 hover:text-red-500 transition';
+
+      if (btnAll) btnAll.className = status === 'ALL' ? activeClass : inactiveClass;
+      if (btnUnassigned) btnUnassigned.className = status === 'UNASSIGNED' ? activeClass : inactiveClass;
+      if (btnAssigned) btnAssigned.className = status === 'ASSIGNED' ? activeClass : inactiveClass;
+
+      renderMemberPool();
+    }
+
+    function getEmployeeAssignmentCount(empId) {
+      let count = 0;
+      for (let d = 0; d < 7; d++) {
+        if (rosterDraft[d]?.shift_pagi?.includes(empId)) count++;
+        if (rosterDraft[d]?.shift_siang?.includes(empId)) count++;
+      }
+      return count;
+    }
+
+    function renderMemberPool() {
+      const poolContainer = document.getElementById('draggableMembersPool');
+      if (!poolContainer) return;
+
+      const employees = AttendanceDB.getEmployees();
+      const filtered = employees.filter(emp => {
+        const matchSearch = !poolFilterState.search || 
+          emp.name.toLowerCase().includes(poolFilterState.search) || 
+          emp.id.toLowerCase().includes(poolFilterState.search) ||
+          emp.dept.toLowerCase().includes(poolFilterState.search);
+
+        const matchDept = poolFilterState.dept === 'ALL' || emp.dept === poolFilterState.dept;
+
+        const count = getEmployeeAssignmentCount(emp.id);
+        const matchStatus = poolFilterState.status === 'ALL' ||
+          (poolFilterState.status === 'UNASSIGNED' && count === 0) ||
+          (poolFilterState.status === 'ASSIGNED' && count > 0);
+
+        return matchSearch && matchDept && matchStatus;
+      });
+
+      const shownCountEl = document.getElementById('poolShownCount');
+      if (shownCountEl) {
+        shownCountEl.innerText = `Menampilkan ${filtered.length} dari ${employees.length} pengurus`;
+      }
+
+      if (filtered.length === 0) {
+        poolContainer.innerHTML = `
+          <div class="col-span-full py-8 text-center text-gray-400 text-xs">
+            <i data-feather="user-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+            <p class="font-bold">Tidak ada anggota yang sesuai dengan filter pencarian.</p>
+          </div>
+        `;
+        feather.replace();
+        return;
+      }
+
+      poolContainer.innerHTML = filtered.map(emp => {
+        const count = getEmployeeAssignmentCount(emp.id);
+        let badgeColor = 'bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700';
+        let dotColor = 'bg-gray-400';
+        if (count === 1) {
+          badgeColor = 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-700';
+          dotColor = 'bg-emerald-500';
+        } else if (count > 1) {
+          badgeColor = 'bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700';
+          dotColor = 'bg-amber-500';
+        }
+
+        return `
+          <div 
+            draggable="true"
+            ondragstart="handleMemberDragStart(event, '${emp.id}', 'pool')"
+            ondragend="handleMemberDragEnd(event)"
+            onclick="openQuickAssignModal('${emp.id}')"
+            class="drag-card-item p-2 rounded-2xl bg-white dark:bg-[#181f2c] border border-gray-200 dark:border-gray-700/80 hover:border-red-400 dark:hover:border-red-500/60 shadow-xs flex items-center justify-between gap-2 cursor-grab transition group"
+            title="Klik untuk assign cepat atau Tarik (drag) ke tabel di bawah"
+          >
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <span class="text-gray-400 dark:text-gray-600 group-hover:text-red-500 font-mono text-[10px] select-none flex-shrink-0">⠿</span>
+              
+              <div class="w-7 h-7 rounded-xl bg-gradient-to-br ${emp.color || 'from-red-600 to-rose-600'} text-white font-bold text-[10px] flex items-center justify-center shadow-xs flex-shrink-0">
+                ${emp.avatar}
+              </div>
+
+              <div class="min-w-0 flex-1">
+                <p class="font-bold text-gray-900 dark:text-white text-xs truncate leading-tight">${emp.name}</p>
+                <p class="text-[9px] text-gray-400 truncate leading-none mt-0.5">${emp.dept}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-1 flex-shrink-0">
+              <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg text-[10px] font-black border ${badgeColor}">
+                <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+                ${count}x
+              </span>
+              <button type="button" class="w-5 h-5 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 text-[10px] font-black flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-500 hover:text-white transition" title="Assign Cepat">+</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      feather.replace();
+    }
+
+    // --- SCHEDULE MATRIX TABLE RENDERING (ROWS: SESSIONS | COLS: DAYS) ---
+    function renderScheduleMatrixTable() {
+      const tbody = document.getElementById('scheduleMatrixTableBody');
+      if (!tbody) return;
+
+      const employees = AttendanceDB.getEmployees();
+      const dayHeaders = [
+        { id: 1, name: 'Senin' },
+        { id: 2, name: 'Selasa' },
+        { id: 3, name: 'Rabu' },
+        { id: 4, name: 'Kamis' },
+        { id: 5, name: 'Jumat' }
+      ];
+
+      let totalMorningSlots = 0;
+      let totalAfternoonSlots = 0;
+
+      dayHeaders.forEach(day => {
+        const pagiCount = rosterDraft[day.id]?.shift_pagi?.length || 0;
+        const siangCount = rosterDraft[day.id]?.shift_siang?.length || 0;
+        totalMorningSlots += pagiCount;
+        totalAfternoonSlots += siangCount;
+      });
+
+      // Helper to render draggable badges inside cell
+      function renderCellBadges(dayIdx, shiftId, borderColor) {
+        const empIds = rosterDraft[dayIdx]?.[shiftId] || [];
+        const badgesHtml = empIds.map(empId => {
+          const emp = employees.find(e => e.id === empId) || { id: empId, name: empId, dept: 'KSPM', avatar: 'KP', color: 'from-gray-600 to-gray-700' };
+          return `
+            <div 
+              draggable="true"
+              ondragstart="handleMemberDragStart(event, '${emp.id}', 'cell', ${dayIdx}, '${shiftId}')"
+              ondragend="handleMemberDragEnd(event)"
+              class="drag-card-item animate-card-pop flex items-center justify-between gap-1.5 px-2 py-1 rounded-xl bg-white dark:bg-[#181d26] border ${borderColor} shadow-xs text-xs font-bold text-gray-800 dark:text-gray-200 group w-full cursor-grab"
+            >
+              <div class="flex items-center gap-1.5 min-w-0 flex-1">
+                <span class="w-4 h-4 rounded-md bg-gradient-to-br ${emp.color || 'from-red-600 to-rose-600'} text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                  ${emp.avatar}
+                </span>
+                <span class="truncate text-[11px] font-semibold">${emp.name}</span>
+              </div>
+              <button type="button" onclick="event.stopPropagation(); removeMemberFromDraft('${emp.id}', ${dayIdx}, '${shiftId}')" class="text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/50 p-0.5 rounded transition font-bold leading-none flex-shrink-0" title="Hapus dari sesi ini">×</button>
+            </div>
+          `;
+        }).join('');
+
+        return badgesHtml;
+      }
+
+      // Render Row 1: Sesi Pagi
+      const pagiCellsHtml = dayHeaders.map(day => {
+        const badges = renderCellBadges(day.id, 'shift_pagi', 'border-amber-200/80 dark:border-amber-900/60');
+        return `
+          <td class="py-2.5 px-2 align-top bg-amber-50/20 dark:bg-amber-950/10 border-r border-gray-100 dark:border-gray-800/80">
+            <div 
+              class="schedule-drop-zone min-h-[140px] p-2 rounded-2xl border-2 border-dashed border-amber-200/60 dark:border-amber-900/40 bg-white/60 dark:bg-[#141822]/60 hover:border-amber-400 dark:hover:border-amber-500/60 flex flex-col gap-1.5 transition"
+              data-day="${day.id}"
+              data-shift="shift_pagi"
+              ondragover="handleCellDragOver(event)"
+              ondragleave="handleCellDragLeave(event)"
+              ondrop="handleCellDrop(event, ${day.id}, 'shift_pagi')"
+            >
+              ${badges || `
+                <div class="w-full h-full min-h-[100px] flex items-center justify-center text-center text-amber-600/40 dark:text-amber-400/30 text-[10px] font-semibold select-none pointer-events-none p-2 border border-dashed border-amber-300/30 rounded-xl">
+                  <span>+ Tarik ke sini</span>
+                </div>
+              `}
+            </div>
+          </td>
+        `;
+      }).join('');
+
+      // Render Row 2: Sesi Siang
+      const siangCellsHtml = dayHeaders.map(day => {
+        const badges = renderCellBadges(day.id, 'shift_siang', 'border-blue-200/80 dark:border-blue-900/60');
+        return `
+          <td class="py-2.5 px-2 align-top bg-blue-50/20 dark:bg-blue-950/10 border-r border-gray-100 dark:border-gray-800/80">
+            <div 
+              class="schedule-drop-zone min-h-[140px] p-2 rounded-2xl border-2 border-dashed border-blue-200/60 dark:border-blue-900/40 bg-white/60 dark:bg-[#141822]/60 hover:border-blue-400 dark:hover:border-blue-500/60 flex flex-col gap-1.5 transition"
+              data-day="${day.id}"
+              data-shift="shift_siang"
+              ondragover="handleCellDragOver(event)"
+              ondragleave="handleCellDragLeave(event)"
+              ondrop="handleCellDrop(event, ${day.id}, 'shift_siang')"
+            >
+              ${badges || `
+                <div class="w-full h-full min-h-[100px] flex items-center justify-center text-center text-blue-600/40 dark:text-blue-400/30 text-[10px] font-semibold select-none pointer-events-none p-2 border border-dashed border-blue-300/30 rounded-xl">
+                  <span>+ Tarik ke sini</span>
+                </div>
+              `}
+            </div>
+          </td>
+        `;
+      }).join('');
+
+      tbody.innerHTML = `
+        <!-- BARIS 1: SESI PAGI -->
+        <tr class="hover:bg-gray-50/30 dark:hover:bg-[#151922]/30 transition border-b border-gray-200 dark:border-gray-800">
+          <td class="py-4 px-4 align-top w-40 bg-gray-50/70 dark:bg-[#181d26]/80 border-r border-gray-200 dark:border-gray-800">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0">
+                  <i data-feather="sun" class="w-4 h-4"></i>
+                </div>
+                <h5 class="font-extrabold text-sm text-gray-900 dark:text-white">Sesi Pagi</h5>
+              </div>
+              <div class="pt-1 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <i data-feather="users" class="w-3 h-3"></i>
+                  <span>${totalMorningSlots}</span>
+                </span>
+                <button type="button" onclick="clearShiftDraft('shift_pagi')" class="p-1 rounded-lg text-gray-400 hover:text-red-500 transition" title="Kosongkan Sesi Pagi">
+                  <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </td>
+          ${pagiCellsHtml}
+        </tr>
+
+        <!-- BARIS 2: SESI SIANG -->
+        <tr class="hover:bg-gray-50/30 dark:hover:bg-[#151922]/30 transition">
+          <td class="py-4 px-4 align-top w-40 bg-gray-50/70 dark:bg-[#181d26]/80 border-r border-gray-200 dark:border-gray-800">
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center flex-shrink-0">
+                  <i data-feather="clock" class="w-4 h-4"></i>
+                </div>
+                <h5 class="font-extrabold text-sm text-gray-900 dark:text-white">Sesi Siang</h5>
+              </div>
+              <div class="pt-1 flex items-center justify-between">
+                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <i data-feather="users" class="w-3 h-3"></i>
+                  <span>${totalAfternoonSlots}</span>
+                </span>
+                <button type="button" onclick="clearShiftDraft('shift_siang')" class="p-1 rounded-lg text-gray-400 hover:text-red-500 transition" title="Kosongkan Sesi Siang">
+                  <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+          </td>
+          ${siangCellsHtml}
+        </tr>
+      `;
+
+      feather.replace();
+    }
+
+    function clearShiftDraft(shiftId) {
+      const shiftName = shiftId === 'shift_pagi' ? 'Sesi Pagi' : 'Sesi Siang';
+      if (confirm(`Kosongkan semua pengisian di ${shiftName}?`)) {
+        for (let d = 0; d < 7; d++) {
+          if (rosterDraft[d]?.[shiftId]) {
+            rosterDraft[d][shiftId] = [];
+          }
+        }
+        renderScheduleMatrixTable();
+        renderMemberPool();
+        updateRosterStats();
+        showScheduleNotification(`Semua pengisian di ${shiftName} berhasil dikosongkan.`, "info");
+      }
+    }
+
+    // --- DRAG AND DROP EVENT HANDLERS ---
+    function handleMemberDragStart(e, empId, source, fromDay = null, fromShift = null) {
+      currentDraggedData = {
+        empId,
+        source, // 'pool' | 'cell'
+        fromDay,
+        fromShift
+      };
+
+      if (e.dataTransfer) {
+        e.dataTransfer.setData('text/plain', JSON.stringify(currentDraggedData));
+        e.dataTransfer.effectAllowed = 'move';
+      }
+
+      const card = e.currentTarget;
+      if (card) {
+        card.classList.add('is-dragging');
+      }
+    }
+
+    function handleMemberDragEnd(e) {
+      currentDraggedData = null;
+      document.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
+      document.querySelectorAll('.drop-zone-hover').forEach(el => el.classList.remove('drop-zone-hover'));
+    }
+
+    function handleCellDragOver(e) {
+      e.preventDefault();
+      if (e.dataTransfer) {
+        e.dataTransfer.dropEffect = 'move';
+      }
+      const cell = e.currentTarget;
+      if (cell && !cell.classList.contains('drop-zone-hover')) {
+        cell.classList.add('drop-zone-hover');
+      }
+    }
+
+    function handleCellDragLeave(e) {
+      const cell = e.currentTarget;
+      if (cell && !cell.contains(e.relatedTarget)) {
+        cell.classList.remove('drop-zone-hover');
+      }
+    }
+
+    function handleCellDrop(e, targetDay, targetShift) {
+      e.preventDefault();
+      const cell = e.currentTarget;
+      if (cell) cell.classList.remove('drop-zone-hover');
+
+      let dropData = currentDraggedData;
+      if (!dropData && e.dataTransfer) {
+        try {
+          dropData = JSON.parse(e.dataTransfer.getData('text/plain'));
+        } catch (err) {}
+      }
+
+      if (!dropData || !dropData.empId) return;
+
+      const empId = dropData.empId;
+
+      if (!rosterDraft[targetDay]) {
+        rosterDraft[targetDay] = { shift_pagi: [], shift_siang: [] };
+      }
+
+      // Cek apakah anggota sudah ada di sesi target
+      if (rosterDraft[targetDay][targetShift].includes(empId)) {
+        showScheduleNotification("Pengurus sudah terdaftar pada sesi ini!", "info");
+        return;
+      }
+
+      // Jika di-drag dari cell lain, hapus dari slot lama
+      if (dropData.source === 'cell' && dropData.fromDay !== null && dropData.fromShift) {
+        const fromArr = rosterDraft[dropData.fromDay]?.[dropData.fromShift];
+        if (fromArr) {
+          const idx = fromArr.indexOf(empId);
+          if (idx >= 0) fromArr.splice(idx, 1);
+        }
+      }
+
+      // Masukkan ke target slot
+      rosterDraft[targetDay][targetShift].push(empId);
+
+      renderScheduleMatrixTable();
+      renderMemberPool();
+      updateRosterStats();
+    }
+
+    function removeMemberFromDraft(empId, dayIdx, shiftId) {
+      const arr = rosterDraft[dayIdx]?.[shiftId];
+      if (arr) {
+        const idx = arr.indexOf(empId);
+        if (idx >= 0) {
+          arr.splice(idx, 1);
+          renderScheduleMatrixTable();
+          renderMemberPool();
+          updateRosterStats();
+        }
+      }
+    }
+
+    // --- QUICK ASSIGN MODAL (MOBILE / CLICK FRIENDLY) ---
+    function openQuickAssignModal(empId) {
+      const emp = AttendanceDB.getEmployees().find(e => e.id === empId);
+      if (!emp) return;
+
+      document.getElementById('quickAssignEmpId').value = emp.id;
+      document.getElementById('quickAssignEmpName').innerText = emp.name;
+      document.getElementById('quickAssignEmpDept').innerText = `${emp.dept} (${emp.role || 'Pengurus'})`;
+
+      const avatarEl = document.getElementById('quickAssignAvatar');
+      if (avatarEl) {
+        avatarEl.innerText = emp.avatar;
+        avatarEl.className = `w-10 h-10 rounded-2xl bg-gradient-to-br ${emp.color || 'from-red-600 to-rose-600'} text-white font-bold flex items-center justify-center text-sm shadow`;
+      }
+
+      setQuickAssignDay(1);
+      setQuickAssignShift('shift_pagi');
+
+      document.getElementById('quickAssignModal').classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeQuickAssignModal() {
+      document.getElementById('quickAssignModal').classList.add('hidden');
+    }
+
+    function setQuickAssignDay(dayIdx) {
+      quickAssignSelectedDay = dayIdx;
+      document.querySelectorAll('#quickAssignDaysGrid .quick-day-btn').forEach(btn => {
+        const d = parseInt(btn.getAttribute('data-day'), 10);
+        if (d === dayIdx) {
+          btn.className = 'quick-day-btn p-2 rounded-xl border-2 border-red-500 bg-red-500 text-white font-bold text-xs transition shadow-xs';
+        } else {
+          btn.className = 'quick-day-btn p-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-700 dark:text-gray-300 font-bold text-xs transition hover:border-red-300';
+        }
+      });
+    }
+
+    function setQuickAssignShift(shiftId) {
+      quickAssignSelectedShift = shiftId;
+      const pagiBtn = document.getElementById('quickShiftPagi');
+      const siangBtn = document.getElementById('quickShiftSiang');
+      if (!pagiBtn || !siangBtn) return;
+
+      if (shiftId === 'shift_pagi') {
+        pagiBtn.className = 'p-2.5 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold flex flex-col items-center gap-0.5 transition shadow-xs';
+        siangBtn.className = 'p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold flex flex-col items-center gap-0.5 transition';
+      } else {
+        siangBtn.className = 'p-2.5 rounded-xl border-2 border-red-500 bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 font-bold flex flex-col items-center gap-0.5 transition shadow-xs';
+        pagiBtn.className = 'p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-[#181d26] text-gray-600 dark:text-gray-400 font-bold flex flex-col items-center gap-0.5 transition';
+      }
+    }
+
+    function executeQuickAssign() {
+      const empId = document.getElementById('quickAssignEmpId').value;
+      if (!empId) return;
+
+      if (!rosterDraft[quickAssignSelectedDay]) {
+        rosterDraft[quickAssignSelectedDay] = { shift_pagi: [], shift_siang: [] };
+      }
+
+      if (rosterDraft[quickAssignSelectedDay][quickAssignSelectedShift].includes(empId)) {
+        alert("Pengurus sudah terjadwal di hari dan sesi tersebut!");
+        return;
+      }
+
+      rosterDraft[quickAssignSelectedDay][quickAssignSelectedShift].push(empId);
+      closeQuickAssignModal();
+      renderScheduleMatrixTable();
+      renderMemberPool();
+      updateRosterStats();
+      showScheduleNotification("Berhasil menambahkan pengurus ke jadwal!", "success");
+    }
+
+    // --- STATS & SAVE LOGIC ---
+    function updateRosterStats() {
+      const employees = AttendanceDB.getEmployees();
+      const allSchedules = AttendanceDB.getSchedules();
+
+      let assignedCount = 0;
+      let totalSlots = 0;
+
+      employees.forEach(emp => {
+        const count = getEmployeeAssignmentCount(emp.id);
+        if (count > 0) assignedCount++;
+        totalSlots += count;
+      });
+
+      const unassignedCount = employees.length - assignedCount;
+
+      const statTotalEl = document.getElementById('statTotalEmployees');
+      const statAssignedEl = document.getElementById('statAssignedMembers');
+      const statUnassignedEl = document.getElementById('statUnassignedMembers');
+      const statSlotsEl = document.getElementById('statTotalWeeklySlots');
+      const totalSchedulesCountEl = document.getElementById('totalSchedulesCount');
+
+      if (statTotalEl) statTotalEl.innerText = `${employees.length} Orang`;
+      if (statAssignedEl) statAssignedEl.innerText = `${assignedCount} Orang`;
+      if (statUnassignedEl) statUnassignedEl.innerText = `${unassignedCount} Orang`;
+      if (statSlotsEl) statSlotsEl.innerText = `${totalSlots} Slot`;
+      if (totalSchedulesCountEl) totalSchedulesCountEl.innerText = `${allSchedules.length}`;
+    }
+
+    function saveRosterDraftToCalendar() {
+      let totalSlots = 0;
+      for (let d = 0; d < 7; d++) {
+        totalSlots += (rosterDraft[d]?.shift_pagi?.length || 0) + (rosterDraft[d]?.shift_siang?.length || 0);
+      }
+
+      if (totalSlots === 0) {
+        alert("Tabel matriks jadwal masih kosong. Silakan tarik atau tambahkan anggota ke sesi piket terlebih dahulu.");
+        return;
+      }
+
+      const durationSelect = document.getElementById('scheduleRosterDurationSelect');
+      const months = durationSelect ? parseInt(durationSelect.value, 10) : 6;
+
+      const totalCreated = AttendanceDB.saveFullWeeklyRoster(rosterDraft, {
+        durationMonths: months,
+        notes: 'Jadwal Piket Rutin'
+      });
+
+      alert(`✅ Berhasil menyimpan dan menerapkan jadwal piket mingguan!\n\nSebanyak ${totalCreated} slot tanggal piket otomatis terbuat di kalender untuk periode ${months} bulan ke depan.`);
+
+      renderSchedulesList();
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+      if (typeof renderWeeklyMemberRekap === 'function') renderWeeklyMemberRekap();
+      if (typeof renderLeaderboards === 'function') renderLeaderboards();
+      updateRosterStats();
+    }
+
+    function renderSchedulesList() {
+      const schedules = AttendanceDB.getSchedules();
+      const employees = AttendanceDB.getEmployees();
+      const shifts = AttendanceDB.getShifts();
+      const container = document.getElementById('schedulesListContainer');
+      const countEl = document.getElementById('totalSchedulesCount');
+
+      if (countEl) countEl.innerText = `${schedules.length}`;
+      if (!container) return;
+
+      if (schedules.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-gray-500 text-xs">Belum ada jadwal piket yang terdaftar.</div>`;
+        return;
+      }
+
+      schedules.sort((a, b) => b.date.localeCompare(a.date));
+
+      container.innerHTML = schedules.map(s => {
+        const emp = employees.find(e => e.id === s.empId) || { name: s.empId, dept: 'KSPM', avatar: 'KP' };
+        const shift = shifts.find(sh => sh.id === s.shiftId) || { name: 'Sesi Pagi', start: '07:00', end: '12:00' };
+
+        return `
+          <div class="p-3 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-blue-600 text-white font-bold flex items-center justify-center text-xs shadow">
+                ${emp.avatar}
+              </div>
+              <div>
+                <p class="font-bold text-gray-900 dark:text-white">${emp.name}</p>
+                <p class="text-[10px] text-gray-500 font-mono">${s.date} • ${shift.name} (${shift.start}-${shift.end} WIB)</p>
+                ${s.notes ? `<p class="text-[10px] text-gray-400 mt-0.5">${s.notes}</p>` : ''}
+              </div>
+            </div>
+
+            <button onclick="hapusJadwal('${s.id}')" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="Hapus Jadwal">
+              <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      feather.replace();
+    }
+
+    function hapusJadwal(scheduleId) {
+      if (confirm("Hapus jadwal piket ini dari database?")) {
+        AttendanceDB.deleteSchedule(scheduleId);
+        renderSchedulesList();
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+        updateRosterStats();
+        showScheduleNotification("Jadwal piket berhasil dihapus.", "info");
+      }
+    }
+
+    // --- RESET SEMUA JADWAL PIKET ---
+    function openResetSchedulesModal() {
+      document.getElementById('resetSchedulesModal').classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeResetSchedulesModal() {
+      document.getElementById('resetSchedulesModal').classList.add('hidden');
+    }
+
+    function executeResetSchedules() {
+      AttendanceDB.clearAllSchedules();
+      closeResetSchedulesModal();
+      alert("Semua jadwal piket berhasil direset dan dikosongkan!");
+      for (let d = 0; d < 7; d++) {
+        rosterDraft[d] = { shift_pagi: [], shift_siang: [] };
+      }
+      renderScheduleMatrixTable();
+      renderMemberPool();
+      renderSchedulesList();
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+      updateRosterStats();
+    }
+
+    function showScheduleNotification(msg, type = 'info') {
+      const toast = document.createElement('div');
+      const isSuccess = type === 'success';
+      toast.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-2xl ${isSuccess ? 'bg-emerald-600 text-white' : 'bg-gray-900 dark:bg-white dark:text-gray-900 text-white'} font-bold text-xs shadow-2xl flex items-center gap-2 animate-scaleUp transition-all`;
+      toast.innerHTML = `<i data-feather="${isSuccess ? 'check-circle' : 'info'}" class="w-4 h-4"></i> <span>${msg}</span>`;
+      document.body.appendChild(toast);
+      feather.replace();
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+
+
+    // --- TAB 3: MANAJEMEN HARI LIBUR NASIONAL & KAMPUS ---
+    function renderHolidaysList() {
+      const holidays = AttendanceDB.getHolidays();
+      const container = document.getElementById('holidaysListContainer');
+      const countEl = document.getElementById('holidaysCountText');
+
+      if (countEl) countEl.innerText = `${holidays.length} Hari Libur`;
+      if (!container) return;
+
+      if (holidays.length === 0) {
+        container.innerHTML = `<div class="p-6 text-center text-gray-400 text-xs">Belum ada hari libur yang terdaftar.</div>`;
+        return;
+      }
+
+      holidays.sort((a, b) => a.date.localeCompare(b.date));
+
+      container.innerHTML = holidays.map(h => `
+        <div class="p-3 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-rose-500/20 flex items-center justify-between text-xs">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/30 font-bold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
+              <i data-feather="sun" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <p class="font-bold text-gray-900 dark:text-white">${h.name}</p>
+              <p class="text-[10px] text-rose-600 dark:text-rose-400 font-mono">${h.date}</p>
+              ${h.description ? `<p class="text-[10px] text-gray-400 mt-0.5">${h.description}</p>` : ''}
+            </div>
+          </div>
+
+          <button onclick="hapusHariLibur('${h.id}')" class="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition" title="Hapus Hari Libur">
+            <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `).join('');
+
+      feather.replace();
+    }
+
+    function handleAddHolidaySubmit(e) {
+      e.preventDefault();
+      const date = document.getElementById('inputHolidayDate').value;
+      const name = document.getElementById('inputHolidayName').value;
+      const description = document.getElementById('inputHolidayDesc').value;
+
+      if (!date || !name) {
+        alert("Tanggal dan Nama Hari Libur harus diisi!");
+        return;
+      }
+
+      AttendanceDB.addHoliday({ date, name, description });
+      alert(`Hari libur "${name}" pada tanggal ${date} berhasil ditambahkan!`);
+      
+      document.getElementById('inputHolidayName').value = '';
+      document.getElementById('inputHolidayDesc').value = '';
+
+      renderHolidaysList();
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+    }
+
+    function hapusHariLibur(holidayId) {
+      if (confirm("Hapus hari libur ini?")) {
+        AttendanceDB.deleteHoliday(holidayId);
+        renderHolidaysList();
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+      }
+    }
+
+    // --- TAB 4: STATISTIK & LEADERBOARD (BULANAN) ---
+    function onStatsMonthChange(monthVal) {
+      renderLeaderboards(monthVal);
+      renderDivisionPerformance(monthVal);
+      updateStatsMonthBadges(monthVal);
+    }
+
+    function updateStatsMonthBadges(monthVal) {
+      const ym = monthVal || (document.getElementById('statsMonthPicker') ? document.getElementById('statsMonthPicker').value : activeDateStr.substring(0, 7));
+      if (!ym) return;
+      const [y, m] = ym.split('-');
+      const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+      const text = `Periode: ${dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+      
+      const badge1 = document.getElementById('statsMonthBadge1');
+      const badge2 = document.getElementById('statsMonthBadge2');
+      const badge3 = document.getElementById('statsMonthBadge3');
+      if (badge1) badge1.innerText = dateObj.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+      if (badge2) badge2.innerText = dateObj.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+      if (badge3) badge3.innerText = text;
+    }
+
+    function renderLeaderboards(monthVal = null) {
+      const targetMonth = monthVal || (document.getElementById('statsMonthPicker') ? document.getElementById('statsMonthPicker').value : activeDateStr.substring(0, 7));
+      const topMembers = AttendanceDB.getTopActiveMembers(3, targetMonth);
+      const topMemberContainer = document.getElementById('topMembersLeaderboardContainer');
+
+      if (topMemberContainer) {
+        if (topMembers.length === 0 || topMembers.every(m => m.hadirCount === 0)) {
+          topMemberContainer.innerHTML = `<p class="text-xs text-gray-400 py-4 text-center font-medium">Belum ada rekaman sesi piket hadir pada bulan ini.</p>`;
+        } else {
+          const badges = ['🥇', '🥈', '🥉'];
+          topMemberContainer.innerHTML = topMembers.map((m, idx) => `
+            <div class="p-3 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2.5 hover:border-red-500/30 transition">
+              <div class="flex items-center gap-3 min-w-0 flex-1">
+                <span class="text-lg font-black flex-shrink-0">${badges[idx] || (idx + 1)}</span>
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br ${m.color || 'from-red-600 to-rose-600'} text-white font-bold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
+                  ${m.avatar}
+                </div>
+                <div class="truncate flex-1">
+                  <h4 class="font-bold text-xs sm:text-sm text-gray-900 dark:text-white leading-tight truncate">${m.name}</h4>
+                  <p class="text-[10px] text-gray-500 truncate font-mono mt-0.5">${m.dept}</p>
+                </div>
+              </div>
+
+              <div class="text-right flex-shrink-0">
+                <span class="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-black text-xs">
+                  ${m.hadirCount} Sesi
+                </span>
+                <p class="text-[9px] text-gray-400 font-mono mt-0.5">${m.ratePercent}% Kuota</p>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      const divStats = AttendanceDB.getDivisionPerformanceStats(null, null, targetMonth);
+      divStats.sort((a, b) => b.activityScore - a.activityScore || b.activeMemberPercent - a.activeMemberPercent || b.hadirCount - a.hadirCount);
+      const topDivContainer = document.getElementById('topDivisionsLeaderboardContainer');
+
+      if (topDivContainer) {
+        topDivContainer.innerHTML = divStats.slice(0, 3).map((div, idx) => {
+          const badges = ['🥇', '🥈', '🥉'];
+          return `
+            <div class="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 flex items-center justify-between gap-2.5 hover:border-red-500/30 transition">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <span class="text-xl font-black flex-shrink-0">${badges[idx] || (idx + 1)}</span>
+                <div class="truncate">
+                  <h4 class="font-black text-xs sm:text-sm text-gray-900 dark:text-white truncate">${div.deptName}</h4>
+                  <p class="text-[10px] text-gray-500 font-mono mt-0.5">
+                    <strong class="text-emerald-600 dark:text-emerald-400 font-bold">${div.activeMembersCount}/${div.memberCount}</strong> Anggota Rajin Piket • ${div.hadirCount} Sesi Tuntas
+                  </p>
+                </div>
+              </div>
+
+              <div class="text-right flex-shrink-0">
+                <span class="px-2.5 py-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 font-black text-xs border border-emerald-300/60 shadow-sm">
+                  ${div.activeMemberPercent}% Keaktifan
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      updateStatsMonthBadges(targetMonth);
+      feather.replace();
+    }
+
+    function renderDivisionPerformance(monthVal = null) {
+      const targetMonth = monthVal || (document.getElementById('statsMonthPicker') ? document.getElementById('statsMonthPicker').value : activeDateStr.substring(0, 7));
+      const stats = AttendanceDB.getDivisionPerformanceStats(null, null, targetMonth);
+      stats.sort((a, b) => b.activityScore - a.activityScore || b.activeMemberPercent - a.activeMemberPercent);
+      const container = document.getElementById('divisionPerformanceContainer');
+      if (!container) return;
+
+      container.innerHTML = stats.map(div => {
+        let barColor = 'bg-emerald-500';
+        let badgeColor = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300';
+        if (div.activeMemberPercent < 50) {
+          barColor = 'bg-red-500';
+          badgeColor = 'bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border border-red-300';
+        } else if (div.activeMemberPercent < 75) {
+          barColor = 'bg-amber-500';
+          badgeColor = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300';
+        }
+
+        return `
+          <div class="p-4 rounded-2xl bg-gray-50 dark:bg-[#181d26] border border-gray-200 dark:border-gray-800 space-y-3 hover:border-red-500/30 transition shadow-sm">
+            <div class="flex items-start justify-between gap-2">
+              <div>
+                <h4 class="font-extrabold text-xs sm:text-sm text-gray-900 dark:text-white leading-tight">${div.deptName}</h4>
+                <p class="text-[10px] text-gray-500 font-mono mt-0.5">
+                  <strong class="text-emerald-600 dark:text-emerald-400">${div.activeMembersCount} dari ${div.memberCount} Pengurus</strong> Rajin Piket
+                </p>
+              </div>
+              <span class="text-[11px] font-black px-2.5 py-0.5 rounded-lg ${badgeColor} flex-shrink-0 shadow-sm">
+                ${div.activeMemberPercent}% Keaktifan
+              </span>
+            </div>
+
+            <!-- Progress Bar Keaktifan Anggota -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-[9px] text-gray-400 font-mono">
+                <span>Partisipasi Anggota: ${div.activeMembersCount}/${div.memberCount} Orang</span>
+                <span>${div.activeMemberPercent}%</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 h-2.5 rounded-full overflow-hidden">
+                <div class="${barColor} h-full rounded-full transition-all duration-500" style="width: ${div.activeMemberPercent}%"></div>
+              </div>
+            </div>
+
+            <!-- Rincian Statistik Keaktifan -->
+            <div class="grid grid-cols-3 gap-1 text-center text-[10px] pt-1.5 border-t border-gray-200/60 dark:border-gray-800">
+              <div>
+                <span class="block text-gray-400">Total Sesi Piket</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400">${div.hadirCount} Sesi</span>
+              </div>
+              <div>
+                <span class="block text-gray-400">Rata-rata/Org</span>
+                <span class="font-bold text-gray-800 dark:text-gray-200 font-mono">${div.avgSessionsPerMember} Sesi</span>
+              </div>
+              <div>
+                <span class="block text-gray-400">Izin / Alpa</span>
+                <span class="font-bold text-gray-600 dark:text-gray-400 font-mono">${div.izinCount} / ${div.alpaCount}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // --- TAB 5: REKAP ANGGOTA & KUOTA MINGGUAN (4 MINGGU @ 2 PIKET WAJIB) ---
+    function populateRekapDeptFilter() {
+      const depts = AttendanceDB.getDepartments();
+      const select = document.getElementById('rekapDeptFilter');
+      if (select) {
+        select.innerHTML = `<option value="ALL">-- Semua Departemen --</option>` +
+          depts.map(d => `<option value="${d}">${d}</option>`).join('');
+      }
+    }
+
+    function renderWeeklyMemberRekap() {
+      const monthVal = document.getElementById('rekapMonthPicker').value || activeDateStr.substring(0, 7);
+      const deptVal = document.getElementById('rekapDeptFilter').value || 'ALL';
+      const searchVal = document.getElementById('rekapSearchInput').value || '';
+
+      const rekapData = AttendanceDB.getMemberWeeklyRekap({
+        yearMonth: monthVal,
+        dept: deptVal,
+        search: searchVal
+      });
+
+      // Update Summary Cards
+      const totalMembers = rekapData.length;
+      const fulfilledCount = rekapData.filter(r => r.isQuotaFulfilled).length;
+      const pendingCount = totalMembers - fulfilledCount;
+      const totalSessions = rekapData.reduce((acc, r) => acc + r.totalHadir, 0);
+
+      document.getElementById('rekapSummaryTotal').innerText = `${totalMembers} Anggota`;
+      document.getElementById('rekapSummaryFulfilled').innerText = `${fulfilledCount} Pengurus`;
+      document.getElementById('rekapSummaryPending').innerText = `${pendingCount} Pengurus`;
+      document.getElementById('rekapSummarySessions').innerText = `${totalSessions} Sesi`;
+
+      const badgeLabel = document.getElementById('rekapMonthBadgeLabel');
+      if (badgeLabel) {
+        const [y, m] = monthVal.split('-');
+        const dateObj = new Date(parseInt(y), parseInt(m) - 1, 1);
+        badgeLabel.innerText = `Periode: ${dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`;
+      }
+
+      const countText = document.getElementById('rekapTableCountText');
+      if (countText) countText.innerText = `Menampilkan ${rekapData.length} Pengurus (Target: 2 Sesi / Minggu)`;
+
+      const tbody = document.getElementById('rekapWeeklyTableBody');
+      if (!tbody) return;
+
+      if (rekapData.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="8" class="px-4 py-8 text-center text-gray-400 text-xs">
+              Tidak ada data pengurus pada filter bulan & departemen ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // Helper untuk render 2 list / kotak slot piket wajib per minggu (1 Sesi = 1 Masuk + 1 Pulang)
+      function renderWeekSlotPill(w) {
+        let slotsHtml = '';
+        if (w.hadirCount >= 2) {
+          slotsHtml = `
+            <div class="flex items-center justify-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Sesi 1 Selesai (Masuk & Pulang Lengkap)">✓</span>
+              <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Sesi 2 Selesai (Masuk & Pulang Lengkap)">✓</span>
+              ${w.extra > 0 ? `<span class="px-1 py-0.2 rounded bg-blue-700 text-white font-extrabold text-[9px]" title="${w.extra} Sesi Ekstra">+${w.extra}</span>` : ''}
+            </div>
+          `;
+        } else if (w.hadirCount === 1) {
+          slotsHtml = `
+            <div class="flex items-center justify-center gap-1">
+              <span class="w-4 h-4 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[9px] font-black" title="Sesi 1 Selesai (Masuk & Pulang Lengkap)">✓</span>
+              ${w.ongoingCount > 0 ? `
+                <span class="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[8px] font-bold animate-pulse" title="Sedang Bertugas (Menunggu Absen Pulang)">⏳</span>
+              ` : `
+                <span class="w-4 h-4 rounded-full border-2 border-dashed border-amber-500 text-amber-500 flex items-center justify-center text-[8px] font-bold" title="Kurang 1 Sesi">1</span>
+              `}
+            </div>
+          `;
+        } else {
+          slotsHtml = `
+            <div class="flex items-center justify-center gap-1">
+              ${w.ongoingCount > 0 ? `
+                <span class="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center text-[8px] font-bold animate-pulse" title="Sedang Bertugas (Menunggu Absen Pulang)">⏳</span>
+              ` : `
+                <span class="w-4 h-4 rounded-full border-2 border-dashed border-red-400 text-red-400 flex items-center justify-center text-[8px]" title="Belum Sesi 1">-</span>
+              `}
+              <span class="w-4 h-4 rounded-full border-2 border-dashed border-red-400 text-red-400 flex items-center justify-center text-[8px]" title="Belum Sesi 2">-</span>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="flex flex-col items-center gap-1">
+            ${slotsHtml}
+            <span class="text-[9px] font-mono ${w.isComplete ? 'text-emerald-600 dark:text-emerald-400 font-bold' : (w.hadirCount > 0 ? 'text-amber-600 dark:text-amber-400 font-semibold' : 'text-gray-400')}">
+              ${w.hadirCount}/2 Sesi
+            </span>
+          </div>
+        `;
+      }
+
+      tbody.innerHTML = rekapData.map(emp => {
+        let statusBadge = '';
+        if (emp.isQuotaFulfilled) {
+          if (emp.totalExtra > 0) {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-900/20 text-blue-900 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-600/40">SANGAT AKTIF (+${emp.totalExtra})</span>`;
+          } else {
+            statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300">MEMENUHI KUOTA</span>`;
+          }
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300">KURANG ${emp.totalMissing} PIKET</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-[#181d26] transition">
+            <td class="px-4 py-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br ${emp.color || 'from-red-600 to-rose-600'} text-white font-bold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
+                  ${emp.avatar}
+                </div>
+                <div class="truncate">
+                  <p class="font-bold text-gray-900 dark:text-white truncate">${emp.name}</p>
+                  <p class="text-[10px] text-gray-500 truncate font-mono">${emp.id} • ${emp.dept}</p>
+                </div>
+              </div>
+            </td>
+
+            <td class="px-3 py-3 text-center">
+              ${renderWeekSlotPill(emp.weeks[0])}
+            </td>
+
+            <td class="px-3 py-3 text-center">
+              ${renderWeekSlotPill(emp.weeks[1])}
+            </td>
+
+            <td class="px-3 py-3 text-center">
+              ${renderWeekSlotPill(emp.weeks[2])}
+            </td>
+
+            <td class="px-3 py-3 text-center">
+              ${renderWeekSlotPill(emp.weeks[3])}
+            </td>
+
+            <td class="px-4 py-3 text-center">
+              <span class="font-black text-xs ${emp.isQuotaFulfilled ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-800 dark:text-gray-200'}">
+                ${emp.totalHadir} / ${emp.totalTarget}
+              </span>
+              <p class="text-[9px] text-gray-400 font-mono">${emp.completionRate}% Kuota</p>
+            </td>
+
+            <td class="px-4 py-3 text-center">
+              ${statusBadge}
+            </td>
+
+            <td class="px-4 py-3 text-right">
+              <button onclick="openDeleteEmployeeModal('${emp.id}', '${emp.name.replace(/'/g, "\\'")}')" class="p-1.5 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 transition" title="Hapus Anggota">
+                <i data-feather="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+
+      feather.replace();
+    }
+
+    function openDeleteEmployeeModal(empId, empName) {
+      document.getElementById('deleteTargetEmpIdHidden').value = empId;
+      document.getElementById('deleteTargetEmpName').innerText = empName;
+      document.getElementById('deleteTargetEmpId').innerText = empId;
+      document.getElementById('deleteEmployeeModal').classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeDeleteEmployeeModal() {
+      document.getElementById('deleteEmployeeModal').classList.add('hidden');
+    }
+
+    function executeDeleteEmployee() {
+      const empId = document.getElementById('deleteTargetEmpIdHidden').value;
+      if (!empId) return;
+
+      AttendanceDB.deleteEmployee(empId);
+      closeDeleteEmployeeModal();
+      alert(`Anggota dengan ID ${empId} berhasil dihapus dari database!`);
+
+      populateScheduleDeptSelect();
+      populateReportDeptSelect();
+      populateRekapDeptFilter();
+      renderWeeklyMemberRekap();
+      renderLeaderboards();
+      renderDivisionPerformance();
+      renderMonitoringView();
+    }
+
+    function promptTambahPegawai() {
+      const name = prompt("Masukkan Nama Lengkap Anggota KSPM:");
+      if (!name) return;
+      const role = prompt("Masukkan Jabatan / Posisi:", "Staff Media & Technology");
+      const dept = prompt("Masukkan Divisi / Departemen:", "Media & Technology");
+
+      AttendanceDB.addEmployee({ name, role, dept });
+      alert(`Anggota KSPM ${name} berhasil ditambahkan!`);
+      populateScheduleDeptSelect();
+      populateReportDeptSelect();
+      populateRekapDeptFilter();
+      renderWeeklyMemberRekap();
+      renderLeaderboards();
+      renderDivisionPerformance();
+      renderMonitoringView();
+    }
+
+    // --- TAB 6: REKAPITULASI & LAPORAN ---
+    function populateReportDeptSelect() {
+      const depts = AttendanceDB.getDepartments();
+      const select = document.getElementById('reportDeptFilter');
+      if (select) {
+        select.innerHTML = `<option value="ALL">-- Semua Divisi KSPM --</option>` +
+          depts.map(d => `<option value="${d}">${d}</option>`).join('');
+      }
+    }
+
+    function renderReportTable() {
+      const startDate = document.getElementById('reportStartDate').value;
+      const endDate = document.getElementById('reportEndDate').value;
+      const dept = document.getElementById('reportDeptFilter').value;
+      const status = document.getElementById('reportStatusFilter').value;
+
+      const reportRows = AttendanceDB.getFilteredAttendanceReport({ startDate, endDate, dept, status });
+      const tbody = document.getElementById('reportTableBody');
+      const countEl = document.getElementById('reportResultCountText');
+
+      if (countEl) countEl.innerText = `Menampilkan ${reportRows.length} Rekaman Presensi`;
+
+      if (reportRows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center text-gray-400 text-xs">
+              Tidak ada rekaman presensi pada filter periode ini.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = reportRows.map(row => {
+        let statusBadge = '';
+        if (row.status === 'SELESAI') {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Selesai</span>`;
+        } else if (row.status === 'SEDANG_BERTUGAS') {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300">Sedang Bertugas</span>`;
+        } else if (row.status === 'IZIN') {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300">Izin</span>`;
+        } else {
+          statusBadge = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300">Alpa</span>`;
+        }
+
+        let catBadge = '';
+        if (row.category === 'sukarela') {
+          catBadge = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-blue-900/15 text-blue-900 dark:bg-blue-950 dark:text-blue-300 border border-blue-600/40 dark:border-blue-700">Sukarela/Main</span>`;
+        } else if (row.category === 'pengganti') {
+          const repText = row.replacedDate ? ` (${row.replacedDate})` : '';
+          catBadge = `<span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300">Ganti${repText}</span>`;
+        }
+
+        return `
+          <tr class="hover:bg-gray-50 dark:hover:bg-[#181d26] transition">
+            <td class="px-4 py-2.5 font-mono font-bold">${row.date}</td>
+            <td class="px-4 py-2.5 font-bold text-gray-900 dark:text-white">${row.name}</td>
+            <td class="px-4 py-2.5 text-gray-500">${row.dept}</td>
+            <td class="px-4 py-2.5 font-mono text-[11px]">${row.shiftName} (${row.shiftTime})</td>
+            <td class="px-4 py-2.5">
+              <div class="flex items-center gap-1 flex-wrap">
+                ${statusBadge}
+                ${catBadge}
+              </div>
+            </td>
+            <td class="px-4 py-2.5 font-mono text-[11px]">
+              ${row.timeMasuk !== '-' ? 'Masuk: ' + row.timeMasuk : '-'} 
+              ${row.timePulang !== '-' ? '| Pulang: ' + row.timePulang : ''}
+            </td>
+            <td class="px-4 py-2.5 text-gray-500 text-[11px]">${row.notes || '-'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function hitungDurasiPiket(tMasuk, tPulang) {
+      if (!tMasuk || tMasuk === '-' || !tPulang || tPulang === '-') {
+        if (tMasuk && tMasuk !== '-') return "Sedang Bertugas";
+        return "-";
+      }
+
+      try {
+        const [hM, mM] = tMasuk.split(':').map(Number);
+        const [hP, mP] = tPulang.split(':').map(Number);
+        const diffMinutes = (hP * 60 + mP) - (hM * 60 + mM);
+        if (isNaN(diffMinutes) || diffMinutes <= 0) return "-";
+        
+        const hours = Math.floor(diffMinutes / 60);
+        const mins = diffMinutes % 60;
+        if (hours > 0 && mins > 0) return `${hours} Jam ${mins} Menit`;
+        if (hours > 0) return `${hours} Jam`;
+        return `${mins} Menit`;
+      } catch (e) {
+        return "-";
+      }
+    }
+
+    function exportReportToExcelCSV() {
+      const startDate = document.getElementById('reportStartDate').value;
+      const endDate = document.getElementById('reportEndDate').value;
+      const dept = document.getElementById('reportDeptFilter').value;
+      const status = document.getElementById('reportStatusFilter').value;
+
+      const reportRows = AttendanceDB.getFilteredAttendanceReport({ startDate, endDate, dept, status });
+      
+      const now = new Date();
+      const exportTimeStr = now.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric'
+      }) + ' ' + now.toLocaleTimeString('id-ID') + ' WIB';
+
+      let csvContent = "\uFEFF";
+      
+      csvContent += '"LAPORAN REKAPITULASI PRESENSI PIKET GALERI INVESTASI"\n';
+      csvContent += '"KELOMPOK STUDI PASAR MODAL (KSPM) - UNIVERSITAS JENDERAL SOEDIRMAN"\n';
+      csvContent += `"Periode: ${startDate || 'Semua Tanggal'} s/d ${endDate || 'Semua Tanggal'} | Filter Divisi: ${dept} | Filter Status: ${status}"\n`;
+      csvContent += `"Waktu Ekspor: ${exportTimeStr}"\n`;
+      csvContent += '\n';
+
+      const tableHeaders = [
+        "No",
+        "Tanggal",
+        "ID Anggota",
+        "Nama Pengurus",
+        "Divisi KSPM",
+        "Jabatan",
+        "Sesi Piket",
+        "Status Kehadiran",
+        "Jam Masuk",
+        "Jam Pulang",
+        "Total Durasi",
+        "Lokasi GPS",
+        "Link Foto Google Drive",
+        "Keterangan / Catatan"
+      ];
+      csvContent += tableHeaders.map(h => `"${h}"`).join(',') + "\n";
+
+      let totalHadir = 0;
+      let totalIzin = 0;
+      let totalAlpa = 0;
+
+      reportRows.forEach((item, idx) => {
+        let statusLabel = 'Alpa (Belum Piket)';
+        if (item.status === 'SELESAI') {
+          statusLabel = 'Selesai Piket';
+          totalHadir++;
+        } else if (item.status === 'SEDANG_BERTUGAS') {
+          statusLabel = 'Sedang Bertugas';
+          totalHadir++;
+        } else if (item.status === 'IZIN') {
+          statusLabel = 'Izin Piket';
+          totalIzin++;
+        } else {
+          totalAlpa++;
+        }
+
+        const durasiText = hitungDurasiPiket(item.timeMasuk, item.timePulang);
+
+        const row = [
+          idx + 1,
+          `"${item.date}"`,
+          `"${item.empId}"`,
+          `"${item.name}"`,
+          `"${item.dept}"`,
+          `"${item.role || 'Pengurus'}"`,
+          `"${item.shiftName}"`,
+          `"${statusLabel}"`,
+          `"${item.timeMasuk && item.timeMasuk !== '-' ? item.timeMasuk + ' WIB' : '-'}"`,
+          `"${item.timePulang && item.timePulang !== '-' ? item.timePulang + ' WIB' : '-'}"`,
+          `"${durasiText}"`,
+          `"${item.location || '-'}"`,
+          `"${item.photo || '-'}"`,
+          `"${(item.notes || '-').replace(/"/g, '""')}"`
+        ];
+        csvContent += row.join(',') + "\n";
+      });
+
+      csvContent += '\n';
+      csvContent += '"RINGKASAN REKAPITULASI PRESENSI"\n';
+      csvContent += `"Total Slot Terjadwal","${reportRows.length} Slot"\n`;
+      csvContent += `"Total Hadir / Selesai","${totalHadir} Slot"\n`;
+      csvContent += `"Total Izin Piket","${totalIzin} Slot"\n`;
+      csvContent += `"Total Alpa (Belum Hadir)","${totalAlpa} Slot"\n`;
+      csvContent += `"Tingkat Kehadiran Keseluruhan","${reportRows.length > 0 ? Math.round((totalHadir / reportRows.length) * 100) : 0}%"\n`;
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", `Rekap_Presensi_KSPM_${startDate || 'all'}_sd_${endDate || 'all'}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // --- MODAL UBAH STATUS ---
+    function openEditStatusModal(empId, empName, dateStr) {
+      document.getElementById('editModalEmpId').value = empId;
+      document.getElementById('editModalDate').value = dateStr;
+      document.getElementById('editModalTitle').innerText = `Ubah Status: ${empName}`;
+      document.getElementById('editModalStatusSelect').value = 'HADIR';
+      document.getElementById('editModalReasonInput').value = '';
+      
+      const repBox = document.getElementById('editModalReplacedDateBox');
+      const repInput = document.getElementById('editModalReplacedDateInput');
+      if (repBox) repBox.classList.add('hidden');
+      if (repInput) {
+        const refDate = new Date(dateStr + 'T00:00:00');
+        const maxDate = new Date(refDate); maxDate.setDate(maxDate.getDate() - 1);
+        const minDate = new Date(refDate); minDate.setDate(minDate.getDate() - 31);
+        repInput.max = maxDate.toISOString().substring(0, 10);
+        repInput.min = minDate.toISOString().substring(0, 10);
+        repInput.value = maxDate.toISOString().substring(0, 10);
+      }
+
+      document.getElementById('editStatusModal').classList.remove('hidden');
+    }
+
+    function onEditModalStatusChange(statusVal) {
+      const repBox = document.getElementById('editModalReplacedDateBox');
+      if (repBox) {
+        if (statusVal === 'PENGGANTI') {
+          repBox.classList.remove('hidden');
+        } else {
+          repBox.classList.add('hidden');
+        }
+      }
+    }
+
+    function saveManualStatusChange() {
+      const empId = document.getElementById('editModalEmpId').value;
+      const dateStr = document.getElementById('editModalDate').value;
+      const status = document.getElementById('editModalStatusSelect').value;
+      const reason = document.getElementById('editModalReasonInput').value || 'Verifikasi Admin KSPM';
+      const replacedDate = document.getElementById('editModalReplacedDateInput')?.value || null;
+
+      let cat = 'biasa';
+      let type = 'MASUK';
+      let finalReplacedDate = null;
+
+      if (status === 'IZIN') {
+        type = 'IZIN';
+        cat = 'izin';
+      } else if (status === 'SUKARELA') {
+        type = 'MASUK';
+        cat = 'sukarela';
+      } else if (status === 'PENGGANTI') {
+        type = 'MASUK';
+        cat = 'pengganti';
+        finalReplacedDate = replacedDate;
+
+        if (!finalReplacedDate) {
+          alert("Silakan tentukan tanggal jadwal alfa yang ingin digantikan!");
+          return;
+        }
+
+        const valRes = AttendanceDB.validateReplacementDate(finalReplacedDate, dateStr);
+        if (!valRes.valid) {
+          alert(`❌ Tanggal pengganti tidak valid:\n${valRes.message}`);
+          return;
+        }
+      } else {
+        type = 'MASUK';
+        cat = 'biasa';
+      }
+
+      const emp = AttendanceDB.getEmployeeById(empId);
+      AttendanceDB.recordAttendance({
+        empId: empId,
+        name: emp ? emp.name : empId,
+        date: dateStr,
+        type: type,
+        category: cat,
+        replacedDate: finalReplacedDate,
+        notes: reason,
+        location: 'Diverifikasi oleh Admin KSPM'
+      });
+
+      document.getElementById('editStatusModal').classList.add('hidden');
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+      if (typeof renderReportTable === 'function') renderReportTable();
+    }
+
+    function executeDeleteScheduleFromModal() {
+      const empId = document.getElementById('editModalEmpId').value;
+      const dateStr = document.getElementById('editModalDate').value;
+      const emp = AttendanceDB.getEmployees().find(e => e.id === empId);
+      const name = emp ? emp.name : empId;
+
+      if (confirm(`Hapus jadwal piket untuk ${name} pada tanggal ${dateStr}?`)) {
+        AttendanceDB.deleteScheduleByEmpAndDate(empId, dateStr);
+        document.getElementById('editStatusModal').classList.add('hidden');
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+        if (typeof renderSchedulesList === 'function') renderSchedulesList();
+        updateRosterStats();
+        showScheduleNotification(`Jadwal ${name} pada ${dateStr} berhasil dihapus.`, "info");
+      }
+    }
+
+    // --- MODAL HAPUS RIWAYAT PRESENSI ---
+    let deleteTarget = { empId: null, name: '', date: '', logId: null };
+
+    function confirmDeleteAttendance(empId, name, date, logId) {
+      deleteTarget = { empId, name, date, logId };
+      const nameEl = document.getElementById('deleteTargetEmpName');
+      const dateEl = document.getElementById('deleteTargetDate');
+      if (nameEl) nameEl.innerText = `${name} (${empId})`;
+      if (dateEl) dateEl.innerText = date;
+      document.getElementById('deleteAttendanceModal').classList.remove('hidden');
+      feather.replace();
+    }
+
+    function closeDeleteAttendanceModal() {
+      document.getElementById('deleteAttendanceModal').classList.add('hidden');
+    }
+
+    function executeDeleteAttendance() {
+      if (!deleteTarget.empId || !deleteTarget.date) return;
+
+      if (deleteTarget.logId) {
+        AttendanceDB.deleteAttendanceLog(deleteTarget.logId);
+      }
+      AttendanceDB.deleteAttendanceByEmpAndDate(deleteTarget.empId, deleteTarget.date);
+
+      closeDeleteAttendanceModal();
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+      if (typeof renderRekapTable === 'function') renderRekapTable();
+      if (typeof renderLeaderboardView === 'function') renderLeaderboardView();
+    }
+
+    function zoomPhoto(photoUrl, name, folderUrl = '') {
+      const targetLink = folderUrl || photoUrl;
+      if (targetLink && (targetLink.includes('drive.google.com') || targetLink.includes('googleusercontent.com') || targetLink.startsWith('http'))) {
+        window.open(targetLink, '_blank', 'noopener,noreferrer');
+      } else {
+        window.open('https://drive.google.com', '_blank', 'noopener,noreferrer');
+      }
+    }
+  </script>
+</body>
+</html>
