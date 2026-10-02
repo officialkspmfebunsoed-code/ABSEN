@@ -137,7 +137,7 @@ function normalizeCloudTime(rawTime) {
 
 const SUPABASE_CONFIG = {
   URL: 'https://kkkkqrgbxaphjizuumzp.supabase.co',
-  ANON_KEY: 'sb_secret_1-o_HEFkiRSa9cR-5p00LA_UD7hj2n8',
+  ANON_KEY: 'sb_publishable_rBFfkW_aA6D8BCslLFWT6w_1A4hCkHw',
   AUTO_SYNC: true
 };
 
@@ -387,7 +387,8 @@ const AttendanceDB = {
     localStorage.setItem(DB_KEYS.HOLIDAYS, JSON.stringify(DEFAULT_HOLIDAYS));
   },
 
-  // --- MANAJEMEN HARI LIBUR NASIONAL & KAMPUS ---
+  //#region 1. MANAJEMEN HARI LIBUR
+
   getHolidays() {
     const data = localStorage.getItem(DB_KEYS.HOLIDAYS);
     return data ? JSON.parse(data) : DEFAULT_HOLIDAYS;
