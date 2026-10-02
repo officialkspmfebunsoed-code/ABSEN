@@ -136,8 +136,8 @@ function normalizeCloudTime(rawTime) {
 }
 
 const SUPABASE_CONFIG = {
-  URL: 'https://nqfaleflkhqfvbehlvvo.supabase.co',
-  ANON_KEY: 'sb_publishable_hSvHuQI9cFxYAUCzL_yFQg_WMpFSNye',
+  URL: 'https://kkkkqrgbxaphjizuumzp.supabase.co',
+  ANON_KEY: 'sb_secret_1-o_HEFkiRSa9cR-5p00LA_UD7hj2n8',
   AUTO_SYNC: true
 };
 
