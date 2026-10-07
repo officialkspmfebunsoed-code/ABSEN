@@ -1615,8 +1615,12 @@ const AttendanceDB = {
         currentStatus = 'SEDANG_BERTUGAS';
         countHadir++;
       } else {
-        currentStatus = 'TIDAK_HADIR';
-        countAlpa++;
+        if (isDatePassed) {
+          currentStatus = 'TIDAK_HADIR';
+          countAlpa++;
+        } else {
+          currentStatus = 'BELUM_MULAI';
+        }
       }
 
       monitoringList.push({
