@@ -1229,7 +1229,7 @@ const AttendanceDB = {
 
   async uploadPhotoToGoogleDrive(logId, photoBase64, name, dept, type, date, time) {
     if (!photoBase64 || !photoBase64.startsWith('data:image')) return null;
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbxmf204X8pU3YN2pFtHH6IuMRwvWeSqSYi8rILlNYxF_nnvmzn53c-YZn-nbE0Z_FtC/exec';
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbz_XL_rt75Zm8MO2N8ygHzHTrti71uK-9pSQwFcu0t_28vMf27gi8b5BcI4xrzoVT7j/exec';
     try {
       const response = await fetch(GAS_URL, {
         method: 'POST',
