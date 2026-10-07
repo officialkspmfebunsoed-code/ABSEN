@@ -386,13 +386,8 @@
 
             <!-- View Switcher & Action Buttons -->
             <div class="flex items-center gap-2 flex-wrap">
-              <div class="flex items-center bg-gray-100 dark:bg-[#181d26] p-1 rounded-2xl border border-gray-200/80 dark:border-gray-800 text-xs">
-                <button type="button" onclick="switchScheduleViewMode('DRAG_DROP')" id="btnSchedModeDragDrop" class="px-3.5 py-1.5 rounded-xl font-bold bg-white dark:bg-[#141822] text-gray-900 dark:text-white shadow-sm transition flex items-center gap-1.5">
-                  <i data-feather="layout" class="w-3.5 h-3.5 text-red-500"></i> Matriks Drag & Drop
-                </button>
-                <button type="button" onclick="switchScheduleViewMode('ALL_DATES')" id="btnSchedModeAll" class="px-3.5 py-1.5 rounded-xl font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 transition flex items-center gap-1.5">
-                  <i data-feather="list" class="w-3.5 h-3.5"></i> Riwayat Tanggal (<span id="totalSchedulesCount">0</span>)
-                </button>
+              <div class="hidden flex items-center bg-gray-100 dark:bg-[#181d26] p-1 rounded-2xl border border-gray-200/80 dark:border-gray-800 text-xs">
+                <!-- Disabled because raw schedule list is no longer relevant for weekly templates -->
               </div>
 
               <button type="button" onclick="openResetSchedulesModal()" class="px-3 py-2 rounded-2xl bg-red-50 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-900/60 text-red-600 dark:text-red-400 font-bold text-xs flex items-center gap-1.5 transition border border-red-200 dark:border-red-800/60 shadow-xs" title="Hapus seluruh jadwal dari database">
@@ -567,20 +562,19 @@
                   <i data-feather="clock" class="w-5 h-5"></i>
                 </div>
                 <div>
-                  <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase">Periode Generate Jadwal Kalender</label>
-                  <select id="scheduleRosterDurationSelect" class="mt-0.5 bg-white dark:bg-[#12161d] border border-gray-300 dark:border-gray-700 rounded-xl px-3 py-1.5 text-xs font-bold text-gray-900 dark:text-white outline-none focus:border-red-500">
-                    <option value="6" selected>1 Semester (6 Bulan ke Depan) - Rekomendasi</option>
-                    <option value="3">3 Bulan ke Depan</option>
-                    <option value="1">1 Bulan ke Depan</option>
-                    <option value="12">1 Tahun Penuh (Sepanjang Periode)</option>
-                  </select>
+                  <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase">Status Jadwal</label>
+                  <p class="mt-0.5 text-xs font-bold text-gray-900 dark:text-white">Templat Mingguan Aktif</p>
                 </div>
               </div>
 
-              <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+              <div class="flex items-center gap-2 w-full md:w-auto justify-end flex-wrap">
+                <button type="button" onclick="applyOfficialRoster()" class="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white dark:bg-[#181d26] text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 font-bold text-xs uppercase tracking-wider shadow-sm transition transform active:scale-95 flex items-center justify-center gap-2">
+                  <i data-feather="download-cloud" class="w-4 h-4"></i>
+                  <span>Gunakan Template Official 2026</span>
+                </button>
                 <button type="button" onclick="saveRosterDraftToCalendar()" class="w-full sm:w-auto px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-xl shadow-red-600/30 transition transform active:scale-95 flex items-center justify-center gap-2">
                   <i data-feather="check-circle" class="w-4 h-4"></i>
-                  <span>Simpan & Terapkan Jadwal ke Kalender</span>
+                  <span>Simpan & Terapkan Jadwal Mingguan</span>
                 </button>
               </div>
             </div>
@@ -2739,6 +2733,20 @@
       if (totalSchedulesCountEl) totalSchedulesCountEl.innerText = `${allSchedules.length}`;
     }
 
+    function applyOfficialRoster() {
+      if (confirm("Apakah Anda yakin ingin menerapkan template jadwal Official KSPM 2026 sebagai template mingguan otomatis?")) {
+        const totalCreated = AttendanceDB.applyOfficialKspmRoster2026();
+        alert(`✅ Template Jadwal Mingguan Official KSPM 2026 berhasil diterapkan!\nJadwal akan otomatis diterapkan secara rutin.`);
+        
+        loadCurrentRosterToDraft(false);
+        renderScheduleMatrixTable();
+        renderSchedulesList();
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+        updateRosterStats();
+      }
+    }
+
     function saveRosterDraftToCalendar() {
       let totalSlots = 0;
       for (let d = 0; d < 7; d++) {
@@ -2750,15 +2758,9 @@
         return;
       }
 
-      const durationSelect = document.getElementById('scheduleRosterDurationSelect');
-      const months = durationSelect ? parseInt(durationSelect.value, 10) : 6;
+      const totalCreated = AttendanceDB.saveFullWeeklyRoster(rosterDraft);
 
-      const totalCreated = AttendanceDB.saveFullWeeklyRoster(rosterDraft, {
-        durationMonths: months,
-        notes: 'Jadwal Piket Rutin'
-      });
-
-      alert(`✅ Berhasil menyimpan dan menerapkan jadwal piket mingguan!\n\nSebanyak ${totalCreated} slot tanggal piket otomatis terbuat di kalender untuk periode ${months} bulan ke depan.`);
+      alert(`✅ Berhasil menyimpan dan menerapkan template jadwal piket mingguan!\n\nJadwal ini akan otomatis berlaku setiap minggunya.`);
 
       renderSchedulesList();
       renderMonitoringView();

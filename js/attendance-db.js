@@ -332,6 +332,10 @@ const AttendanceDB = {
                 reason: reasonSetting ? reasonSetting.value : 'Masa Libur Perkuliahan'
               }));
             }
+            const rosterSetting = settings.find(s => s.key === 'WEEKLY_ROSTER');
+            if (rosterSetting) {
+              localStorage.setItem(DB_KEYS.SCHEDULES, rosterSetting.value);
+            }
           }
         }
 
@@ -820,13 +824,49 @@ const AttendanceDB = {
     return memberStats.slice(0, limit);
   },
 
-  getSchedules(dateStr = null) {
-    const data = localStorage.getItem(DB_KEYS.SCHEDULES);
-    const schedules = data ? JSON.parse(data) : [];
-    if (dateStr) {
-      return schedules.filter(s => s.date === dateStr);
+  getSchedulesForRange(startDateStr, endDateStr) {
+    const roster = this.getWeeklyRosterMap();
+    const result = [];
+    const current = new Date(startDateStr + 'T00:00:00');
+    const end = new Date(endDateStr + 'T23:59:59');
+    
+    while (current <= end) {
+      const dStr = current.getFullYear() + '-' + String(current.getMonth() + 1).padStart(2, '0') + '-' + String(current.getDate()).padStart(2, '0');
+      const dayIdx = current.getDay();
+      const dayRoster = roster[dayIdx];
+      
+      if (dayRoster) {
+        ['shift_pagi', 'shift_siang'].forEach(shiftId => {
+          if (dayRoster[shiftId]) {
+            dayRoster[shiftId].forEach(empId => {
+              result.push({
+                id: 'ROSTER-' + dStr + '-' + empId,
+                empId,
+                date: dStr,
+                shiftId,
+                category: 'biasa',
+                replacedDate: null,
+                notes: 'Jadwal Rutin'
+              });
+            });
+          }
+        });
+      }
+      current.setDate(current.getDate() + 1);
     }
-    return schedules;
+    return result;
+  },
+
+  getSchedules(dateStr = null) {
+    if (dateStr) {
+      return this.getSchedulesForRange(dateStr, dateStr);
+    }
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 6, 0);
+    const startStr = start.toISOString().split('T')[0];
+    const endStr = end.toISOString().split('T')[0];
+    return this.getSchedulesForRange(startStr, endStr);
   },
 
   addSchedule(scheduleData) {
@@ -881,8 +921,16 @@ const AttendanceDB = {
   },
 
   clearAllSchedules() {
-    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify([]));
-    this.deleteFromSupabase('schedules', 'id=not.is.null');
+    const emptyRoster = {
+      0: { shift_pagi: [], shift_siang: [] },
+      1: { shift_pagi: [], shift_siang: [] },
+      2: { shift_pagi: [], shift_siang: [] },
+      3: { shift_pagi: [], shift_siang: [] },
+      4: { shift_pagi: [], shift_siang: [] },
+      5: { shift_pagi: [], shift_siang: [] },
+      6: { shift_pagi: [], shift_siang: [] }
+    };
+    this.saveFullWeeklyRoster(emptyRoster);
     return [];
   },
 
@@ -967,86 +1015,37 @@ const AttendanceDB = {
   },
 
   getWeeklyRosterMap() {
-    const summary = this.getWeeklyRosterSummary();
-    const map = {};
-    for (let d = 0; d < 7; d++) {
-      map[d] = {
-        shift_pagi: (summary[d]?.shift_pagi || []).map(m => m.empId),
-        shift_siang: (summary[d]?.shift_siang || []).map(m => m.empId)
+    const data = localStorage.getItem(DB_KEYS.SCHEDULES);
+    let roster = data ? JSON.parse(data) : null;
+    
+    // Convert old array format or empty to weekly roster map
+    if (Array.isArray(roster) || !roster) {
+      roster = {
+        0: { shift_pagi: [], shift_siang: [] },
+        1: { shift_pagi: [], shift_siang: [] },
+        2: { shift_pagi: [], shift_siang: [] },
+        3: { shift_pagi: [], shift_siang: [] },
+        4: { shift_pagi: [], shift_siang: [] },
+        5: { shift_pagi: [], shift_siang: [] },
+        6: { shift_pagi: [], shift_siang: [] }
       };
     }
-    return map;
+    return roster;
   },
 
-  saveFullWeeklyRoster(rosterMap, { durationMonths = 6, startDate = null, notes = 'Jadwal Piket Rutin' } = {}) {
-    const now = new Date();
-    const start = startDate ? new Date(startDate + 'T00:00:00') : new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  saveFullWeeklyRoster(rosterMap, unusedOpts = {}) {
+    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(rosterMap));
     
-    const end = new Date(start);
-    end.setMonth(end.getMonth() + parseInt(durationMonths, 10));
-
-    const startStr = `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
-    const endStr = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, '0')}-${String(end.getDate()).padStart(2, '0')}`;
-
-    let schedules = this.getSchedules();
-    const idsToDelete = [];
-    schedules = schedules.filter(s => {
-      if (s.date >= startStr && s.date <= endStr && (!s.category || s.category === 'biasa')) {
-        idsToDelete.push(s.id);
-        return false;
-      }
-      return true;
+    this.postToSupabase('settings', {
+      key: 'WEEKLY_ROSTER',
+      value: JSON.stringify(rosterMap)
     });
-
-    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(schedules));
-    if (idsToDelete.length > 0) {
-      idsToDelete.forEach(id => this.deleteFromSupabase('schedules', `id=eq.${id}`));
+    
+    let count = 0;
+    for (let d = 0; d < 7; d++) {
+      count += (rosterMap[d]?.shift_pagi?.length || 0) + (rosterMap[d]?.shift_siang?.length || 0);
     }
-
-    const batchList = [];
-    const current = new Date(start);
-    while (current <= end) {
-      const dayIdx = current.getDay();
-      const dayConfig = rosterMap[dayIdx];
-
-      if (dayConfig) {
-        const y = current.getFullYear();
-        const m = String(current.getMonth() + 1).padStart(2, '0');
-        const d = String(current.getDate()).padStart(2, '0');
-        const dateStr = `${y}-${m}-${d}`;
-
-        const pagiMembers = dayConfig.shift_pagi || [];
-        pagiMembers.forEach(empId => {
-          batchList.push({
-            empId,
-            date: dateStr,
-            shiftId: 'shift_pagi',
-            category: 'biasa',
-            replacedDate: null,
-            notes: notes ? `${notes} (Sesi Pagi)` : 'Jadwal Piket Rutin (Sesi Pagi)'
-          });
-        });
-
-        const siangMembers = dayConfig.shift_siang || [];
-        siangMembers.forEach(empId => {
-          batchList.push({
-            empId,
-            date: dateStr,
-            shiftId: 'shift_siang',
-            category: 'biasa',
-            replacedDate: null,
-            notes: notes ? `${notes} (Sesi Siang)` : 'Jadwal Piket Rutin (Sesi Siang)'
-          });
-        });
-      }
-
-      current.setDate(current.getDate() + 1);
-    }
-
-    if (batchList.length > 0) {
-      return this.addBatchSchedules(batchList);
-    }
-    return 0;
+    return count;
   },
 
   // --- MATRIKS JADWAL RESMI KSPM 2026 (SESUAI DOKUMEN & FOTO RESMI GALERI INVESTASI) ---
@@ -1123,7 +1122,7 @@ const AttendanceDB = {
   },
 
   getWeeklyRosterSummary() {
-    const schedules = this.getSchedules();
+    const roster = this.getWeeklyRosterMap();
     const employees = this.getEmployees();
     const dayNames = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     const summary = {};
@@ -1135,57 +1134,42 @@ const AttendanceDB = {
         shift_pagi: [],
         shift_siang: []
       };
-    }
-
-    const pairMap = new Map();
-
-    schedules.forEach(s => {
-      if (!s.date) return;
-      const dateObj = new Date(s.date + 'T00:00:00');
-      const dayIdx = dateObj.getDay();
-      const shiftId = s.shiftId || 'shift_pagi';
-      const key = `${s.empId}_${dayIdx}_${shiftId}`;
-
-      if (!pairMap.has(key)) {
-        pairMap.set(key, true);
-        const emp = employees.find(e => e.id === s.empId) || { id: s.empId, name: s.empId, dept: 'KSPM', avatar: 'KP', color: 'from-gray-600 to-gray-700' };
-        if (summary[dayIdx] && summary[dayIdx][shiftId]) {
-          summary[dayIdx][shiftId].push({
-            empId: emp.id,
-            name: emp.name,
-            dept: emp.dept,
-            avatar: emp.avatar,
-            color: emp.color,
-            shiftId: shiftId,
-            dayIndex: dayIdx
-          });
-        }
+      
+      if (roster[d]) {
+        ['shift_pagi', 'shift_siang'].forEach(shiftId => {
+          if (roster[d][shiftId]) {
+            roster[d][shiftId].forEach(empId => {
+              const emp = employees.find(e => e.id === empId) || { id: empId, name: empId, dept: 'KSPM', avatar: 'KP', color: 'from-gray-600 to-gray-700' };
+              summary[d][shiftId].push({
+                empId: emp.id,
+                name: emp.name,
+                dept: emp.dept,
+                avatar: emp.avatar,
+                color: emp.color,
+                shiftId: shiftId,
+                dayIndex: d
+              });
+            });
+          }
+        });
       }
-    });
-
+    }
     return summary;
   },
 
   deleteWeeklyRosterMember(empId, dayIndex, shiftId = null) {
-    const schedules = this.getSchedules();
-    const idsToDelete = [];
-    const remaining = [];
-
-    schedules.forEach(s => {
-      const dateObj = new Date(s.date + 'T00:00:00');
-      const dayIdx = dateObj.getDay();
-      if (s.empId === empId && dayIdx === dayIndex && (!shiftId || s.shiftId === shiftId)) {
-        idsToDelete.push(s.id);
+    const roster = this.getWeeklyRosterMap();
+    if (roster[dayIndex]) {
+      if (shiftId) {
+        if (roster[dayIndex][shiftId]) {
+          roster[dayIndex][shiftId] = roster[dayIndex][shiftId].filter(id => id !== empId);
+        }
       } else {
-        remaining.push(s);
+        roster[dayIndex].shift_pagi = roster[dayIndex].shift_pagi.filter(id => id !== empId);
+        roster[dayIndex].shift_siang = roster[dayIndex].shift_siang.filter(id => id !== empId);
       }
-    });
-
-    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(remaining));
-    if (idsToDelete.length > 0) {
-      idsToDelete.forEach(id => this.deleteFromSupabase('schedules', `id=eq.${id}`));
+      this.saveFullWeeklyRoster(roster);
     }
-    return idsToDelete.length;
   },
 
   getAttendanceLogs(dateStr = null) {
