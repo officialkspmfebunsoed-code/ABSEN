@@ -1479,11 +1479,15 @@ const AttendanceDB = {
 
     // Validasi Wajib: Tidak bisa melakukan Presensi Pulang jika belum pernah ada Presensi Masuk di tanggal yang sama
     if (type === 'PULANG') {
-      const hasMasuk = logs.some(l => l.empId === empId && l.date === recordDate && l.type === 'MASUK');
-      if (!hasMasuk) {
+      const masukLog = logs.find(l => l.empId === empId && l.date === recordDate && l.type === 'MASUK');
+      if (!masukLog) {
         const errMsg = `Presensi Pulang ditolak: ${employee.name} belum melakukan Presensi Masuk (Berangkat) pada tanggal ${recordDate}.`;
         console.warn(`[AttendanceDB] ${errMsg}`);
         throw new Error(errMsg);
+      } else {
+        // Otomatis "menutup" status absen masuk (Piket Berangkat) menjadi SELESAI
+        masukLog.status = 'SELESAI';
+        this.postToSupabase('attendance', { id: masukLog.id, status: 'SELESAI' });
       }
     }
 
