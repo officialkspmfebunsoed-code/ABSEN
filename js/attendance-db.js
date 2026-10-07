@@ -1038,20 +1038,16 @@ const AttendanceDB = {
   },
 
   getWeeklyRosterMap() {
-    return {
-      0: { shift_pagi: [], shift_siang: [] },
-      1: { shift_pagi: [], shift_siang: [] },
-      2: { shift_pagi: [], shift_siang: [] },
-      3: { shift_pagi: [], shift_siang: [] },
-      4: { shift_pagi: [], shift_siang: [] },
-      5: { shift_pagi: [], shift_siang: [] },
-      6: { shift_pagi: [], shift_siang: [] }
-    };
+    return this.getOfficialKspmRoster2026();
   },
 
-  saveFullWeeklyRoster(rosterMap, opts = {}) {
+  async saveFullWeeklyRoster(rosterMap, opts = {}) {
     let totalCreated = 0;
     
+    // Hapus jadwal lama di Supabase (opsional bisa dibatasi filter tanggal, sementara hapus semua)
+    await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?id=not.is.null`, { method: 'DELETE', headers: this.getHeaders() });
+    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify([]));
+
     // Convert matrix into individual recurring schedules (6 months by default)
     for (let d = 0; d < 7; d++) {
       const dayData = rosterMap[d];
@@ -1059,7 +1055,7 @@ const AttendanceDB = {
       
       if (dayData.shift_pagi && dayData.shift_pagi.length > 0) {
         totalCreated += this.addRecurringWeeklySchedule({
-          daysOfWeek: [d],
+          daysOfWeek: [Number(d)],
           shiftId: 'shift_pagi',
           empIds: dayData.shift_pagi,
           startDate: opts.startDate,
@@ -1070,7 +1066,7 @@ const AttendanceDB = {
       
       if (dayData.shift_siang && dayData.shift_siang.length > 0) {
         totalCreated += this.addRecurringWeeklySchedule({
-          daysOfWeek: [d],
+          daysOfWeek: [Number(d)],
           shiftId: 'shift_siang',
           empIds: dayData.shift_siang,
           startDate: opts.startDate,
@@ -1087,24 +1083,24 @@ const AttendanceDB = {
   getOfficialKspmRoster2026() {
     return {
       1: { // SENIN
-        shift_pagi: ['KSPM-004', 'KSPM-009', 'KSPM-013', 'KSPM-015', 'KSPM-021'], // Finna Erlinda, Elmira Firzana Ghaisani, Ari Dwi C, Eka Setya Ramadhan, Alfaritzy Putra Januar
-        shift_siang: ['KSPM-022', 'KSPM-030', 'KSPM-031', 'KSPM-033'] // Athaya Nasywa B. N., Zulfikar Alkindi, M. Abdur Rosyid, Balqis Ghaliya Zafirah
+        shift_pagi: ['KSPM-004', 'KSPM-009', 'KSPM-013', 'KSPM-015', 'KSPM-021', 'KSPM-INT-011', 'KSPM-INT-010', 'KSPM-INT-020', 'KSPM-INT-001'],
+        shift_siang: ['KSPM-022', 'KSPM-030', 'KSPM-031', 'KSPM-033', 'KSPM-INT-018', 'KSPM-INT-006', 'KSPM-INT-002', 'KSPM-INT-015']
       },
       2: { // SELASA
-        shift_pagi: ['KSPM-010', 'KSPM-014', 'KSPM-032', 'KSPM-028', 'KSPM-020'], // Bakian Benzena W., Violetta Maylita Saffana, Naswa Alia, Mohammad Raffi R., Devano Kefanya R. A.
-        shift_siang: ['KSPM-011', 'KSPM-006', 'KSPM-017', 'KSPM-024', 'KSPM-027'] // Mashara Raka W., Fidela Prastika Salsabila, Febrianto, Annaba Wulandara, Fatma Ayu Lestari
+        shift_pagi: ['KSPM-010', 'KSPM-014', 'KSPM-032', 'KSPM-028', 'KSPM-020', 'KSPM-INT-009', 'KSPM-INT-017', 'KSPM-INT-003', 'KSPM-INT-012'],
+        shift_siang: ['KSPM-011', 'KSPM-006', 'KSPM-017', 'KSPM-024', 'KSPM-027', 'KSPM-INT-014', 'KSPM-INT-020', 'KSPM-INT-016', 'KSPM-INT-005']
       },
       3: { // RABU
-        shift_pagi: ['KSPM-008', 'KSPM-016', 'KSPM-021', 'KSPM-031', 'KSPM-026'], // Benawa Kalam Ma'wa, Safira Yunindya Putri, Alfaritzy Putra Januar, M. Abdur Rosyid, M. Hasby Nabil Ayyasy
-        shift_siang: ['KSPM-004', 'KSPM-006', 'KSPM-009', 'KSPM-018', 'KSPM-025'] // Finna Erlinda, Fidela Prastika Salsabila, Elmira Firzana Ghaisani, Naisya Sherra Maksum, Melisa
+        shift_pagi: ['KSPM-008', 'KSPM-016', 'KSPM-021', 'KSPM-031', 'KSPM-026', 'KSPM-INT-006', 'KSPM-INT-008', 'KSPM-INT-019', 'KSPM-INT-004'],
+        shift_siang: ['KSPM-004', 'KSPM-006', 'KSPM-009', 'KSPM-018', 'KSPM-025', 'KSPM-INT-009', 'KSPM-INT-007', 'KSPM-INT-017', 'KSPM-INT-013']
       },
       4: { // KAMIS
-        shift_pagi: ['KSPM-013', 'KSPM-024', 'KSPM-030', 'KSPM-025', 'KSPM-018'], // Ari Dwi C, Annaba Wulandara, Zulfikar Alkindi, Melisa, Naisya Sherra Maksum
-        shift_siang: ['KSPM-017', 'KSPM-010', 'KSPM-014', 'KSPM-020', 'KSPM-022'] // Febrianto, Bakian Benzena W., Violetta Maylita Saffana, Devano Kefanya R. A., Athaya Nasywa B. N.
+        shift_pagi: ['KSPM-013', 'KSPM-024', 'KSPM-030', 'KSPM-025', 'KSPM-018', 'KSPM-INT-018', 'KSPM-INT-005', 'KSPM-INT-002', 'KSPM-INT-015'],
+        shift_siang: ['KSPM-017', 'KSPM-010', 'KSPM-014', 'KSPM-020', 'KSPM-022', 'KSPM-INT-004', 'KSPM-INT-012', 'KSPM-INT-010', 'KSPM-INT-011']
       },
       5: { // JUMAT
-        shift_pagi: ['KSPM-008', 'KSPM-011', 'KSPM-015', 'KSPM-026', 'KSPM-033'], // Benawa Kalam Ma'wa, Mashara Raka W., Eka Setya Ramadhan, M. Hasby Nabil Ayyasy, Balqis Ghaliya Zafirah
-        shift_siang: ['KSPM-016', 'KSPM-027', 'KSPM-028', 'KSPM-032'] // Safira Yunindya Putri, Fatma Ayu Lestari, Mohammad Raffi R., Naswa Alia
+        shift_pagi: ['KSPM-008', 'KSPM-011', 'KSPM-015', 'KSPM-026', 'KSPM-033', 'KSPM-INT-014', 'KSPM-INT-013', 'KSPM-INT-016', 'KSPM-INT-007'],
+        shift_siang: ['KSPM-016', 'KSPM-027', 'KSPM-028', 'KSPM-032', 'KSPM-INT-008', 'KSPM-INT-019', 'KSPM-INT-001', 'KSPM-INT-003']
       },
       6: { shift_pagi: [], shift_siang: [] }, // SABTU
       0: { shift_pagi: [], shift_siang: [] }  // MINGGU

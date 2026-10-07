@@ -2740,7 +2740,7 @@
       }
     }
 
-    function saveRosterDraftToCalendar() {
+    async function saveRosterDraftToCalendar() {
       let totalSlots = 0;
       for (let d = 0; d < 7; d++) {
         totalSlots += (rosterDraft[d]?.shift_pagi?.length || 0) + (rosterDraft[d]?.shift_siang?.length || 0);
@@ -2751,16 +2751,32 @@
         return;
       }
 
-      const totalCreated = AttendanceDB.saveFullWeeklyRoster(rosterDraft);
+      // Tampilkan indikator loading agar user tahu sedang memproses
+      const btn = document.querySelector('button[onclick="saveRosterDraftToCalendar()"]');
+      const originalText = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="flex items-center gap-2"><i class="ph ph-spinner animate-spin"></i> Menyimpan...</span>';
+      }
 
-      alert(`✅ Berhasil menyimpan dan menerapkan template jadwal piket mingguan!\n\nJadwal ini akan otomatis berlaku setiap minggunya.`);
+      try {
+        const totalCreated = await AttendanceDB.saveFullWeeklyRoster(rosterDraft);
+        alert(`✅ Berhasil menyimpan dan menerapkan template jadwal piket mingguan secara sinkron dengan cloud!`);
 
-      renderSchedulesList();
-      renderMonitoringView();
-      if (fullCalendar) fullCalendar.render();
-      if (typeof renderWeeklyMemberRekap === 'function') renderWeeklyMemberRekap();
-      if (typeof renderLeaderboards === 'function') renderLeaderboards();
-      updateRosterStats();
+        renderSchedulesList();
+        renderMonitoringView();
+        if (fullCalendar) fullCalendar.render();
+        if (typeof renderWeeklyMemberRekap === 'function') renderWeeklyMemberRekap();
+        if (typeof renderLeaderboards === 'function') renderLeaderboards();
+        updateRosterStats();
+      } catch (err) {
+        alert("Terjadi kesalahan saat menyimpan jadwal: " + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = originalText;
+        }
+      }
     }
 
     function renderSchedulesList() {
