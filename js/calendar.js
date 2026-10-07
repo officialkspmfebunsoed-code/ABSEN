@@ -20,7 +20,9 @@ class AttendanceCalendar {
       onDateClick: null,
       onDateSelect: null,
       showControls: true,
-      compact: false
+      compact: false,
+      emptyMode: false, // true = render kalender kosong tanpa memuat data (ringan)
+      deptName: null    // filter data per departemen
     }, options);
 
     this.monthNames = [
@@ -74,13 +76,36 @@ class AttendanceCalendar {
     }
   }
 
-  render() {
+  /**
+   * Klasifikasi status item monitoring -> 'hadir' | 'izin' | 'alpa' | 'pending' | 'libur'
+   * pending = terjadwal tapi belum lewat (hari ini / mendatang), tidak dihitung alpa.
+   */
+  static classifyItem(item, dateStr, todayStr) {
+    const st = String(item.status || '').toUpperCase();
+    if (st === 'BEBAS_TUGAS') return 'libur';
+    if (st.includes('IZIN') || st === 'SAKIT') return 'izin';
+    if (st === 'SELESAI' || st === 'SELESAI_PIKET' || st === 'SEDANG_BERTUGAS' || st === 'HADIR' || st === 'TEPAT_WAKTU') return 'hadir';
+    if (item.isWalkIn || item.hasAttended) return 'hadir';
+    return dateStr < todayStr ? 'alpa' : 'pending';
+  }
+
+  render(useCache = false) {
     if (!this.container) {
       this.container = document.getElementById(this.containerId);
       if (!this.container) return;
     }
 
-    const statsMap = window.AttendanceDB ? window.AttendanceDB.getMonthCalendarStats(this.currentYear, this.currentMonth + 1) : {};
+    const cacheKey = `${this.currentYear}-${this.currentMonth}`;
+    let statsMap = {};
+    if (!this.options.emptyMode && window.AttendanceDB) {
+      if (useCache && this._cache && this._cache.key === cacheKey) {
+        statsMap = this._cache.statsMap;
+      } else {
+        statsMap = window.AttendanceDB.getMonthCalendarStats(this.currentYear, this.currentMonth + 1);
+        this._cache = { key: cacheKey, statsMap };
+      }
+    }
+    const monthData = {};
     const todayStr = window.getTodayString ? window.getTodayString(0) : new Date().toISOString().split('T')[0];
 
     const firstDay = new Date(this.currentYear, this.currentMonth, 1).getDay();
@@ -137,29 +162,21 @@ class AttendanceCalendar {
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
       let dayData = statsMap[dateStr] || { totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [], isHoliday: false, holidayName: null };
-      
-      // Filter untuk Personal Monitoring
-      if (this.options.empId && dayData.monitoringList.length > 0) {
-        const listForEmp = dayData.monitoringList.filter(x => x.id === this.options.empId);
-        if (listForEmp.length > 0) {
-          const total = listForEmp.length;
-          const hadir = listForEmp.filter(x => x.status === 'HADIR' || x.status === 'SELESAI' || x.status === 'SELESAI_PIKET' || x.status === 'SEDANG_BERTUGAS' || x.status === 'TEPAT_WAKTU').length;
-          const izin = listForEmp.filter(x => x.status === 'IZIN' || x.status === 'SAKIT').length;
-          const alpa = listForEmp.filter(x => x.status === 'ALPA' || x.status === 'BELUM_DATANG').length;
-          
-          dayData = {
-            ...dayData,
-            totalScheduled: total,
-            hadir,
-            alpa,
-            izin,
-            monitoringList: listForEmp
-          };
-        } else {
-          // Tidak ada jadwal untuk orang ini di hari ini
-          dayData = { ...dayData, totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [] };
-        }
+      if (dayData.totalScheduled === undefined) dayData.totalScheduled = dayData.total || 0;
+
+      // Filter untuk Monitoring per Departemen
+      if (this.options.deptName) {
+        const list = (dayData.monitoringList || []).filter(x => x.dept === this.options.deptName);
+        let hadir = 0, izin = 0, alpa = 0;
+        list.forEach(x => {
+          const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
+          if (c === 'hadir') hadir++;
+          else if (c === 'izin') izin++;
+          else if (c === 'alpa') alpa++;
+        });
+        dayData = { ...dayData, totalScheduled: list.length, hadir, izin, alpa, monitoringList: list };
       }
+      monthData[dateStr] = dayData;
 
       const isToday = dateStr === todayStr;
       const isSelected = dateStr === this.selectedDate;
@@ -185,7 +202,7 @@ class AttendanceCalendar {
         }
       }
 
-      let cellClasses = 'calendar-day-cell cursor-pointer p-1 sm:p-2 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between ';
+      let cellClasses = 'calendar-day-cell cursor-pointer p-1 sm:p-2 rounded-xl sm:rounded-2xl border transition-all flex flex-col justify-between min-h-[48px] sm:min-h-[64px] md:min-h-[76px] ';
       if (isSelected) {
         cellClasses += 'ring-2 ring-red-500 border-red-500 bg-red-500/10 shadow-md ';
       } else if (isToday) {
@@ -223,11 +240,15 @@ class AttendanceCalendar {
     if (window.feather) {
       window.feather.replace();
     }
+
+    if (typeof this.options.onRender === 'function') {
+      this.options.onRender({ year: this.currentYear, month: this.currentMonth, monthData, emptyMode: !!this.options.emptyMode });
+    }
   }
 
   handleDayClick(dateStr) {
     this.selectedDate = dateStr;
-    this.render();
+    this.render(true);
 
     if (this.options.onDateSelect) {
       this.options.onDateSelect(dateStr);
