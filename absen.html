@@ -308,7 +308,7 @@
         </div>
 
         <!-- 3. JENIS PRESENSI -->
-        <div id="attendanceTypeBox" class="space-y-1.5">
+        <div id="attendanceTypeBox" class="hidden space-y-1.5">
           <label class="block text-[11px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
             3. Jenis Presensi Piket
           </label>
@@ -336,7 +336,7 @@
         <!-- 4. SESI PIKET -->
         <div id="shiftSelectBox" class="space-y-1.5">
           <label class="block text-[11px] font-extrabold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-            4. Pilih Sesi Piket
+            3. Pilih Sesi Piket
           </label>
           <div class="grid grid-cols-2 gap-2">
             <button type="button" onclick="setKioskShift('shift_pagi')" id="btnShiftPagi"
@@ -813,6 +813,20 @@
         emp = AttendanceDB.getEmployeeById(empId);
       }
       if (!emp) return;
+
+      // --- AUTO-DETERMINE MASUK/PULANG ---
+      if (currentCategory !== 'izin') {
+        const todayDate = getTodayString(0);
+        const logs = AttendanceDB.getAttendanceLogs(todayDate);
+        const hasMasuk = logs.some(l => l.empId === emp.id && l.type === 'MASUK');
+        const hasPulang = logs.some(l => l.empId === emp.id && l.type === 'PULANG');
+        
+        if (hasMasuk && !hasPulang) {
+          setAttendanceType('PULANG');
+        } else {
+          setAttendanceType('MASUK');
+        }
+      }
 
       currentStep = 2;
 
