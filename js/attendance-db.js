@@ -35,7 +35,8 @@ const DEFAULT_DEPARTMENTS = [
   'Project Management',
   'Research Analyst',
   'Public Relations',
-  'Media & Technology'
+  'Media & Technology',
+  'Calon Pengurus / Trainee'
 ];
 
 // Data 33 Pengurus & Anggota Resmi KSPM

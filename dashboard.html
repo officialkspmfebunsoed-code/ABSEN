@@ -3239,10 +3239,10 @@
     }
 
     function promptTambahPegawai() {
-      const name = prompt("Masukkan Nama Lengkap Anggota KSPM:");
+      const name = prompt("Masukkan Nama Lengkap Anggota KSPM (Trainee/Baru):");
       if (!name) return;
-      const role = prompt("Masukkan Jabatan / Posisi:", "Staff Media & Technology");
-      const dept = prompt("Masukkan Divisi / Departemen:", "Media & Technology");
+      const role = prompt("Masukkan Jabatan / Posisi (misal: Trainee, Staff, dll):", "Trainee");
+      const dept = prompt("Masukkan Divisi / Departemen (Biarkan 'Calon Pengurus / Trainee' jika belum ada divisi):", "Calon Pengurus / Trainee");
 
       AttendanceDB.addEmployee({ name, role, dept });
       alert(`Anggota KSPM ${name} berhasil ditambahkan!`);
