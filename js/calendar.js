@@ -37,27 +37,41 @@ class AttendanceCalendar {
   init() {
     if (!this.container) return;
     this.render();
+    this.fetchMonthData();
   }
 
-  prevMonth() {
+  async fetchMonthData() {
+    if (!window.AttendanceDB) return;
+    const yStr = this.currentYear;
+    const mStr = String(this.currentMonth + 1).padStart(2, '0');
+    const start = `${yStr}-${mStr}-01`;
+    const daysInMonth = new Date(this.currentYear, this.currentMonth + 1, 0).getDate();
+    const end = `${yStr}-${mStr}-${daysInMonth}`;
+    await window.AttendanceDB.fetchDataRange(start, end);
+    this.render();
+  }
+
+  async prevMonth() {
     this.currentMonth--;
     if (this.currentMonth < 0) {
       this.currentMonth = 11;
       this.currentYear--;
     }
     this.render();
+    await this.fetchMonthData();
   }
 
-  nextMonth() {
+  async nextMonth() {
     this.currentMonth++;
     if (this.currentMonth > 11) {
       this.currentMonth = 0;
       this.currentYear++;
     }
     this.render();
+    await this.fetchMonthData();
   }
 
-  goToToday() {
+  async goToToday() {
     const now = new Date();
     this.currentYear = now.getFullYear();
     this.currentMonth = now.getMonth();
@@ -66,6 +80,7 @@ class AttendanceCalendar {
     if (this.options.onDateSelect) {
       this.options.onDateSelect(this.selectedDate);
     }
+    await this.fetchMonthData();
   }
 
   selectDate(dateStr) {
