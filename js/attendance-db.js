@@ -292,7 +292,9 @@ const AttendanceDB = {
         if (schRes.ok) {
           const schedules = await schRes.json();
           if (Array.isArray(schedules)) {
+            const localSchedules = JSON.parse(localStorage.getItem(DB_KEYS.SCHEDULES) || '[]');
             const schMap = new Map();
+
             schedules.forEach(s => {
               if (s && s.id) {
                 const item = {
@@ -307,6 +309,15 @@ const AttendanceDB = {
                 schMap.set(item.id, item);
               }
             });
+
+            // Merge local schedules that might not have synced yet
+            localSchedules.forEach(s => {
+              if (s && s.id) {
+                s.date = normalizeCloudDate(s.date);
+                schMap.set(s.id, s);
+              }
+            });
+
             localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(Array.from(schMap.values())));
           }
         }
