@@ -566,6 +566,20 @@ const AttendanceDB = {
     return holidays.find(h => h.date === dateStr) || null;
   },
 
+  isDateExemptedFromAlpha(dateStr) {
+    if (this.isHoliday(dateStr)) return true;
+    const pauseInfo = this.getSystemPauseInfo();
+    if (pauseInfo && pauseInfo.isPaused) {
+       if (pauseInfo.pausedAt && dateStr >= pauseInfo.pausedAt.split('T')[0]) {
+           return true;
+       }
+       if (!pauseInfo.pausedAt && dateStr >= getTodayString(0)) {
+           return true;
+       }
+    }
+    return false;
+  },
+
   addHoliday({ date, name, description = '' }) {
     const holidays = this.getHolidays();
     const existingIdx = holidays.findIndex(h => h.date === date);
@@ -808,7 +822,7 @@ const AttendanceDB = {
       empSchedules.forEach(sch => {
         const hasSession = this.hasCompletedSessionOnDate(emp.id, empLogs, sch.date);
         const hasIzin = empLogs.some(l => l.date === sch.date && (l.type === 'IZIN' || l.status === 'IZIN'));
-        if (!hasSession && !hasIzin) alpaCount++;
+        if (!hasSession && !hasIzin && !this.isDateExemptedFromAlpha(sch.date)) alpaCount++;
       });
 
       const totalSlots = empSchedules.length > 0 ? empSchedules.length : 8;
@@ -1403,8 +1417,8 @@ const AttendanceDB = {
           shiftId: sch.shiftId,
           shiftName: shift.name,
           shiftTime: `${shift.start} - ${shift.end}`,
-          status: isIzin ? 'IZIN' : 'ALPA',
-          statusLabel: isIzin ? 'Izin Terdaftar' : 'Belum Piket (Alfa)',
+          status: isIzin ? 'IZIN' : (this.isDateExemptedFromAlpha(sch.date) ? 'LIBUR' : 'ALPA'),
+          statusLabel: isIzin ? 'Izin Terdaftar' : (this.isDateExemptedFromAlpha(sch.date) ? 'Sistem Dijeda / Libur' : 'Belum Piket (Alfa)'),
           daysAgo: daysAgo
         });
       }
@@ -1539,6 +1553,8 @@ const AttendanceDB = {
     const shifts = this.getShifts();
 
     const holidayInfo = this.isHoliday(targetDate);
+    const isExempted = this.isDateExemptedFromAlpha(targetDate);
+    const pauseInfo = this.getSystemPauseInfo();
 
     const isDatePassed = targetDate < getTodayString(0);
 
@@ -1581,9 +1597,13 @@ const AttendanceDB = {
         if (match) driveFolder = match[1];
       }
 
-      if (holidayInfo) {
+      if (isExempted) {
         currentStatus = 'BEBAS_TUGAS';
-        notes = `Hari Libur: ${holidayInfo.name}`;
+        if (holidayInfo) {
+          notes = `Hari Libur: ${holidayInfo.name}`;
+        } else {
+          notes = `Sistem Dijeda: ${pauseInfo.reason || 'Masa Libur Perkuliahan'}`;
+        }
       } else if (izinLog) {
         currentStatus = 'IZIN';
         notes = izinLog.reason || izinLog.notes || 'Izin piket terverifikasi';
@@ -1697,7 +1717,7 @@ const AttendanceDB = {
         totalScheduled: schedules.length,
         hadir: countHadir,
         izin: countIzin,
-        alpa: holidayInfo ? 0 : countAlpa
+        alpa: isExempted ? 0 : countAlpa
       },
       monitoringList: monitoringList
     };
@@ -1779,7 +1799,7 @@ const AttendanceDB = {
         empSchedules.forEach(sch => {
           const hasSession = this.hasCompletedSessionOnDate(emp.id, empLogs, sch.date);
           const hasIzin = empLogs.some(l => l.date === sch.date && (l.type === 'IZIN' || l.status === 'IZIN'));
-          if (!hasSession && !hasIzin) totalAlpa++;
+          if (!hasSession && !hasIzin && !this.isDateExemptedFromAlpha(sch.date)) totalAlpa++;
         });
 
         // Anggota dianggap aktif/rajin jika memiliki minimal 1 sesi hadir sah
