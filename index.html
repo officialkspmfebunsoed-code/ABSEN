@@ -161,7 +161,7 @@
         <div class="flex-1">
           <h4 class="font-black text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
             Pemberitahuan BPH: Presensi KSPM Dijeda
-            <span class="px-2 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider">Maintenance</span>
+            <span id="homePauseBadge" class="px-2 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider">Maintenance</span>
           </h4>
           <p class="text-xs sm:text-sm font-medium text-red-800 dark:text-red-300 mt-1" id="homePauseReasonText">
             Masa Libur Perkuliahan / Kegiatan Piket Ditangguhkan Sementara.
@@ -545,6 +545,17 @@
         const info = AttendanceDB.getSystemPauseInfo();
         if (banner) banner.classList.remove('hidden');
         if (reasonText) reasonText.innerText = info.reason || 'Masa Libur Perkuliahan / Kegiatan Piket Ditangguhkan Sementara.';
+        
+        const badge = document.getElementById('homePauseBadge');
+        if (badge) {
+          if ((info.reason || '').toLowerCase().includes('perbaikan') || (info.reason || '').toLowerCase().includes('pemeliharaan')) {
+            badge.innerText = 'Maintenance';
+            badge.className = 'px-2 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider';
+          } else {
+            badge.innerText = 'Libur';
+            badge.className = 'px-2 py-0.5 rounded-lg bg-amber-500 text-white font-bold text-[9px] uppercase tracking-wider';
+          }
+        }
         
         if (gformWrapper && btnGform) {
           if (info.gformLink && info.gformLink.trim() !== '') {

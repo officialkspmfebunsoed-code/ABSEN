@@ -85,7 +85,10 @@
         <i data-feather="alert-circle" class="w-8 h-8"></i>
       </div>
       <div class="space-y-1.5">
-        <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white">Sistem Presensi Sedang Dijeda</h3>
+        <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white flex flex-col items-center gap-2">
+          Sistem Presensi Sedang Dijeda
+          <span id="absenPauseBadge" class="px-2.5 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider">Maintenance</span>
+        </h3>
         <p class="text-xs font-bold text-red-600 dark:text-red-400" id="pausedReasonText">
           Masa Libur Perkuliahan / Kegiatan Ditangguhkan
         </p>
@@ -927,12 +930,23 @@
       const formWrapper = document.getElementById('attendanceActiveFormWrapper');
       const reasonText = document.getElementById('pausedReasonText');
       const btnGform = document.getElementById('btnAbsenGformFallback');
+      const badge = document.getElementById('absenPauseBadge');
 
       if (isPaused) {
         const info = AttendanceDB.getSystemPauseInfo();
         if (pauseCard) pauseCard.classList.remove('hidden');
         if (formWrapper) formWrapper.classList.add('hidden');
         if (reasonText) reasonText.innerText = info.reason || 'Masa Libur Perkuliahan / Kegiatan Ditangguhkan';
+        
+        if (badge) {
+          if ((info.reason || '').toLowerCase().includes('perbaikan') || (info.reason || '').toLowerCase().includes('pemeliharaan')) {
+            badge.innerText = 'Maintenance';
+            badge.className = 'px-2.5 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[10px] uppercase tracking-wider';
+          } else {
+            badge.innerText = 'Libur';
+            badge.className = 'px-2.5 py-0.5 rounded-lg bg-amber-500 text-white font-bold text-[10px] uppercase tracking-wider';
+          }
+        }
         
         if (btnGform) {
           if (info.gformLink && info.gformLink.trim() !== '') {
