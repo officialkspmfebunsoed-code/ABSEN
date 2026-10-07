@@ -3044,10 +3044,19 @@
       }
     }
 
-    function renderWeeklyMemberRekap() {
+    async function renderWeeklyMemberRekap() {
       const monthVal = document.getElementById('rekapMonthPicker').value || activeDateStr.substring(0, 7);
       const deptVal = document.getElementById('rekapDeptFilter').value || 'ALL';
       const searchVal = document.getElementById('rekapSearchInput').value || '';
+
+      const tbody = document.getElementById('rekapMemberTableBody');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10"><div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status"></div><p class="mt-2 text-gray-500">Menarik data dari server...</p></td></tr>`;
+
+      const [y, m] = monthVal.split('-');
+      const startDate = `${y}-${m}-01`;
+      const lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+      const endDate = `${y}-${m}-${String(lastDay).padStart(2, '0')}`;
+      await AttendanceDB.fetchDataRange(startDate, endDate);
 
       const rekapData = AttendanceDB.getMemberWeeklyRekap({
         yearMonth: monthVal,
@@ -3256,14 +3265,20 @@
       }
     }
 
-    function renderReportTable() {
+    async function renderReportTable() {
       const startDate = document.getElementById('reportStartDate').value;
       const endDate = document.getElementById('reportEndDate').value;
       const dept = document.getElementById('reportDeptFilter').value;
       const status = document.getElementById('reportStatusFilter').value;
 
-      const reportRows = AttendanceDB.getFilteredAttendanceReport({ startDate, endDate, dept, status });
       const tbody = document.getElementById('reportTableBody');
+      if (tbody) tbody.innerHTML = `<tr><td colspan="8" class="text-center py-10"><div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status"></div><p class="mt-2 text-gray-500">Menarik data dari server...</p></td></tr>`;
+
+      if (startDate && endDate) {
+          await AttendanceDB.fetchDataRange(startDate, endDate);
+      }
+
+      const reportRows = AttendanceDB.getFilteredAttendanceReport({ startDate, endDate, dept, status });
       const countEl = document.getElementById('reportResultCountText');
 
       if (countEl) countEl.innerText = `Menampilkan ${reportRows.length} Rekaman Presensi`;

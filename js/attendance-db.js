@@ -324,6 +324,82 @@ const AttendanceDB = {
     return this._syncPromise;
   },
 
+  async fetchDataRange(startDate, endDate) {
+    if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.ANON_KEY) return null;
+    
+    this._fetchedRanges = this._fetchedRanges || new Set();
+    const rangeKey = `${startDate}_${endDate}`;
+    if (this._fetchedRanges.has(rangeKey)) return true;
+
+    try {
+      const headers = this.getHeaders();
+      const [attRes, schRes] = await Promise.all([
+        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=3000`, { headers }),
+        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=2000`, { headers })
+      ]);
+
+      if (attRes.ok) {
+        const attendance = await attRes.json();
+        if (Array.isArray(attendance)) {
+          const localLogs = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE) || '[]');
+          const logMap = new Map();
+          localLogs.forEach(l => logMap.set(l.id, l));
+          
+          attendance.forEach(l => {
+            logMap.set(l.id, {
+              id: l.id,
+              empId: l.emp_id || l.empId,
+              name: l.name,
+              date: normalizeCloudDate(l.date),
+              time: normalizeCloudTime(l.time),
+              type: l.type,
+              category: l.category || 'biasa',
+              replacedDate: l.replaced_date || l.replacedDate || null,
+              reason: l.reason || '',
+              status: l.status,
+              shiftId: l.shift_id || l.shiftId,
+              location: l.location || '',
+              photo: l.photo || '',
+              notes: l.notes || ''
+            });
+          });
+          
+          const mergedLogs = Array.from(logMap.values());
+          mergedLogs.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
+          localStorage.setItem(DB_KEYS.ATTENDANCE, JSON.stringify(mergedLogs));
+        }
+      }
+
+      if (schRes.ok) {
+        const schedules = await schRes.json();
+        if (Array.isArray(schedules)) {
+          const localSch = JSON.parse(localStorage.getItem(DB_KEYS.SCHEDULES) || '[]');
+          const schMap = new Map();
+          localSch.forEach(s => schMap.set(s.id, s));
+          
+          schedules.forEach(s => {
+            schMap.set(s.id, {
+              id: s.id,
+              empId: s.emp_id || s.empId,
+              date: normalizeCloudDate(s.date),
+              shiftId: s.shift_id || s.shiftId,
+              category: s.category || 'biasa',
+              replacedDate: s.replaced_date || s.replacedDate || null,
+              notes: s.notes || ''
+            });
+          });
+          localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(Array.from(schMap.values())));
+        }
+      }
+
+      this._fetchedRanges.add(rangeKey);
+      return true;
+    } catch (e) {
+      console.warn("Failed to fetch data range", e);
+      return false;
+    }
+  },
+
   handleRealtimePayload(table, payload) {
     const { eventType, new: newRec, old: oldRec } = payload;
     let localData = [];
