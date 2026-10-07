@@ -4,8 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Monitoring Piket Departemen - KSPM</title>
-  <meta name="description" content="Kalender monitoring piket Galeri Investasi KSPM per departemen: lihat jadwal kosong, alpa, dan piket yang perlu diganti.">
+  <title>Monitoring Piketku - KSPM</title>
+  <meta name="description" content="Cek rekap piket Galeri Investasi KSPM pribadi: jadwal, kehadiran, izin, dan piket yang perlu diganti.">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -49,13 +49,11 @@
               onerror="this.onerror=null; this.parentNode.innerHTML='<span class=\'font-black text-red-600 text-xs sm:text-sm\'>GI</span>';">
           </div>
           <div class="min-w-0">
-            <p
-              class="text-xs sm:text-sm md:text-base font-black tracking-tight text-gray-900 dark:text-white truncate">
+            <p class="text-xs sm:text-sm md:text-base font-black tracking-tight text-gray-900 dark:text-white truncate">
               Kelompok Studi <span class="text-red-600 dark:text-red-500">Pasar Modal</span>
             </p>
-            <p
-              class="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[160px] sm:max-w-none">
-              Monitoring Piket Departemen</p>
+            <p class="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[160px] sm:max-w-none">
+              Monitoring Piket Pribadi</p>
           </div>
         </a>
       </div>
@@ -73,71 +71,136 @@
   </header>
 
   <!-- ================= KONTEN UTAMA ================= -->
-  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6 pb-8 sm:pb-10 space-y-5 sm:space-y-6 mt-16 sm:mt-24">
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-4 pb-8 sm:pb-10 space-y-5 mt-16 sm:mt-20">
 
-    <!-- HEADER TITLE -->
+    <!-- JUDUL -->
     <div class="text-center max-w-xl mx-auto">
       <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-gray-900 dark:text-white">
-        Monitoring Piket <span class="text-red-600">Departemen</span>
+        Monitoring <span class="text-red-600">Piketku</span>
       </h1>
-      <p class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-2">
-        Pilih departemen lalu klik <b>Load</b> untuk melihat piket yang kosong, alpa, atau perlu diganti.
+      <p class="text-sm text-gray-500 dark:text-gray-400 font-medium mt-1.5">
+        Cek jadwal piketmu, mana yang sudah hadir, izin, dan mana yang perlu diganti.
       </p>
     </div>
 
-    <!-- FILTER DEPARTEMEN -->
+    <!-- PILIH IDENTITAS -->
     <section
       class="bg-white/80 dark:bg-[#131823]/90 backdrop-blur-xl border border-gray-200/80 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-xl">
-      <div class="flex flex-col sm:flex-row gap-3 sm:items-end">
-        <div class="flex-1">
-          <label for="monSelectDept" class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">Departemen</label>
+      <div class="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 sm:items-end">
+        <div>
+          <label for="monSelectDept" class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">1. Departemen</label>
           <div class="relative">
             <select id="monSelectDept" onchange="onDeptChange()"
-              class="w-full pl-10 pr-4 py-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:outline-none appearance-none">
+              class="w-full pl-10 pr-9 py-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:outline-none appearance-none">
               <option value="">-- Pilih Departemen --</option>
             </select>
             <i data-feather="briefcase" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
             <i data-feather="chevron-down" class="w-4 h-4 text-gray-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
           </div>
         </div>
-        <button id="btnLoadMonitoring" onclick="loadDeptMonitoring()" disabled
-          class="sm:w-44 py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-black text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
+        <div>
+          <label for="monSelectEmp" class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1.5">2. Nama</label>
+          <div class="relative">
+            <select id="monSelectEmp" onchange="onEmpChange()" disabled
+              class="w-full pl-10 pr-9 py-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border border-gray-200 dark:border-gray-700 text-sm font-semibold text-gray-900 dark:text-white focus:ring-2 focus:ring-red-500 focus:outline-none appearance-none disabled:opacity-50 disabled:cursor-not-allowed">
+              <option value="">-- Pilih departemen dulu --</option>
+            </select>
+            <i data-feather="user" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5 pointer-events-none"></i>
+            <i data-feather="chevron-down" class="w-4 h-4 text-gray-400 absolute right-3.5 top-3.5 pointer-events-none"></i>
+          </div>
+        </div>
+        <button id="btnLoadMonitoring" onclick="loadMonitoring()" disabled
+          class="sm:w-36 py-3 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-gray-300 dark:disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-black text-sm shadow-md transition-all active:scale-95 flex items-center justify-center gap-2">
           <i data-feather="download-cloud" class="w-4 h-4"></i>
           <span id="btnLoadText">Load</span>
         </button>
       </div>
-      <p id="loadStatus" class="text-[11px] text-gray-400 font-medium mt-2.5 flex items-center gap-1.5">
-        <i data-feather="info" class="w-3 h-3"></i>
-        <span>Kalender masih kosong. Data belum dimuat agar halaman tetap ringan.</span>
-      </p>
-    </section>
 
-    <!-- STATS BULAN INI -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div class="bg-white dark:bg-[#131823] p-4 rounded-2xl border border-gray-200 dark:border-gray-800 flex flex-col items-center justify-center text-center shadow-sm">
-        <span class="text-[10px] font-bold text-gray-500 uppercase tracking-wide">Total Jadwal</span>
-        <span class="text-2xl font-black text-gray-900 dark:text-white mt-1" id="statTotal">-</span>
-      </div>
-      <div class="bg-emerald-50 dark:bg-emerald-950/20 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-900/50 flex flex-col items-center justify-center text-center shadow-sm">
-        <span class="text-[10px] font-bold text-emerald-600 uppercase tracking-wide">Hadir / Selesai</span>
-        <span class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="statHadir">-</span>
-      </div>
-      <div class="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-2xl border border-blue-200 dark:border-blue-900/50 flex flex-col items-center justify-center text-center shadow-sm">
-        <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wide">Izin</span>
-        <span class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1" id="statIzin">-</span>
-      </div>
-      <div class="bg-red-50 dark:bg-red-950/20 p-4 rounded-2xl border border-red-200 dark:border-red-900/50 flex flex-col items-center justify-center text-center shadow-sm">
-        <span class="text-[10px] font-bold text-red-600 uppercase tracking-wide">Alpa (Perlu Ganti)</span>
-        <span class="text-2xl font-black text-red-600 dark:text-red-400 mt-1" id="statAlpa">-</span>
+      <div class="mt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <label for="chkRemember" class="inline-flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-gray-600 dark:text-gray-300">
+          <input type="checkbox" id="chkRemember" onchange="onRememberChange()"
+            class="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-red-600 focus:ring-red-500 accent-red-600">
+          Ingat pilihan saya di perangkat ini
+        </label>
+        <p id="loadStatus" class="text-[11px] text-gray-400 font-medium flex items-center gap-1.5">
+          <i data-feather="info" class="w-3 h-3"></i>
+          <span>Pilih nama lalu klik Load. Data baru dimuat setelah itu.</span>
+        </p>
       </div>
     </section>
 
-    <!-- KALENDER + DETAIL -->
+    <!-- RINGKASAN (muncul setelah Load) -->
+    <section id="summaryCard"
+      class="hidden bg-white dark:bg-[#131823] border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div id="sumAvatar"
+            class="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 text-white font-black flex items-center justify-center flex-shrink-0">-</div>
+          <div class="min-w-0">
+            <p id="sumName" class="text-base font-black text-gray-900 dark:text-white truncate">-</p>
+            <p id="sumMeta" class="text-xs text-gray-500 dark:text-gray-400 font-medium">-</p>
+          </div>
+        </div>
+        <div id="sumMessage" class="text-xs font-semibold px-3 py-2 rounded-xl"></div>
+      </div>
+
+      <!-- Angka utama -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="p-3.5 rounded-2xl bg-gray-50 dark:bg-[#0b0e14] border border-gray-200 dark:border-gray-800">
+          <p class="text-[11px] font-bold text-gray-500 flex items-center gap-1.5"><i data-feather="calendar" class="w-3.5 h-3.5"></i> Jadwal piket</p>
+          <p class="text-2xl font-black text-gray-900 dark:text-white mt-1" id="statTotal">0</p>
+          <p class="text-[10px] text-gray-400">total sesi bulan ini</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50">
+          <p class="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5"><i data-feather="check-circle" class="w-3.5 h-3.5"></i> Sudah hadir</p>
+          <p class="text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-1" id="statHadir">0</p>
+          <p class="text-[10px] text-emerald-700/70 dark:text-emerald-400/70">sesi yang sudah dijalani</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50">
+          <p class="text-[11px] font-bold text-blue-700 dark:text-blue-400 flex items-center gap-1.5"><i data-feather="file-text" class="w-3.5 h-3.5"></i> Izin</p>
+          <p class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1" id="statIzin">0</p>
+          <p class="text-[10px] text-blue-700/70 dark:text-blue-400/70">sesi dengan izin</p>
+        </div>
+        <div class="p-3.5 rounded-2xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
+          <p class="text-[11px] font-bold text-red-700 dark:text-red-400 flex items-center gap-1.5"><i data-feather="alert-triangle" class="w-3.5 h-3.5"></i> Perlu diganti</p>
+          <p class="text-2xl font-black text-red-600 dark:text-red-400 mt-1" id="statAlpa">0</p>
+          <p class="text-[10px] text-red-700/70 dark:text-red-400/70">sesi terlewat (alpa)</p>
+        </div>
+      </div>
+
+      <!-- Progress -->
+      <div>
+        <div class="flex items-center justify-between text-[11px] font-bold text-gray-500 dark:text-gray-400 mb-1.5">
+          <span>Progres piket bulan ini</span>
+          <span id="progressText">0 dari 0 sesi</span>
+        </div>
+        <div class="h-2.5 w-full rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden flex">
+          <div id="barHadir" class="h-full bg-emerald-500 transition-all duration-500" style="width:0%"></div>
+          <div id="barIzin" class="h-full bg-blue-500 transition-all duration-500" style="width:0%"></div>
+          <div id="barAlpa" class="h-full bg-red-500 transition-all duration-500" style="width:0%"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- KALENDER + PANEL -->
     <section class="flex flex-col lg:flex-row gap-5 items-start">
 
       <!-- KALENDER -->
       <div class="w-full lg:w-8/12 bg-white dark:bg-[#131823] border border-gray-200 dark:border-gray-800 rounded-3xl p-4 sm:p-6 shadow-xl relative">
         <div id="monitoringCalendarContainer"></div>
+
+        <!-- Cara baca kalender -->
+        <div class="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+          <p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Cara baca kalender</p>
+          <div class="flex flex-wrap gap-2 text-[11px] font-semibold text-gray-600 dark:text-gray-300">
+            <span class="inline-flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded-md bg-emerald-600 text-white text-[10px] font-extrabold">Hadir</span> sudah piket</span>
+            <span class="inline-flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded-md bg-blue-600 text-white text-[10px] font-extrabold">Izin</span> izin piket</span>
+            <span class="inline-flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded-md bg-red-600 text-white text-[10px] font-extrabold">Alpa</span> terlewat, harus diganti</span>
+            <span class="inline-flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100 text-[10px] font-extrabold">Jadwal</span> piket yang akan datang</span>
+            <span class="inline-flex items-center gap-1.5"><span class="px-1.5 py-0.5 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 text-[10px] font-extrabold">Libur</span> bebas tugas</span>
+          </div>
+        </div>
+
         <!-- Overlay loading -->
         <div id="calLoading" class="hidden absolute inset-0 rounded-3xl bg-white/70 dark:bg-[#0b0e14]/70 backdrop-blur-sm flex items-center justify-center">
           <div class="flex items-center gap-2 text-sm font-bold text-gray-700 dark:text-gray-200">
@@ -151,21 +214,28 @@
       <div class="w-full lg:w-4/12 space-y-4">
         <!-- Detail tanggal -->
         <div class="bg-white dark:bg-[#131823] border border-gray-200 dark:border-gray-800 rounded-3xl p-5 shadow-xl">
-          <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Detail Tanggal</h2>
+          <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Tanggal dipilih</h2>
           <p id="selectedDateLabel" class="text-base font-black text-gray-900 dark:text-white mt-1">-</p>
-          <div id="selectedDateDetails" class="mt-4 space-y-2.5 max-h-[420px] overflow-y-auto pr-1"></div>
+          <div id="selectedDateDetails" class="mt-3 space-y-2.5"></div>
         </div>
 
-        <!-- Daftar perlu diganti -->
+        <!-- Perlu diganti -->
         <div class="bg-white dark:bg-[#131823] border border-red-200 dark:border-red-900/50 rounded-3xl p-5 shadow-xl">
-          <div class="flex items-center justify-between">
-            <h2 class="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
-              <i data-feather="alert-triangle" class="w-3.5 h-3.5"></i> Piket Perlu Diganti
-            </h2>
-            <span id="replaceMonthLabel" class="text-[10px] font-bold text-gray-400"></span>
+          <h2 class="text-[10px] font-bold text-red-600 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-feather="alert-triangle" class="w-3.5 h-3.5"></i> Piket yang perlu diganti
+          </h2>
+          <div id="replaceList" class="mt-3 space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            <p class="text-xs text-gray-400 italic">Belum ada data.</p>
           </div>
-          <div id="replaceList" class="mt-3 space-y-2 max-h-[320px] overflow-y-auto pr-1">
-            <p class="text-xs text-gray-400 italic">Belum ada data. Pilih departemen lalu klik Load.</p>
+        </div>
+
+        <!-- Jadwal berikutnya -->
+        <div class="bg-white dark:bg-[#131823] border border-gray-200 dark:border-gray-800 rounded-3xl p-5 shadow-xl">
+          <h2 class="text-[10px] font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-feather="clock" class="w-3.5 h-3.5"></i> Jadwal piket berikutnya
+          </h2>
+          <div id="upcomingList" class="mt-3 space-y-2 max-h-[280px] overflow-y-auto pr-1">
+            <p class="text-xs text-gray-400 italic">Belum ada data.</p>
           </div>
         </div>
       </div>
@@ -173,28 +243,40 @@
     </section>
   </main>
 
-  <!-- ================= FOOTER ================= -->
-  <footer class="mt-auto border-t border-gray-200/80 dark:border-gray-800/80 bg-white/50 dark:bg-[#0b0e14]/50">
-    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <!-- Clean Minimal Footer & Watermark -->
+  <footer
+    class="w-full border-t border-gray-200/60 dark:border-gray-800/60 py-6 bg-white/40 dark:bg-[#0e1219]/40 backdrop-blur-2xl text-xs text-gray-500 text-center transition-colors">
+    <div class="max-w-6xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
       <div class="flex items-center gap-2">
-        <i data-feather="bar-chart-2" class="w-5 h-5 text-red-600"></i>
-        <span class="font-black text-sm text-gray-900 dark:text-white tracking-tight">KSPM Unsoed</span>
+        <div
+          class="w-6 h-6 rounded-lg bg-red-600/10 dark:bg-red-500/10 border border-red-500/20 p-0.5 flex items-center justify-center flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo" class="w-full h-full object-contain">
+        </div>
+        <p class="font-medium">© 2026 <strong>Kelompok Studi Pasar Modal (KSPM)</strong> • Galeri Investasi</p>
       </div>
-      <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">© 2026 Divisi RnD &amp; IT KSPM. All rights reserved.</p>
+
+      <!-- Watermark Department of Media and Technology -->
+      <div
+        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100/80 dark:bg-[#151a24]/80 border border-gray-200 dark:border-gray-700/80 text-[10px] font-semibold text-gray-600 dark:text-gray-300 shadow-sm">
+        <i data-feather="code" class="w-3 h-3 text-red-500"></i>
+        <span>Develop by <strong class="text-gray-900 dark:text-white">Department of Media and
+            Technology</strong></span>
+      </div>
     </div>
   </footer>
 
   <script src="js/attendance-db.js"></script>
   <script src="js/calendar.js"></script>
   <script>
+    const PREF_KEY = 'kspm_monitoring_pref';
     const todayStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+    const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
     let activeDateStr = todayStr;
     let calendarInstance = null;
-    let loadedDept = null;      // departemen yang sedang ditampilkan
-    let lastMonthData = {};     // data per-hari hasil render terakhir (sudah terfilter)
+    let loadedEmp = null;       // { id, name, dept }
+    let lastMonthData = {};
     let hasSynced = false;
-
-    const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
 
     document.addEventListener('DOMContentLoaded', () => {
       populateDeptSelect();
@@ -203,43 +285,101 @@
       calendarInstance = new AttendanceCalendar('monitoringCalendarContainer', {
         defaultSelectedDate: activeDateStr,
         emptyMode: true,
+        showLegend: false,
         onRender: handleCalendarRender,
         onDateSelect: (dateStr) => {
           activeDateStr = dateStr;
           renderSelectedDateDetails();
         }
       });
-
       renderSelectedDateDetails();
       feather.replace();
+
+      restorePreference();
     });
 
+    /* ---------- Util ---------- */
     function escapeHtml(str) {
       return String(str ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     }
+    function formatShortDate(dateStr) {
+      return new Date(dateStr + 'T00:00:00').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'short' });
+    }
+    function shiftText(item) {
+      const s = item.shift || {};
+      return `${escapeHtml(s.name || 'Sesi')} • ${escapeHtml(s.start || '')}–${escapeHtml(s.end || '')}`;
+    }
+    function initials(name) {
+      return String(name || '?').split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+    }
 
+    /* ---------- Form ---------- */
     function populateDeptSelect() {
       const depts = AttendanceDB.getDepartments() || [];
-      const select = document.getElementById('monSelectDept');
-      select.innerHTML = '<option value="">-- Pilih Departemen --</option>' +
+      document.getElementById('monSelectDept').innerHTML = '<option value="">-- Pilih Departemen --</option>' +
         depts.map(d => `<option value="${escapeHtml(d)}">${escapeHtml(d)}</option>`).join('');
     }
 
     function onDeptChange() {
       const dept = document.getElementById('monSelectDept').value;
-      document.getElementById('btnLoadMonitoring').disabled = !dept;
+      const sel = document.getElementById('monSelectEmp');
+      if (!dept) {
+        sel.innerHTML = '<option value="">-- Pilih departemen dulu --</option>';
+        sel.disabled = true;
+      } else {
+        const emps = AttendanceDB.getEmployees().filter(e => e.dept === dept)
+          .sort((a, b) => String(a.name).localeCompare(String(b.name)));
+        sel.innerHTML = '<option value="">-- Pilih Nama --</option>' +
+          emps.map(e => `<option value="${escapeHtml(e.id)}">${escapeHtml(e.name)}</option>`).join('');
+        sel.disabled = false;
+      }
+      onEmpChange();
+    }
+
+    function onEmpChange() {
+      document.getElementById('btnLoadMonitoring').disabled = !document.getElementById('monSelectEmp').value;
+      if (document.getElementById('chkRemember').checked) savePreference();
+    }
+
+    /* ---------- Ingat pilihan ---------- */
+    function savePreference() {
+      const dept = document.getElementById('monSelectDept').value;
+      const empId = document.getElementById('monSelectEmp').value;
+      if (dept && empId) localStorage.setItem(PREF_KEY, JSON.stringify({ dept, empId }));
+    }
+    function onRememberChange() {
+      if (document.getElementById('chkRemember').checked) savePreference();
+      else localStorage.removeItem(PREF_KEY);
+    }
+    function restorePreference() {
+      let pref = null;
+      try { pref = JSON.parse(localStorage.getItem(PREF_KEY) || 'null'); } catch (e) { pref = null; }
+      if (!pref || !pref.dept || !pref.empId) return;
+
+      const deptSel = document.getElementById('monSelectDept');
+      if (![...deptSel.options].some(o => o.value === pref.dept)) return;
+      deptSel.value = pref.dept;
+      onDeptChange();
+
+      const empSel = document.getElementById('monSelectEmp');
+      if (![...empSel.options].some(o => o.value === pref.empId)) return;
+      empSel.value = pref.empId;
+      document.getElementById('chkRemember').checked = true;
+      onEmpChange();
+      loadMonitoring(); // langsung tampilkan data milik pilihan tersimpan
     }
 
     function setStatus(icon, text, cls = 'text-gray-400') {
       const el = document.getElementById('loadStatus');
-      el.className = `text-[11px] font-medium mt-2.5 flex items-center gap-1.5 ${cls}`;
+      el.className = `text-[11px] font-medium flex items-center gap-1.5 ${cls}`;
       el.innerHTML = `<i data-feather="${icon}" class="w-3 h-3"></i><span>${text}</span>`;
       feather.replace();
     }
 
-    async function loadDeptMonitoring() {
-      const dept = document.getElementById('monSelectDept').value;
-      if (!dept) return;
+    /* ---------- Load ---------- */
+    async function loadMonitoring() {
+      const empId = document.getElementById('monSelectEmp').value;
+      if (!empId) return;
 
       const btn = document.getElementById('btnLoadMonitoring');
       const overlay = document.getElementById('calLoading');
@@ -248,8 +388,7 @@
       overlay.classList.remove('hidden');
 
       try {
-        // Sinkronisasi cloud hanya sekali per kunjungan halaman
-        if (!hasSynced) {
+        if (!hasSynced) {               // sinkron cloud cukup sekali per kunjungan
           await AttendanceDB.syncFromCloud();
           hasSynced = true;
         }
@@ -257,9 +396,16 @@
         console.warn('Sync gagal, memakai data lokal:', err);
       }
 
-      loadedDept = dept;
+      const emp = AttendanceDB.getEmployees().find(e => e.id === empId) || { id: empId, name: empId, dept: document.getElementById('monSelectDept').value };
+      loadedEmp = emp;
+      if (document.getElementById('chkRemember').checked) savePreference();
+
+      document.getElementById('sumAvatar').innerText = initials(emp.name);
+      document.getElementById('sumName').innerText = emp.name;
+      document.getElementById('summaryCard').classList.remove('hidden');
+
       calendarInstance.options.emptyMode = false;
-      calendarInstance.options.deptName = dept;
+      calendarInstance.options.empId = empId;
       calendarInstance._cache = null;
       calendarInstance.render();
       renderSelectedDateDetails();
@@ -267,137 +413,133 @@
       overlay.classList.add('hidden');
       btn.disabled = false;
       document.getElementById('btnLoadText').innerText = 'Load';
-      setStatus('check-circle', `Menampilkan data departemen <b>${escapeHtml(dept)}</b>. Ganti departemen lalu klik Load lagi untuk berpindah.`, 'text-emerald-600 dark:text-emerald-400');
+      setStatus('check-circle', `Menampilkan data <b>${escapeHtml(emp.name)}</b>`, 'text-emerald-600 dark:text-emerald-400');
+      feather.replace();
     }
 
-    // Dipanggil setiap kalender selesai render (termasuk saat ganti bulan)
+    /* ---------- Hasil render kalender (juga saat ganti bulan) ---------- */
     function handleCalendarRender({ year, month, monthData, emptyMode }) {
       lastMonthData = monthData || {};
-      document.getElementById('replaceMonthLabel').innerText = `${MONTHS[month]} ${year}`;
-
-      if (emptyMode || !loadedDept) {
-        ['statTotal', 'statHadir', 'statIzin', 'statAlpa'].forEach(id => document.getElementById(id).innerText = '-');
-        return;
-      }
+      if (emptyMode || !loadedEmp) return;
 
       let t = 0, h = 0, i = 0, a = 0;
-      const needReplace = [];
+      const needReplace = [], upcoming = [];
       Object.keys(lastMonthData).sort().forEach(date => {
-        const d = lastMonthData[date];
-        t += d.totalScheduled || 0;
-        h += d.hadir || 0;
-        i += d.izin || 0;
-        a += d.alpa || 0;
-        (d.monitoringList || []).forEach(item => {
-          if (AttendanceCalendar.classifyItem(item, date, todayStr) === 'alpa') {
-            needReplace.push({ date, item });
-          }
+        (lastMonthData[date].monitoringList || []).forEach(item => {
+          const c = AttendanceCalendar.classifyItem(item, date, todayStr);
+          if (c === 'libur') return;
+          t++;
+          if (c === 'hadir') h++;
+          else if (c === 'izin') i++;
+          else if (c === 'alpa') { a++; needReplace.push({ date, item }); }
+          else if (c === 'pending') upcoming.push({ date, item });
         });
       });
 
+      const monthLabel = `${MONTHS[month]} ${year}`;
+      document.getElementById('sumMeta').innerText = `${loadedEmp.dept || '-'} • Rekap ${monthLabel}`;
       document.getElementById('statTotal').innerText = t;
       document.getElementById('statHadir').innerText = h;
       document.getElementById('statIzin').innerText = i;
       document.getElementById('statAlpa').innerText = a;
 
-      renderReplaceList(needReplace);
-      if (activeDateStr) renderSelectedDateDetails();
-    }
+      const pct = n => t ? (n / t * 100).toFixed(1) + '%' : '0%';
+      document.getElementById('barHadir').style.width = pct(h);
+      document.getElementById('barIzin').style.width = pct(i);
+      document.getElementById('barAlpa').style.width = pct(a);
+      document.getElementById('progressText').innerText = `${h} dari ${t} sesi hadir`;
 
-    function formatShortDate(dateStr) {
-      const d = new Date(dateStr + 'T00:00:00');
-      return d.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'short' });
+      // Pesan singkat yang mudah dipahami
+      const msg = document.getElementById('sumMessage');
+      if (t === 0) {
+        msg.className = 'text-xs font-semibold px-3 py-2 rounded-xl bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300';
+        msg.innerText = `Tidak ada jadwal piket di ${monthLabel}.`;
+      } else if (a > 0) {
+        msg.className = 'text-xs font-semibold px-3 py-2 rounded-xl bg-red-600 text-white';
+        msg.innerText = `Ada ${a} piket terlewat — segera ganti ya!`;
+      } else {
+        msg.className = 'text-xs font-semibold px-3 py-2 rounded-xl bg-emerald-600 text-white';
+        msg.innerText = 'Aman! Tidak ada piket yang perlu diganti.';
+      }
+
+      renderReplaceList(needReplace);
+      renderUpcomingList(upcoming);
+      renderSelectedDateDetails();
     }
 
     function renderReplaceList(items) {
       const box = document.getElementById('replaceList');
-      if (items.length === 0) {
-        box.innerHTML = `
-          <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
-            <i data-feather="check-circle" class="w-4 h-4"></i> Tidak ada piket yang perlu diganti bulan ini.
-          </div>`;
-      } else {
-        box.innerHTML = items.map(({ date, item }) => `
-          <button onclick="calendarInstance.handleDayClick('${date}')"
-            class="w-full text-left p-2.5 rounded-xl bg-red-50/70 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 border border-red-100 dark:border-red-900/40 transition flex items-center justify-between gap-2">
-            <div class="min-w-0">
-              <p class="text-xs font-bold text-gray-900 dark:text-white truncate">${escapeHtml(item.name)}</p>
-              <p class="text-[10px] text-gray-500 dark:text-gray-400">${escapeHtml(item.shift?.name || 'Sesi')} • ${escapeHtml(item.shift?.start || '')}-${escapeHtml(item.shift?.end || '')}</p>
-            </div>
-            <span class="text-[10px] font-bold text-red-600 dark:text-red-400 whitespace-nowrap">${formatShortDate(date)}</span>
-          </button>`).join('');
-      }
+      box.innerHTML = items.length === 0 ? `
+        <div class="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-emerald-700 dark:text-emerald-300 text-xs font-semibold flex items-center gap-2">
+          <i data-feather="check-circle" class="w-4 h-4"></i> Tidak ada. Pertahankan!
+        </div>` : items.map(({ date, item }) => `
+        <button onclick="calendarInstance.handleDayClick('${date}')"
+          class="w-full text-left p-2.5 rounded-xl bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 border border-red-100 dark:border-red-900/40 transition">
+          <p class="text-xs font-bold text-gray-900 dark:text-white">${formatShortDate(date)}</p>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400">${shiftText(item)}</p>
+        </button>`).join('');
       feather.replace();
     }
 
-    function statusBadge(cls) {
-      const map = {
-        hadir: ['Hadir', 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'],
-        izin: ['Izin', 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-400'],
-        alpa: ['Alpa', 'bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400'],
-        pending: ['Terjadwal', 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300'],
-        libur: ['Bebas Tugas', 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300']
-      };
-      const [label, c] = map[cls] || map.pending;
-      return `<span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${c}">${label}</span>`;
+    function renderUpcomingList(items) {
+      const box = document.getElementById('upcomingList');
+      box.innerHTML = items.length === 0
+        ? '<p class="text-xs text-gray-400 italic">Tidak ada jadwal mendatang di bulan ini.</p>'
+        : items.map(({ date, item }) => `
+        <button onclick="calendarInstance.handleDayClick('${date}')"
+          class="w-full text-left p-2.5 rounded-xl bg-gray-50 hover:bg-gray-100 dark:bg-[#0b0e14] dark:hover:bg-[#181d26] border border-gray-200 dark:border-gray-800 transition flex items-center justify-between gap-2">
+          <div class="min-w-0">
+            <p class="text-xs font-bold text-gray-900 dark:text-white">${formatShortDate(date)}</p>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400">${shiftText(item)}</p>
+          </div>
+          ${date === todayStr ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-red-600 text-white">Hari ini</span>' : ''}
+        </button>`).join('');
     }
 
+    /* ---------- Detail tanggal ---------- */
     function renderSelectedDateDetails() {
-      const dObj = new Date(activeDateStr + 'T00:00:00');
-      document.getElementById('selectedDateLabel').innerText = dObj.toLocaleDateString('id-ID', {
-        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      });
+      document.getElementById('selectedDateLabel').innerText = new Date(activeDateStr + 'T00:00:00')
+        .toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-      const container = document.getElementById('selectedDateDetails');
-
-      if (!loadedDept) {
-        container.innerHTML = `
-          <div class="p-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border border-dashed border-gray-200 dark:border-gray-700 text-gray-400 text-xs font-medium flex items-center gap-2">
-            <i data-feather="inbox" class="w-4 h-4"></i> Pilih departemen dan klik Load untuk melihat detail.
-          </div>`;
+      const box = document.getElementById('selectedDateDetails');
+      const note = (cls, icon, text) => {
+        box.innerHTML = `<div class="p-3 rounded-xl border text-xs font-semibold flex items-center gap-2 ${cls}"><i data-feather="${icon}" class="w-4 h-4 flex-shrink-0"></i><span>${text}</span></div>`;
         feather.replace();
-        return;
-      }
+      };
+
+      if (!loadedEmp) return note('bg-gray-50 dark:bg-[#0b0e14] border-dashed border-gray-200 dark:border-gray-700 text-gray-400', 'inbox', 'Pilih nama dan klik Load untuk melihat detail.');
 
       const day = lastMonthData[activeDateStr];
-      if (!day) {
-        container.innerHTML = '<p class="text-xs text-gray-400 italic">Tanggal di luar bulan yang ditampilkan.</p>';
-        return;
-      }
+      if (!day) return note('bg-gray-50 dark:bg-[#0b0e14] border-gray-200 dark:border-gray-700 text-gray-400', 'calendar', 'Tanggal di luar bulan yang ditampilkan.');
 
       const list = day.monitoringList || [];
       if (list.length === 0) {
-        const isOff = day.isHoliday || (AttendanceDB.isDateExemptedFromAlpha && AttendanceDB.isDateExemptedFromAlpha(activeDateStr));
-        container.innerHTML = isOff ? `
-          <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2">
-            <i data-feather="sun" class="w-4 h-4"></i> ${day.holidayName ? 'Libur: ' + escapeHtml(day.holidayName) : 'Sistem sedang dijeda'}.
-          </div>` : `
-          <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/50 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center gap-2">
-            <i data-feather="alert-circle" class="w-4 h-4"></i> Tidak ada jadwal piket ${escapeHtml(loadedDept)} di hari ini.
-          </div>`;
-        feather.replace();
-        return;
+        if (day.isHoliday) return note('bg-rose-50 dark:bg-rose-950/20 border-rose-200 dark:border-rose-900/50 text-rose-700 dark:text-rose-300', 'sun', `Libur: ${escapeHtml(day.holidayName || 'Hari libur')}`);
+        return note('bg-gray-50 dark:bg-[#0b0e14] border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400', 'coffee', 'Kamu tidak ada jadwal piket di hari ini.');
       }
 
-      // Urutkan per jam mulai sesi
-      const sorted = [...list].sort((a, b) => String(a.shift?.start || '').localeCompare(String(b.shift?.start || '')));
-      container.innerHTML = sorted.map(item => {
-        const cls = AttendanceCalendar.classifyItem(item, activeDateStr, todayStr);
-        const time = (item.timeMasuk && item.timeMasuk !== '-')
-          ? `<span class="font-mono">${escapeHtml(item.timeMasuk)}${item.timePulang && item.timePulang !== '-' ? ' → ' + escapeHtml(item.timePulang) : ''}</span>` : '';
-        const tag = item.category === 'pengganti'
-          ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 font-bold">Pengganti</span>`
-          : (item.category === 'sukarela' ? `<span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300 font-bold">Sukarela</span>` : '');
+      const info = {
+        hadir: ['Hadir', 'bg-emerald-600 text-white', 'Sudah piket. Terima kasih!'],
+        izin: ['Izin', 'bg-blue-600 text-white', 'Izin sudah tercatat.'],
+        alpa: ['Alpa', 'bg-red-600 text-white', 'Piket ini terlewat. Segera lakukan piket pengganti.'],
+        pending: ['Jadwal', 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100', activeDateStr === todayStr ? 'Jadwalmu hari ini. Jangan lupa absen!' : 'Jadwal piket mendatang.'],
+        libur: ['Libur', 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300', 'Bebas tugas (libur / sistem dijeda).']
+      };
+
+      box.innerHTML = [...list].sort((a, b) => String(a.shift?.start || '').localeCompare(String(b.shift?.start || ''))).map(item => {
+        const c = AttendanceCalendar.classifyItem(item, activeDateStr, todayStr);
+        const [label, badgeCls, desc] = info[c];
+        const hasTime = item.timeMasuk && item.timeMasuk !== '-';
+        const tag = item.category === 'pengganti' ? 'Piket pengganti' : (item.category === 'sukarela' ? 'Piket sukarela' : '');
         return `
-          <div class="p-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border ${cls === 'alpa' ? 'border-red-300 dark:border-red-900/60' : 'border-gray-200 dark:border-gray-800'}">
-            <div class="flex items-start justify-between gap-2">
-              <div class="min-w-0">
-                <p class="text-xs font-bold text-gray-900 dark:text-white truncate">${escapeHtml(item.name)}</p>
-                <p class="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">${escapeHtml(item.shift?.name || 'Sesi')} • ${escapeHtml(item.shift?.start || '')}-${escapeHtml(item.shift?.end || '')}</p>
-              </div>
-              ${statusBadge(cls)}
+          <div class="p-3 rounded-xl bg-gray-50 dark:bg-[#0b0e14] border ${c === 'alpa' ? 'border-red-300 dark:border-red-900/60' : 'border-gray-200 dark:border-gray-800'}">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-xs font-bold text-gray-900 dark:text-white">${shiftText(item)}</p>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold ${badgeCls}">${label}</span>
             </div>
-            ${(time || tag) ? `<div class="flex items-center gap-2 mt-1.5 text-[10px] text-gray-500 dark:text-gray-400">${tag}${time}</div>` : ''}
+            <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-1">${desc}</p>
+            ${hasTime ? `<p class="text-[11px] text-gray-600 dark:text-gray-300 mt-1 font-mono">Masuk ${escapeHtml(item.timeMasuk)}${item.timePulang && item.timePulang !== '-' ? ' • Pulang ' + escapeHtml(item.timePulang) : ''}</p>` : ''}
+            ${tag ? `<span class="inline-block mt-1.5 text-[9px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 font-bold">${tag}</span>` : ''}
           </div>`;
       }).join('');
       feather.replace();

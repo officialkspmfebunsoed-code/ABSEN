@@ -137,12 +137,12 @@ class AttendanceCalendar {
         </div>
 
         <!-- Legend / Keterangan Warna (Tanpa Terlambat) -->
-        <div class="flex items-center gap-3 sm:gap-5 text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 flex-wrap bg-gray-100/70 dark:bg-[#181d26] p-2 sm:p-2.5 rounded-xl border border-gray-200/80 dark:border-gray-800">
+        ${this.options.showLegend === false ? '' : `<div class="flex items-center gap-3 sm:gap-5 text-[10px] sm:text-xs font-semibold text-gray-500 dark:text-gray-400 mb-3 flex-wrap bg-gray-100/70 dark:bg-[#181d26] p-2 sm:p-2.5 rounded-xl border border-gray-200/80 dark:border-gray-800">
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span> <span>Sudah Piket / Selesai</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span> <span>Izin Piket</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span> <span>Belum Piket (Alpa)</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span> <span>Hari Libur (Bebas Tugas)</span></div>
-        </div>
+        </div>`}
 
         <!-- Day Names Grid (7 cols) -->
         <div class="grid grid-cols-7 gap-1 sm:gap-1.5 mb-1.5 text-center text-[10px] sm:text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
@@ -164,9 +164,10 @@ class AttendanceCalendar {
       let dayData = statsMap[dateStr] || { totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [], isHoliday: false, holidayName: null };
       if (dayData.totalScheduled === undefined) dayData.totalScheduled = dayData.total || 0;
 
-      // Filter untuk Monitoring per Departemen
-      if (this.options.deptName) {
-        const list = (dayData.monitoringList || []).filter(x => x.dept === this.options.deptName);
+      // Filter untuk Monitoring per Departemen / per Orang
+      if (this.options.deptName || this.options.empId) {
+        const list = (dayData.monitoringList || []).filter(x =>
+          this.options.empId ? x.empId === this.options.empId : x.dept === this.options.deptName);
         let hadir = 0, izin = 0, alpa = 0;
         list.forEach(x => {
           const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
@@ -186,6 +187,13 @@ class AttendanceCalendar {
 
       if (dayData.isHoliday) {
         statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 font-extrabold" title="${dayData.holidayName || 'Hari Libur'}">Libur</span>`;
+      } else if (this.options.empId && dayData.totalScheduled > 0) {
+        // Mode personal: label kata yang jelas
+        const base = 'inline-block text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold';
+        if (dayData.alpa > 0) statusBadge = `<span class="${base} bg-red-600 text-white">Alpa</span>`;
+        else if (dayData.izin > 0 && dayData.hadir === 0) statusBadge = `<span class="${base} bg-blue-600 text-white">Izin</span>`;
+        else if (dayData.hadir > 0) statusBadge = `<span class="${base} bg-emerald-600 text-white">Hadir</span>`;
+        else statusBadge = `<span class="${base} bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100">Jadwal</span>`;
       } else if (dayData.totalScheduled > 0) {
         indicators = '<div class="flex items-center justify-center gap-1 mt-0.5 sm:mt-1 flex-wrap">';
         if (dayData.hadir > 0) indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 flex-shrink-0" title="${dayData.hadir} Hadir"></span>`;
@@ -220,7 +228,7 @@ class AttendanceCalendar {
             <span class="text-[11px] sm:text-xs font-bold ${isToday ? 'w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-[9px] sm:text-[10px]' : (dayData.isHoliday ? 'text-rose-600 dark:text-rose-400 font-black' : 'text-gray-800 dark:text-gray-200')}">
               ${day}
             </span>
-            ${dayData.totalScheduled > 0 && !dayData.isHoliday ? `<span class="text-[8px] sm:text-[9px] text-gray-400 font-medium font-mono">${dayData.totalScheduled}p</span>` : ''}
+            ${dayData.totalScheduled > 0 && !dayData.isHoliday && !this.options.empId ? `<span class="text-[8px] sm:text-[9px] text-gray-400 font-medium font-mono">${dayData.totalScheduled}p</span>` : ''}
           </div>
 
           <div class="my-0.5 text-center">
