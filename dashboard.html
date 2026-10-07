@@ -306,12 +306,18 @@
               </div>
 
               <!-- Shortcut Utama Google Drive Folder Presensi -->
-              <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer"
-                class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition active:scale-95 whitespace-nowrap"
-                title="Buka Folder Google Drive Semua Bukti Foto Presensi">
-                <i data-feather="folder" class="w-3.5 h-3.5"></i>
-                <span>Folder Drive Presensi</span>
-              </a>
+              <div class="flex items-center gap-2">
+                <button onclick="openAddManualAttendanceModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-blue-600/20 transition active:scale-95 whitespace-nowrap" title="Tambah Presensi Manual (Luar Jadwal)">
+                  <i data-feather="plus" class="w-3.5 h-3.5"></i>
+                  <span>Tambah Presensi Manual</span>
+                </button>
+                <a href="https://drive.google.com" target="_blank" rel="noopener noreferrer"
+                  class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-extrabold flex items-center gap-1.5 shadow-md shadow-emerald-600/20 transition active:scale-95 whitespace-nowrap"
+                  title="Buka Folder Google Drive Semua Bukti Foto Presensi">
+                  <i data-feather="folder" class="w-3.5 h-3.5"></i>
+                  <span>Folder Drive Presensi</span>
+                </a>
+              </div>
             </div>
 
             <!-- Filter Status Pill -->
@@ -1265,6 +1271,51 @@
           <i data-feather="power" class="w-3.5 h-3.5"></i>
           <span id="btnConfirmPauseText">Jeda Sistem Sekarang</span>
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MODAL TAMBAH PRESENSI MANUAL ================= -->
+  <div id="addManualAttendanceModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 modal-overlay hidden">
+    <div class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-md w-full animate-scaleUp space-y-3.5">
+      <div class="flex items-center justify-between pb-2 border-b border-gray-200/40 dark:border-white/10">
+        <h3 class="text-sm sm:text-base font-bold text-gray-900 dark:text-white">Tambah Presensi Manual</h3>
+        <button onclick="document.getElementById('addManualAttendanceModal').classList.add('hidden')" class="p-1 rounded-xl bg-white/40 dark:bg-[#181d26]/60 backdrop-blur-md text-gray-400 hover:text-gray-800 dark:hover:text-white transition">
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Nama Anggota</label>
+          <select id="addManualEmpSelect" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+            <!-- Populated via JS -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status / Kategori</label>
+          <select id="addManualStatusSelect" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+            <option value="HADIR">HADIR (Piket Biasa)</option>
+            <option value="SUKARELA">HADIR - SUKARELA / MAIN (Masuk Tambahan)</option>
+            <option value="PENGGANTI">HADIR - PIKET PENGGANTI</option>
+            <option value="IZIN">IZIN (Kuliah / Lomba / Acara Kampus)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Keterangan / Alasan</label>
+          <input type="text" id="addManualReasonInput" placeholder="Contoh: Lupa absen Kiosk / Verifikasi Admin" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs text-gray-800 dark:text-gray-200 outline-none focus:border-red-500 shadow-inner">
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-gray-200/40 dark:border-white/10">
+          <button onclick="document.getElementById('addManualAttendanceModal').classList.add('hidden')" class="px-3.5 py-1.5 rounded-xl bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/60 dark:border-white/10 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-white dark:hover:bg-gray-800 transition">
+            Batal
+          </button>
+          <button onclick="saveAddManualAttendance()" class="px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-lg shadow-blue-600/30 transition active:scale-95">
+            Tambahkan
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -3542,6 +3593,61 @@
       });
 
       document.getElementById('editStatusModal').classList.add('hidden');
+      renderMonitoringView();
+      if (fullCalendar) fullCalendar.render();
+      if (typeof renderReportTable === 'function') renderReportTable();
+    }
+
+    // --- MODAL TAMBAH MANUAL ---
+    function openAddManualAttendanceModal() {
+      const select = document.getElementById('addManualEmpSelect');
+      const employees = AttendanceDB.getEmployees();
+      select.innerHTML = '<option value="">-- Pilih Anggota --</option>' + employees.map(e => `<option value="${e.id}">${e.name} (${e.dept})</option>`).join('');
+      document.getElementById('addManualStatusSelect').value = 'HADIR';
+      document.getElementById('addManualReasonInput').value = '';
+      document.getElementById('addManualAttendanceModal').classList.remove('hidden');
+    }
+
+    function saveAddManualAttendance() {
+      const empId = document.getElementById('addManualEmpSelect').value;
+      const status = document.getElementById('addManualStatusSelect').value;
+      const reason = document.getElementById('addManualReasonInput').value || 'Ditambahkan Manual oleh Admin';
+      const dateStr = document.getElementById('monitoringDatePicker').value || (window.getTodayString ? window.getTodayString(0) : new Date().toISOString().substring(0, 10));
+
+      if (!empId) {
+        alert("Pilih anggota terlebih dahulu!");
+        return;
+      }
+
+      let cat = 'biasa';
+      let type = 'MASUK';
+
+      if (status === 'IZIN') {
+        type = 'IZIN';
+        cat = 'izin';
+      } else if (status === 'SUKARELA') {
+        type = 'MASUK';
+        cat = 'sukarela';
+      } else if (status === 'PENGGANTI') {
+        type = 'MASUK';
+        cat = 'pengganti';
+      } else {
+        type = 'MASUK';
+        cat = 'biasa';
+      }
+
+      const emp = AttendanceDB.getEmployeeById(empId);
+      AttendanceDB.recordAttendance({
+        empId: empId,
+        name: emp ? emp.name : empId,
+        date: dateStr,
+        type: type,
+        category: cat,
+        notes: reason,
+        location: 'Diverifikasi oleh Admin KSPM'
+      });
+
+      document.getElementById('addManualAttendanceModal').classList.add('hidden');
       renderMonitoringView();
       if (fullCalendar) fullCalendar.render();
       if (typeof renderReportTable === 'function') renderReportTable();
