@@ -443,6 +443,8 @@ const AttendanceDB = {
         if (typeof checkHomeSystemPauseState === 'function') checkHomeSystemPauseState();
         if (typeof updateSystemPauseUI === 'function') updateSystemPauseUI();
         if (typeof checkSystemPauseState === 'function') checkSystemPauseState();
+        if (typeof renderScheduleMatrixTable === 'function') renderScheduleMatrixTable();
+        if (window.calendarInstance) window.calendarInstance.render();
       });
       return;
     } else {
@@ -1036,7 +1038,7 @@ const AttendanceDB = {
   saveFullWeeklyRoster(rosterMap, unusedOpts = {}) {
     localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(rosterMap));
     
-    this.postToSupabase('settings', {
+    this.postToSupabase('settings?on_conflict=key', {
       key: 'WEEKLY_ROSTER',
       value: JSON.stringify(rosterMap)
     });
@@ -1987,7 +1989,7 @@ const AttendanceDB = {
       pausedAt: paused ? new Date().toISOString() : null
     };
     localStorage.setItem('kspm_system_paused', JSON.stringify(pauseData));
-    this.postToSupabase('settings', [
+    this.postToSupabase('settings?on_conflict=key', [
       { key: 'SYSTEM_PAUSED', value: paused ? 'TRUE' : 'FALSE' },
       { key: 'SYSTEM_PAUSE_REASON', value: reason || 'Masa Libur Perkuliahan' }
     ]);
