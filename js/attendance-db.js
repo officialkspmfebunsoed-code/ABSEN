@@ -227,7 +227,7 @@ const AttendanceDB = {
         const [empRes, attRes, schRes, holRes, setRes] = await Promise.all([
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/employees?select=*`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilter}&order=date.desc,time.desc&limit=2000`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*`, { headers }),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&limit=3000`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/holidays?select=*`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*`, { headers })
         ]);
