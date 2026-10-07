@@ -136,7 +136,31 @@ class AttendanceCalendar {
     // Actual day cells
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = `${this.currentYear}-${String(this.currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-      const dayData = statsMap[dateStr] || { totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [], isHoliday: false, holidayName: null };
+      let dayData = statsMap[dateStr] || { totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [], isHoliday: false, holidayName: null };
+      
+      // Filter untuk Personal Monitoring
+      if (this.options.empId && dayData.monitoringList.length > 0) {
+        const listForEmp = dayData.monitoringList.filter(x => x.id === this.options.empId);
+        if (listForEmp.length > 0) {
+          const total = listForEmp.length;
+          const hadir = listForEmp.filter(x => x.status === 'HADIR' || x.status === 'SELESAI' || x.status === 'SELESAI_PIKET' || x.status === 'SEDANG_BERTUGAS' || x.status === 'TEPAT_WAKTU').length;
+          const izin = listForEmp.filter(x => x.status === 'IZIN' || x.status === 'SAKIT').length;
+          const alpa = listForEmp.filter(x => x.status === 'ALPA' || x.status === 'BELUM_DATANG').length;
+          
+          dayData = {
+            ...dayData,
+            totalScheduled: total,
+            hadir,
+            alpa,
+            izin,
+            monitoringList: listForEmp
+          };
+        } else {
+          // Tidak ada jadwal untuk orang ini di hari ini
+          dayData = { ...dayData, totalScheduled: 0, hadir: 0, alpa: 0, izin: 0, monitoringList: [] };
+        }
+      }
+
       const isToday = dateStr === todayStr;
       const isSelected = dateStr === this.selectedDate;
 
