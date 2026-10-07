@@ -883,15 +883,13 @@ const AttendanceDB = {
   },
 
   getSchedules(dateStr = null) {
+    const data = localStorage.getItem(DB_KEYS.SCHEDULES);
+    const schedules = data ? JSON.parse(data) : [];
+    if (!Array.isArray(schedules)) return []; // in case it was a JSON object previously
     if (dateStr) {
-      return this.getSchedulesForRange(dateStr, dateStr);
+      return schedules.filter(s => s.date === dateStr);
     }
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 6, 0);
-    const startStr = start.toISOString().split('T')[0];
-    const endStr = end.toISOString().split('T')[0];
-    return this.getSchedulesForRange(startStr, endStr);
+    return schedules;
   },
 
   addSchedule(scheduleData) {
