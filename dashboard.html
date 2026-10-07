@@ -3049,8 +3049,8 @@
       const deptVal = document.getElementById('rekapDeptFilter').value || 'ALL';
       const searchVal = document.getElementById('rekapSearchInput').value || '';
 
-      const tbody = document.getElementById('rekapMemberTableBody');
-      if (tbody) tbody.innerHTML = `<tr><td colspan="7" class="text-center py-10"><div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status"></div><p class="mt-2 text-gray-500">Menarik data dari server...</p></td></tr>`;
+      const loadingTbody = document.getElementById('rekapWeeklyTableBody');
+      if (loadingTbody) loadingTbody.innerHTML = `<tr><td colspan="7" class="text-center py-10"><div class="animate-spin inline-block w-8 h-8 border-[3px] border-current border-t-transparent text-red-600 rounded-full" role="status"></div><p class="mt-2 text-gray-500">Menarik data dari server...</p></td></tr>`;
 
       const [y, m] = monthVal.split('-');
       const startDate = `${y}-${m}-01`;
