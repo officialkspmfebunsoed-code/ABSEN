@@ -3576,7 +3576,7 @@
       }
 
       const emp = AttendanceDB.getEmployeeById(empId);
-      AttendanceDB.recordAttendance({
+      const attendanceData = {
         empId: empId,
         name: emp ? emp.name : empId,
         date: dateStr,
@@ -3585,7 +3585,14 @@
         replacedDate: finalReplacedDate,
         notes: reason,
         location: 'Diverifikasi oleh Admin KSPM'
-      });
+      };
+      
+      AttendanceDB.recordAttendance(attendanceData);
+      
+      if (type === 'MASUK') {
+        attendanceData.type = 'PULANG';
+        AttendanceDB.recordAttendance(attendanceData);
+      }
 
       document.getElementById('editStatusModal').classList.add('hidden');
       renderMonitoringView();
@@ -3595,7 +3602,7 @@
 
     // --- QUICK MARK GFORM ---
     function quickMarkGForm(empId, empName, dateStr) {
-      if (confirm(`Tandai ${empName} sebagai HADIR pada ${dateStr} melalui migrasi data GForm?\nCatatan akan otomatis tertulis "Data terekam di Google Form".`)) {
+      if (confirm(`Tandai ${empName} sebagai SELESAI PIKET pada ${dateStr} melalui migrasi data GForm?\nCatatan akan otomatis tertulis "Data terekam di Google Form".`)) {
         AttendanceDB.recordAttendance({
           empId: empId,
           name: empName,
@@ -3605,7 +3612,16 @@
           notes: 'Data terekam di Google Form',
           location: 'Migrasi GForm'
         });
-        showScheduleNotification(`Berhasil menandai ${empName} hadir via GForm.`, 'success');
+        AttendanceDB.recordAttendance({
+          empId: empId,
+          name: empName,
+          date: dateStr,
+          type: 'PULANG',
+          category: 'biasa',
+          notes: 'Data terekam di Google Form',
+          location: 'Migrasi GForm'
+        });
+        showScheduleNotification(`Berhasil menandai ${empName} selesai piket via GForm.`, 'success');
         renderMonitoringView();
         if (fullCalendar) fullCalendar.render();
         if (typeof renderReportTable === 'function') renderReportTable();
@@ -3651,7 +3667,7 @@
       }
 
       const emp = AttendanceDB.getEmployeeById(empId);
-      AttendanceDB.recordAttendance({
+      const attendanceData = {
         empId: empId,
         name: emp ? emp.name : empId,
         date: dateStr,
@@ -3659,7 +3675,14 @@
         category: cat,
         notes: reason,
         location: 'Diverifikasi oleh Admin KSPM'
-      });
+      };
+      
+      AttendanceDB.recordAttendance(attendanceData);
+      
+      if (type === 'MASUK') {
+        attendanceData.type = 'PULANG';
+        AttendanceDB.recordAttendance(attendanceData);
+      }
 
       document.getElementById('addManualAttendanceModal').classList.add('hidden');
       renderMonitoringView();
