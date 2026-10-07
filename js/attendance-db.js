@@ -197,9 +197,13 @@ const AttendanceDB = {
           'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
         };
 
+        const twoMonthsAgo = new Date();
+        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+        const dateFilter = twoMonthsAgo.toISOString().split('T')[0];
+
         const [empRes, attRes, schRes, holRes, setRes] = await Promise.all([
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/employees?select=*`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&order=date.desc,time.desc&limit=2000`, { headers }),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilter}&order=date.desc,time.desc&limit=2000`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/holidays?select=*`, { headers }),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*`, { headers })
@@ -320,33 +324,89 @@ const AttendanceDB = {
     return this._syncPromise;
   },
 
+  handleRealtimePayload(table, payload) {
+    const { eventType, new: newRec, old: oldRec } = payload;
+    let localData = [];
+    let storageKey = '';
+
+    if (table === 'attendance') {
+      storageKey = DB_KEYS.ATTENDANCE;
+      localData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    } else if (table === 'schedules') {
+      storageKey = DB_KEYS.SCHEDULES;
+      localData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    } else if (table === 'settings') {
+      this.syncFromCloud().then(() => {
+        if (typeof checkHomeSystemPauseState === 'function') checkHomeSystemPauseState();
+        if (typeof updateSystemPauseUI === 'function') updateSystemPauseUI();
+        if (typeof checkSystemPauseState === 'function') checkSystemPauseState();
+      });
+      return;
+    } else {
+      return;
+    }
+
+    if (eventType === 'DELETE' && oldRec && oldRec.id) {
+      localData = localData.filter(item => item.id !== oldRec.id);
+    } else if ((eventType === 'INSERT' || eventType === 'UPDATE') && newRec && newRec.id) {
+      let mappedItem = {};
+      if (table === 'attendance') {
+        mappedItem = {
+          id: newRec.id,
+          empId: newRec.emp_id || newRec.empId,
+          name: newRec.name,
+          date: normalizeCloudDate(newRec.date),
+          time: normalizeCloudTime(newRec.time),
+          type: newRec.type,
+          category: newRec.category || 'biasa',
+          replacedDate: newRec.replaced_date || newRec.replacedDate || null,
+          reason: newRec.reason || '',
+          status: newRec.status,
+          shiftId: newRec.shift_id || newRec.shiftId,
+          location: newRec.location || '',
+          photo: newRec.photo || '',
+          notes: newRec.notes || ''
+        };
+      } else if (table === 'schedules') {
+        mappedItem = {
+          id: newRec.id,
+          empId: newRec.emp_id || newRec.empId,
+          date: normalizeCloudDate(newRec.date),
+          shiftId: newRec.shift_id || newRec.shiftId,
+          category: newRec.category || 'biasa',
+          replacedDate: newRec.replaced_date || newRec.replacedDate || null,
+          notes: newRec.notes || ''
+        };
+      }
+      
+      const existingIdx = localData.findIndex(item => item.id === mappedItem.id);
+      if (existingIdx >= 0) {
+        localData[existingIdx] = mappedItem;
+      } else {
+        localData.push(mappedItem);
+      }
+      
+      if (table === 'attendance') {
+        localData.sort((a, b) => (b.date + ' ' + b.time).localeCompare(a.date + ' ' + a.time));
+      }
+    }
+
+    localStorage.setItem(storageKey, JSON.stringify(localData));
+
+    if (window.calendarInstance) window.calendarInstance.render();
+    if (typeof renderMonitoringView === 'function') renderMonitoringView();
+    if (typeof onCalendarDateSelected === 'function' && typeof activeSelectedDate !== 'undefined') onCalendarDateSelected(activeSelectedDate);
+  },
+
   initRealtime() {
     if (typeof supabase !== 'undefined' && supabase.createClient && !this._realtimeClient) {
       try {
         this._realtimeClient = supabase.createClient(SUPABASE_CONFIG.URL, SUPABASE_CONFIG.ANON_KEY);
         this._realtimeClient
           .channel('kspm_attendance_realtime')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, () => {
-            this.syncFromCloud().then(() => {
-              if (window.calendarInstance) window.calendarInstance.render();
-              if (typeof renderMonitoringView === 'function') renderMonitoringView();
-              if (typeof onCalendarDateSelected === 'function' && typeof activeSelectedDate !== 'undefined') onCalendarDateSelected(activeSelectedDate);
-            });
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, () => {
-            this.syncFromCloud().then(() => {
-              if (window.calendarInstance) window.calendarInstance.render();
-              if (typeof renderMonitoringView === 'function') renderMonitoringView();
-              if (typeof onCalendarDateSelected === 'function' && typeof activeSelectedDate !== 'undefined') onCalendarDateSelected(activeSelectedDate);
-            });
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, () => {
-            this.syncFromCloud().then(() => {
-              if (typeof checkHomeSystemPauseState === 'function') checkHomeSystemPauseState();
-              if (typeof updateSystemPauseUI === 'function') updateSystemPauseUI();
-              if (typeof checkSystemPauseState === 'function') checkSystemPauseState();
-            });
-          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'attendance' }, (payload) => this.handleRealtimePayload('attendance', payload))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' }, (payload) => this.handleRealtimePayload('schedules', payload))
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, (payload) => this.handleRealtimePayload('settings', payload))
           .subscribe();
       } catch (e) {
         console.warn('Realtime init error:', e);
