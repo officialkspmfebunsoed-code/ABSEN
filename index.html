@@ -474,9 +474,16 @@
         }
       });
 
-      // Jika tidak ada yang sedang di GI, sembunyikan section sepenuhnya!
+      // Jika tidak ada yang sedang di GI, tampilkan status kosong
       if (activeInGI.length === 0) {
-        section.classList.add('hidden');
+        section.classList.remove('hidden');
+        badge.innerHTML = `<i data-feather="users" class="w-3 h-3 text-emerald-500"></i><span>0</span>`;
+        track.innerHTML = `
+          <div class="flex items-center justify-center p-4 w-full text-center text-xs text-gray-500 dark:text-gray-400 opacity-70 italic">
+            Sedang sepi, belum ada pengurus yang berjaga di GI saat ini 😴
+          </div>
+        `;
+        if (window.feather) feather.replace();
         return;
       }
 
