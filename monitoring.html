@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monitoring Piket - KSPM</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Inter -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
+
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+
+  <!-- Supabase Realtime SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body
+  class="font-sans bg-[#f8fafc] text-gray-900 dark:bg-[#0b0e14] dark:text-gray-100 min-h-screen flex flex-col justify-between selection:bg-red-600 selection:text-white transition-colors duration-300 antialiased">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header id="dynamicHeader" class="dynamic-header header-at-top z-40">
+    <div class="header-inner-container flex items-center justify-between gap-2 sm:gap-3">
+
+      <!-- Island Kiri: Brand & Logo KSPM -->
+      <div class="header-island-left min-w-0">
+        <a href="index.html" class="flex items-center gap-2 sm:gap-3 group min-w-0">
+          <div
+            class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/90 dark:bg-[#181d28]/90 border border-gray-200/80 dark:border-white/10 p-1 flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform flex-shrink-0">
+            <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain"
+              onerror="this.onerror=null; this.parentNode.innerHTML='<span class=\'font-black text-red-600 text-xs sm:text-sm\'>GI</span>';">
+          </div>
+          <div class="min-w-0">
+            <h1
+              class="text-xs sm:text-sm md:text-base font-black tracking-tight text-gray-900 dark:text-white truncate">
+              Kelompok Studi <span class="text-red-600 dark:text-red-500">Pasar Modal</span>
+            </h1>
+            <p
+              class="text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate max-w-[160px] sm:max-w-none">
+              Monitoring Kehadiran Piket Anggota</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Island Kanan: Back & Actions -->
+      <div class="header-island-right flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+        <a href="index.html"
+          class="px-3 sm:px-3.5 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 dark:bg-[#181d26] dark:hover:bg-gray-800 text-gray-700 dark:text-gray-200 text-xs font-bold transition flex items-center gap-1.5 flex-shrink-0">
+          <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
+          <span class="hidden sm:inline">Beranda</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ================= KONTEN UTAMA ================= -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 pt-6 pb-8 sm:pb-10 space-y-6 sm:space-y-8 mt-16 sm:mt-24">
+
+    <!-- HEADER TITLE -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div>
+        <h2 class="text-xl sm:text-2xl md:text-3xl font-black tracking-tight text-gray-900 dark:text-white">Monitoring <span class="text-red-600">Piket</span></h2>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-medium mt-1">
+          Pilih tanggal pada kalender untuk melihat daftar anggota yang bertugas beserta status kehadirannya.
+        </p>
+      </div>
+    </div>
+
+    <div class="flex flex-col lg:flex-row gap-6 items-start">
+      
+      <!-- KALENDER -->
+      <div class="w-full lg:w-5/12 bg-white/70 dark:bg-[#131823]/80 backdrop-blur-xl border border-gray-200/80 dark:border-white/5 rounded-3xl p-5 sm:p-6 shadow-xl shadow-gray-200/30 dark:shadow-none sticky top-28">
+        <div id="monitoringCalendarContainer"></div>
+      </div>
+
+      <!-- REKAP HARIAN -->
+      <div class="w-full lg:w-7/12 space-y-6">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/70 dark:bg-[#131823]/80 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-gray-200/80 dark:border-white/5 shadow-sm">
+          <div>
+            <span class="text-[10px] font-bold text-red-500 uppercase tracking-wider">Rekapitulasi Harian</span>
+            <h3 id="monitoringDateLabel" class="text-sm sm:text-base font-black text-gray-900 dark:text-white mt-0.5">Hari Ini</h3>
+          </div>
+          <div id="monitoringQuickStats" class="flex items-center gap-2 text-xs font-bold flex-wrap">
+            <!-- Stats -->
+          </div>
+        </div>
+
+        <div id="monitoringListContainer" class="space-y-4">
+          <!-- Populated dynamically -->
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="mt-auto border-t border-gray-200/80 dark:border-gray-800/80 bg-white/50 dark:bg-[#0b0e14]/50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-2">
+        <i data-feather="bar-chart-2" class="w-5 h-5 text-red-600"></i>
+        <span class="font-black text-sm text-gray-900 dark:text-white tracking-tight">KSPM Unsoed</span>
+      </div>
+      <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">© 2026 Divisi RnD & IT KSPM. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="js/attendance-db.js"></script>
+  <script src="js/calendar.js"></script>
+  <script>
+    let activeDateStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+    let calendarInstance;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      feather.replace();
+
+      // Sinkronisasi DB
+      AttendanceDB.syncFromCloud().then(() => {
+        calendarInstance = new AttendanceCalendar('monitoringCalendarContainer', {
+          defaultSelectedDate: activeDateStr,
+          onDateSelect: (dateStr) => {
+            activeDateStr = dateStr;
+            renderMonitoringView();
+          }
+        });
+        renderMonitoringView();
+      });
+    });
+
+    function renderMonitoringView() {
+      const daily = AttendanceDB.getDailyMonitoring(activeDateStr);
+      
+      const dObj = new Date(activeDateStr + 'T00:00:00');
+      const dateText = dObj.toLocaleDateString('id-ID', {
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+      });
+      
+      document.getElementById('monitoringDateLabel').innerText = dateText;
+      
+      const statsContainer = document.getElementById('monitoringQuickStats');
+      if (daily.isHoliday || AttendanceDB.isDateExemptedFromAlpha(activeDateStr)) {
+        statsContainer.innerHTML = \`
+          <span class="px-2.5 py-1 rounded-xl bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300">
+            \${daily.holiday ? \`Libur: \${daily.holiday.name}\` : 'Sistem Dijeda (Bebas Tugas)'}
+          </span>
+        \`;
+      } else {
+        statsContainer.innerHTML = \`
+          <span class="px-2 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">Total: \${daily.counts.totalScheduled}</span>
+          <span class="px-2 py-1 rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300">Hadir: \${daily.counts.hadir}</span>
+          <span class="px-2 py-1 rounded-xl bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300">Izin: \${daily.counts.izin}</span>
+          <span class="px-2 py-1 rounded-xl bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300 border border-red-300">Alpa: \${daily.counts.alpa}</span>
+        \`;
+      }
+
+      const listContainer = document.getElementById('monitoringListContainer');
+      const list = daily.monitoringList || [];
+      const isExempted = daily.isHoliday || AttendanceDB.isDateExemptedFromAlpha(activeDateStr);
+
+      if (list.length === 0 && !isExempted) {
+        listContainer.innerHTML = \`
+          <div class="text-center py-10 px-4 bg-gray-50/50 dark:bg-gray-800/20 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800">
+            <i data-feather="inbox" class="w-8 h-8 mx-auto text-gray-400 mb-2"></i>
+            <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Tidak ada anggota yang dijadwalkan piket pada hari ini.</p>
+          </div>
+        \`;
+        feather.replace();
+        return;
+      }
+
+      if (isExempted && list.length === 0) {
+        listContainer.innerHTML = \`
+          <div class="text-center py-10 px-4 bg-rose-50/50 dark:bg-rose-950/20 rounded-2xl border border-dashed border-rose-200 dark:border-rose-900/50">
+            <i data-feather="sun" class="w-8 h-8 mx-auto text-rose-400 mb-2"></i>
+            <p class="text-sm font-semibold text-rose-600 dark:text-rose-400">\${daily.holiday ? \`Hari ini libur: \${daily.holiday.name}\` : 'Sistem Dijeda'}</p>
+          </div>
+        \`;
+        feather.replace();
+        return;
+      }
+
+      let html = '';
+      
+      const shifts = AttendanceDB.getShifts();
+      shifts.forEach(shift => {
+        const membersInShift = list.filter(i => i.shift.id === shift.id);
+        
+        html += \`
+          <div class="bg-white/50 dark:bg-[#181d26]/50 rounded-2xl border border-gray-200/80 dark:border-gray-800 overflow-hidden">
+            <div class="px-4 py-3 bg-gray-100/50 dark:bg-[#131823] border-b border-gray-200/80 dark:border-gray-800 flex items-center gap-2">
+              <i data-feather="\${shift.id === 'shift_pagi' ? 'sunrise' : 'sun'}" class="w-4 h-4 \${shift.id === 'shift_pagi' ? 'text-amber-500' : 'text-orange-500'}"></i>
+              <h4 class="text-xs sm:text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider">\${shift.name} <span class="font-medium text-gray-500 ml-1">(\${shift.start} - \${shift.end})</span></h4>
+            </div>
+            <div class="p-4 space-y-3">
+        \`;
+
+        if (membersInShift.length === 0) {
+           html += \`<p class="text-xs text-red-500 text-center font-bold py-2"><i data-feather="alert-triangle" class="w-4 h-4 inline-block mb-1"></i> Sesi kosong (tidak ada petugas yang dijadwalkan)</p>\`;
+        } else {
+           membersInShift.forEach(item => {
+             let badgeHtml = '';
+             let timeDetails = '';
+
+             if (item.status === 'BEBAS_TUGAS') {
+               badgeHtml = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-300 flex items-center gap-1"><i data-feather="sun" class="w-2.5 h-2.5"></i> BEBAS TUGAS</span>';
+               timeDetails = item.notes || 'Hari Libur / Dijeda';
+             } else if (item.status === 'SELESAI' || item.status === 'SELESAI_PIKET') {
+               badgeHtml = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-300 flex items-center gap-1"><i data-feather="check-circle" class="w-2.5 h-2.5 text-emerald-500"></i> SELESAI</span>';
+               timeDetails = \`Masuk: \${item.timeMasuk || '-'} | Pulang: \${item.timePulang || '-'}\`;
+             } else if (item.status === 'SEDANG_BERTUGAS' || item.status === 'HADIR' || item.status === 'TEPAT_WAKTU') {
+               badgeHtml = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-black bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 flex items-center gap-1 shadow-sm"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> SEDANG BERTUGAS</span>';
+               timeDetails = \`Masuk: \${item.timeMasuk || item.time}\`;
+             } else if (item.status === 'IZIN' || item.status === 'SAKIT') {
+               badgeHtml = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-300 flex items-center gap-1"><i data-feather="file-text" class="w-2.5 h-2.5"></i> IZIN PIKET</span>';
+               timeDetails = item.notes || 'Izin Terdaftar';
+             } else {
+               badgeHtml = '<span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400 border border-red-300 flex items-center gap-1"><i data-feather="alert-circle" class="w-2.5 h-2.5"></i> BELUM PIKET (ALPA)</span>';
+               timeDetails = 'Belum Absen';
+             }
+
+             html += \`
+                <div class="flex items-center justify-between gap-2 p-3 bg-white dark:bg-[#0b0e14] rounded-xl border border-gray-100 dark:border-gray-800/80 shadow-sm hover:border-gray-200 dark:hover:border-gray-700 transition">
+                  <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br \${item.color || 'from-gray-400 to-gray-500'} text-white font-bold flex items-center justify-center text-xs shadow-sm flex-shrink-0">
+                      \${item.avatar}
+                    </div>
+                    <div class="min-w-0 flex-1">
+                      <h6 class="font-bold text-xs sm:text-sm text-gray-900 dark:text-white truncate">\${item.name}</h6>
+                      <div class="flex items-center gap-2 mt-0.5 text-[9px] sm:text-[10px] text-gray-500 dark:text-gray-400 font-mono truncate">
+                        <span>\${timeDetails}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="flex-shrink-0">
+                    \${badgeHtml}
+                  </div>
+                </div>
+             \`;
+           });
+        }
+
+        html += \`
+            </div>
+          </div>
+        \`;
+      });
+
+      listContainer.innerHTML = html;
+      feather.replace();
+    }
+  </script>
+</body>
+</html>
