@@ -789,41 +789,6 @@
       }).join('');
     }
   </script>
-    <!-- ================= BOTTOM NAVIGATION ================= -->
-    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-xl bg-white/95 dark:bg-[#131823]/95 backdrop-blur-xl border-t border-gray-200 dark:border-gray-800 flex justify-around items-center pt-2 pb-safe z-50 px-2 shadow-[0_-10px_20px_rgba(0,0,0,0.05)]">
-      
-      <a href="portal.html" class="flex flex-col items-center gap-1 p-2 w-16 relative text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <i data-feather="home" class="w-5 h-5"></i>
-        <span class="text-[9px] font-bold mt-0.5">Home</span>
-      </a>
-
-      <a href="portal_jadwal.html" class="flex flex-col items-center gap-1 p-2 w-16 relative text-red-600 dark:text-red-500 transition-colors">
-        <div class="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-1 bg-red-600 dark:bg-red-500 rounded-b-md"></div>
-        <i data-feather="calendar" class="w-5 h-5"></i>
-        <span class="text-[9px] font-extrabold mt-0.5">Jadwal</span>
-      </a>
-
-      <a href="portal_monitor.html" class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <i data-feather="pie-chart" class="w-5 h-5"></i>
-        <span class="text-[9px] font-bold mt-0.5">Monitor</span>
-      </a>
-
-      <a href="portal_contact.html" class="flex flex-col items-center gap-1 p-2 w-16 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors">
-        <i data-feather="message-circle" class="w-5 h-5"></i>
-        <span class="text-[9px] font-bold mt-0.5">Contact</span>
-      </a>
-
-    </nav>
-    <style>
-      @supports (padding-bottom: env(safe-area-inset-bottom)) {
-        .pb-safe { padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)); }
-        body { padding-bottom: calc(5rem + env(safe-area-inset-bottom)) !important; }
-      }
-      @supports not (padding-bottom: env(safe-area-inset-bottom)) {
-        .pb-safe { padding-bottom: 0.5rem; }
-        body { padding-bottom: 5rem !important; }
-      }
-    </style>
 </body>
 
 </html>
