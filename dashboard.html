@@ -1251,6 +1251,11 @@
           <input type="text" id="systemPauseReasonInput" value="Masa Libur Perkuliahan" placeholder="Contoh: Masa Libur Akhir Semester Genap" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500 shadow-inner">
         </div>
 
+        <div>
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Link Google Form (Opsional)</label>
+          <input type="text" id="systemPauseGformLinkInput" placeholder="Contoh: https://forms.gle/..." class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-gray-800 dark:text-gray-200 outline-none focus:border-amber-500 shadow-inner">
+        </div>
+
         <div class="p-3 rounded-2xl bg-white/40 dark:bg-[#181d26]/50 backdrop-blur-md border border-gray-200/60 dark:border-white/10 space-y-1">
           <p class="font-bold text-gray-800 dark:text-gray-200">Status Saat Ini:</p>
           <p id="modalCurrentPauseStatus" class="font-mono text-emerald-600 dark:text-emerald-400 font-bold">🟢 Sistem Aktif Normal</p>
@@ -1775,6 +1780,7 @@
       const modal = document.getElementById('systemPauseModal');
       const statusText = document.getElementById('modalCurrentPauseStatus');
       const reasonInput = document.getElementById('systemPauseReasonInput');
+      const gformInput = document.getElementById('systemPauseGformLinkInput');
       const btnAction = document.getElementById('btnConfirmPauseAction');
       const btnActionText = document.getElementById('btnConfirmPauseText');
 
@@ -1782,11 +1788,13 @@
         statusText.className = 'font-mono text-amber-500 font-bold';
         statusText.innerText = '⏸️ Sistem Sedang Dijeda (' + (pauseInfo.reason || 'Libur Kuliah') + ')';
         reasonInput.value = pauseInfo.reason || 'Masa Libur Perkuliahan';
+        if (gformInput) gformInput.value = pauseInfo.gformLink || '';
         btnAction.className = 'px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow flex items-center gap-1.5';
         btnActionText.innerText = 'Buka & Aktifkan Sistem';
       } else {
         statusText.className = 'font-mono text-emerald-600 dark:text-emerald-400 font-bold';
         statusText.innerText = '🟢 Sistem Sedang Aktif Normal';
+        if (gformInput) gformInput.value = '';
         btnAction.className = 'px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow flex items-center gap-1.5';
         btnActionText.innerText = 'Jeda Sistem Sekarang';
       }
@@ -1802,12 +1810,13 @@
     function confirmToggleSystemPause() {
       const isPaused = AttendanceDB.isSystemPaused();
       const reason = document.getElementById('systemPauseReasonInput').value || 'Masa Libur Perkuliahan';
+      const gformLink = document.getElementById('systemPauseGformLinkInput') ? document.getElementById('systemPauseGformLinkInput').value : '';
       
       if (isPaused) {
         AttendanceDB.setSystemPaused(false);
         alert("Sistem presensi piket KSPM telah DIAKTIFKAN kembali!");
       } else {
-        AttendanceDB.setSystemPaused(true, reason);
+        AttendanceDB.setSystemPaused(true, reason, gformLink);
         alert("Sistem presensi piket KSPM telah DIJEDA (" + reason + ")!");
       }
 

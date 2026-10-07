@@ -77,21 +77,21 @@
       <p class="text-gray-500 dark:text-gray-400 text-xs">Pilih Kategori Piket & Verifikasi Identitas Anggota</p>
     </div>
 
-    <!-- ================= KARTU PEMBERITAHUAN JEDA SISTEM (LIBUR KULIAH) ================= -->
+    <!-- ================= KARTU PEMBERITAHUAN JEDA SISTEM ================= -->
     <div id="attendanceSystemPausedCard"
-      class="hidden p-6 sm:p-8 rounded-3xl bg-amber-500/10 border-2 border-amber-500/40 text-center space-y-4 animate-scaleUp">
+      class="hidden p-6 sm:p-8 rounded-3xl bg-red-500/10 border-2 border-red-500/40 text-center space-y-4 animate-scaleUp">
       <div
-        class="w-16 h-16 rounded-3xl bg-amber-500/20 text-amber-500 border border-amber-500/40 flex items-center justify-center mx-auto shadow-lg shadow-amber-500/20">
-        <i data-feather="coffee" class="w-8 h-8"></i>
+        class="w-16 h-16 rounded-3xl bg-red-500/20 text-red-500 border border-red-500/40 flex items-center justify-center mx-auto shadow-lg shadow-red-500/20">
+        <i data-feather="alert-circle" class="w-8 h-8"></i>
       </div>
       <div class="space-y-1.5">
         <h3 class="text-base sm:text-lg font-black text-gray-900 dark:text-white">Sistem Presensi Sedang Dijeda</h3>
-        <p class="text-xs font-bold text-amber-600 dark:text-amber-400" id="pausedReasonText">
+        <p class="text-xs font-bold text-red-600 dark:text-red-400" id="pausedReasonText">
           Masa Libur Perkuliahan / Kegiatan Ditangguhkan
         </p>
         <p class="text-[11px] text-gray-600 dark:text-gray-400 max-w-sm mx-auto leading-relaxed pt-1">
           Kegiatan piket dan rekam absensi Galeri Investasi ditangguhkan sementara waktu oleh BPH KSPM. Sistem akan
-          dibuka kembali saat masa perkuliahan aktif.
+          dibuka kembali nanti.
         </p>
       </div>
       <div class="pt-2 flex flex-col sm:flex-row items-center justify-center gap-2">
@@ -100,8 +100,8 @@
           <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
           <span>Kembali ke Beranda</span>
         </a>
-        <a href="https://forms.gle/dummy-link-perbaikan" target="_blank"
-          class="inline-flex items-center justify-center w-full sm:w-auto gap-2 px-6 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs shadow-lg transition transform hover:-translate-y-0.5">
+        <a href="#" target="_blank" id="btnAbsenGformFallback"
+          class="hidden items-center justify-center w-full sm:w-auto gap-2 px-6 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-extrabold text-xs shadow-lg transition transform hover:-translate-y-0.5">
           <i data-feather="external-link" class="w-3.5 h-3.5"></i>
           <span>Isi Presensi via Google Form</span>
         </a>
@@ -926,12 +926,25 @@
       const pauseCard = document.getElementById('attendanceSystemPausedCard');
       const formWrapper = document.getElementById('attendanceActiveFormWrapper');
       const reasonText = document.getElementById('pausedReasonText');
+      const btnGform = document.getElementById('btnAbsenGformFallback');
 
       if (isPaused) {
         const info = AttendanceDB.getSystemPauseInfo();
         if (pauseCard) pauseCard.classList.remove('hidden');
         if (formWrapper) formWrapper.classList.add('hidden');
         if (reasonText) reasonText.innerText = info.reason || 'Masa Libur Perkuliahan / Kegiatan Ditangguhkan';
+        
+        if (btnGform) {
+          if (info.gformLink && info.gformLink.trim() !== '') {
+            btnGform.classList.remove('hidden');
+            btnGform.classList.add('inline-flex');
+            btnGform.href = info.gformLink;
+          } else {
+            btnGform.classList.add('hidden');
+            btnGform.classList.remove('inline-flex');
+          }
+        }
+
         feather.replace();
         return true;
       } else {

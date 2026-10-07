@@ -149,29 +149,29 @@
 
     <!-- BANNER PERINGATAN JEDA SISTEM / LIBUR KULIAH -->
     <div id="homeSystemPauseBanner"
-      class="hidden w-full flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-amber-50 dark:bg-amber-950/30 border-2 border-amber-200 dark:border-amber-900/50 shadow-sm relative overflow-hidden animate-scaleUp">
+      class="hidden w-full flex flex-col sm:flex-row items-center justify-between gap-4 p-5 sm:p-6 rounded-3xl bg-red-50 dark:bg-red-950/30 border-2 border-red-200 dark:border-red-900/50 shadow-sm relative overflow-hidden animate-scaleUp">
       
       <!-- Dekorasi Background -->
-      <div class="absolute -right-10 -top-10 w-32 h-32 bg-amber-500/10 rounded-full blur-xl pointer-events-none"></div>
+      <div class="absolute -right-10 -top-10 w-32 h-32 bg-red-500/10 rounded-full blur-xl pointer-events-none"></div>
 
       <div class="flex items-center gap-4 z-10 w-full">
-        <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center flex-shrink-0 border border-amber-500/30">
+        <div class="w-12 h-12 rounded-2xl bg-red-500/20 text-red-600 dark:text-red-400 flex items-center justify-center flex-shrink-0 border border-red-500/30">
           <i data-feather="alert-circle" class="w-6 h-6 animate-pulse"></i>
         </div>
         <div class="flex-1">
           <h4 class="font-black text-sm sm:text-base text-gray-900 dark:text-white flex items-center gap-2">
             Pemberitahuan BPH: Presensi KSPM Dijeda
-            <span class="px-2 py-0.5 rounded-lg bg-amber-500 text-white font-bold text-[9px] uppercase tracking-wider">Maintenance</span>
+            <span class="px-2 py-0.5 rounded-lg bg-red-500 text-white font-bold text-[9px] uppercase tracking-wider">Maintenance</span>
           </h4>
-          <p class="text-xs sm:text-sm font-medium text-amber-800 dark:text-amber-300 mt-1" id="homePauseReasonText">
+          <p class="text-xs sm:text-sm font-medium text-red-800 dark:text-red-300 mt-1" id="homePauseReasonText">
             Masa Libur Perkuliahan / Kegiatan Piket Ditangguhkan Sementara.
           </p>
         </div>
       </div>
 
-      <div class="z-10 flex flex-col w-full sm:w-auto gap-2">
-        <a href="https://forms.gle/dummy-link-perbaikan" target="_blank" id="btnGformFallback"
-          class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-md transition transform active:scale-95 flex items-center justify-center gap-2 flex-shrink-0">
+      <div class="z-10 flex flex-col w-full sm:w-auto gap-2" id="homeGformFallbackWrapper">
+        <a href="#" target="_blank" id="btnGformFallback"
+          class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-md transition transform active:scale-95 flex items-center justify-center gap-2 flex-shrink-0">
           <i data-feather="external-link" class="w-3.5 h-3.5"></i>
           <span>Isi Presensi via Google Form</span>
         </a>
@@ -538,10 +538,23 @@
       const isPaused = AttendanceDB.isSystemPaused();
       const banner = document.getElementById('homeSystemPauseBanner');
       const reasonText = document.getElementById('homePauseReasonText');
+      const gformWrapper = document.getElementById('homeGformFallbackWrapper');
+      const btnGform = document.getElementById('btnGformFallback');
+      
       if (isPaused) {
         const info = AttendanceDB.getSystemPauseInfo();
         if (banner) banner.classList.remove('hidden');
         if (reasonText) reasonText.innerText = info.reason || 'Masa Libur Perkuliahan / Kegiatan Piket Ditangguhkan Sementara.';
+        
+        if (gformWrapper && btnGform) {
+          if (info.gformLink && info.gformLink.trim() !== '') {
+            gformWrapper.classList.remove('hidden');
+            btnGform.href = info.gformLink;
+          } else {
+            gformWrapper.classList.add('hidden');
+          }
+        }
+        
         feather.replace();
       } else {
         if (banner) banner.classList.add('hidden');

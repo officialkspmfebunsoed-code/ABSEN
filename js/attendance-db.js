@@ -326,10 +326,12 @@ const AttendanceDB = {
           if (Array.isArray(settings) && settings.length > 0) {
             const pauseSetting = settings.find(s => s.key === 'SYSTEM_PAUSED');
             const reasonSetting = settings.find(s => s.key === 'SYSTEM_PAUSE_REASON');
+            const gformSetting = settings.find(s => s.key === 'SYSTEM_PAUSE_GFORM_LINK');
             if (pauseSetting) {
               localStorage.setItem('kspm_system_paused', JSON.stringify({
                 isPaused: pauseSetting.value === 'TRUE',
-                reason: reasonSetting ? reasonSetting.value : 'Masa Libur Perkuliahan'
+                reason: reasonSetting ? reasonSetting.value : 'Masa Libur Perkuliahan',
+                gformLink: gformSetting ? gformSetting.value : ''
               }));
             }
             const rosterSetting = settings.find(s => s.key === 'WEEKLY_ROSTER');
@@ -1975,23 +1977,25 @@ const AttendanceDB = {
   getSystemPauseInfo() {
     try {
       const data = localStorage.getItem('kspm_system_paused');
-      if (!data) return { isPaused: false, reason: '', pausedAt: null };
+      if (!data) return { isPaused: false, reason: '', pausedAt: null, gformLink: '' };
       return JSON.parse(data);
     } catch (e) {
-      return { isPaused: false, reason: '', pausedAt: null };
+      return { isPaused: false, reason: '', pausedAt: null, gformLink: '' };
     }
   },
 
-  setSystemPaused(paused, reason = 'Masa Libur Perkuliahan') {
+  setSystemPaused(paused, reason = 'Masa Libur Perkuliahan', gformLink = '') {
     const pauseData = {
       isPaused: !!paused,
       reason: reason || 'Masa Libur Perkuliahan',
+      gformLink: gformLink || '',
       pausedAt: paused ? new Date().toISOString() : null
     };
     localStorage.setItem('kspm_system_paused', JSON.stringify(pauseData));
     this.postToSupabase('settings?on_conflict=key', [
       { key: 'SYSTEM_PAUSED', value: paused ? 'TRUE' : 'FALSE' },
-      { key: 'SYSTEM_PAUSE_REASON', value: reason || 'Masa Libur Perkuliahan' }
+      { key: 'SYSTEM_PAUSE_REASON', value: reason || 'Masa Libur Perkuliahan' },
+      { key: 'SYSTEM_PAUSE_GFORM_LINK', value: gformLink || '' }
     ]);
     return pauseData;
   },
