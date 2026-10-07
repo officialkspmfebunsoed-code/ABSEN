@@ -36,7 +36,7 @@ const DEFAULT_DEPARTMENTS = [
   'Research Analyst',
   'Public Relations',
   'Media & Technology',
-  'Calon Pengurus / Trainee'
+  'Internship'
 ];
 
 // Data 33 Pengurus & Anggota Resmi KSPM
@@ -88,7 +88,28 @@ const DEFAULT_EMPLOYEES = [
   { id: 'KSPM-030', name: 'Zulfikar Alkindi', role: 'Staff Media & Technology', dept: 'Media & Technology', avatar: 'ZA', color: 'from-amber-600 to-orange-700', email: 'zulfikar.alkindi@unsoed.ac.id', phone: '0857-8008-0030' },
   { id: 'KSPM-031', name: 'Muhammad Abdur Rosyid', role: 'Staff Media & Technology', dept: 'Media & Technology', avatar: 'MR', color: 'from-red-600 to-orange-600', email: 'muhammad.abdur.rosyid@unsoed.ac.id', phone: '0857-8008-0031' },
   { id: 'KSPM-032', name: 'Naswa Alia', role: 'Staff Media & Technology', dept: 'Media & Technology', avatar: 'NA', color: 'from-orange-500 to-amber-500', email: 'naswa.alia@unsoed.ac.id', phone: '0857-8008-0032' },
-  { id: 'KSPM-033', name: 'Balqis Ghaliya Zafirah', role: 'Staff Media & Technology', dept: 'Media & Technology', avatar: 'BZ', color: 'from-amber-600 to-rose-600', email: 'balqis.ghaliya.zafirah@unsoed.ac.id', phone: '0857-8008-0033' }
+  { id: 'KSPM-033', name: 'Balqis Ghaliya Zafirah', role: 'Staff Media & Technology', dept: 'Media & Technology', avatar: 'BZ', color: 'from-amber-600 to-rose-600', email: 'balqis.ghaliya.zafirah@unsoed.ac.id', phone: '0857-8008-0033' },
+
+  // Internship
+  { id: 'KSPM-INT-001', name: 'Nurul Homsatun', role: 'Internship', dept: 'Internship', avatar: 'NH', color: 'from-gray-500 to-slate-600', email: 'nurul.homsatun@intern.kspm', phone: '0000-0000-0001' },
+  { id: 'KSPM-INT-002', name: 'Nadiya Kautsar Uzmud', role: 'Internship', dept: 'Internship', avatar: 'NK', color: 'from-gray-500 to-slate-600', email: 'nadiya.kautsar@intern.kspm', phone: '0000-0000-0002' },
+  { id: 'KSPM-INT-003', name: 'Eka Vina Saputri', role: 'Internship', dept: 'Internship', avatar: 'EV', color: 'from-gray-500 to-slate-600', email: 'eka.vina@intern.kspm', phone: '0000-0000-0003' },
+  { id: 'KSPM-INT-004', name: 'Aulia Fitriana Kholifah', role: 'Internship', dept: 'Internship', avatar: 'AF', color: 'from-gray-500 to-slate-600', email: 'aulia.fitriana@intern.kspm', phone: '0000-0000-0004' },
+  { id: 'KSPM-INT-005', name: 'Hanisah Aurelia Faustine', role: 'Internship', dept: 'Internship', avatar: 'HA', color: 'from-gray-500 to-slate-600', email: 'hanisah.aurelia@intern.kspm', phone: '0000-0000-0005' },
+  { id: 'KSPM-INT-006', name: 'Reza Rizki Saputra', role: 'Internship', dept: 'Internship', avatar: 'RR', color: 'from-gray-500 to-slate-600', email: 'reza.rizki@intern.kspm', phone: '0000-0000-0006' },
+  { id: 'KSPM-INT-007', name: 'Mufiida Annaura', role: 'Internship', dept: 'Internship', avatar: 'MA', color: 'from-gray-500 to-slate-600', email: 'mufiida.annaura@intern.kspm', phone: '0000-0000-0007' },
+  { id: 'KSPM-INT-008', name: 'Cyrilla Ivani Elysia Harsongko', role: 'Internship', dept: 'Internship', avatar: 'CI', color: 'from-gray-500 to-slate-600', email: 'cyrilla.ivani@intern.kspm', phone: '0000-0000-0008' },
+  { id: 'KSPM-INT-009', name: 'Sofiyah Karimah', role: 'Internship', dept: 'Internship', avatar: 'SK', color: 'from-gray-500 to-slate-600', email: 'sofiyah.karimah@intern.kspm', phone: '0000-0000-0009' },
+  { id: 'KSPM-INT-010', name: 'Naya Dinda Irfani', role: 'Internship', dept: 'Internship', avatar: 'ND', color: 'from-gray-500 to-slate-600', email: 'naya.dinda@intern.kspm', phone: '0000-0000-0010' },
+  { id: 'KSPM-INT-011', name: 'Nurhayati', role: 'Internship', dept: 'Internship', avatar: 'NU', color: 'from-gray-500 to-slate-600', email: 'nurhayati@intern.kspm', phone: '0000-0000-0011' },
+  { id: 'KSPM-INT-012', name: 'Muhammad Nur Al-Fadhl', role: 'Internship', dept: 'Internship', avatar: 'MN', color: 'from-gray-500 to-slate-600', email: 'muhammad.nur@intern.kspm', phone: '0000-0000-0012' },
+  { id: 'KSPM-INT-013', name: 'Aisha Rasendriya Prabawa', role: 'Internship', dept: 'Internship', avatar: 'AR', color: 'from-gray-500 to-slate-600', email: 'aisha.rasendriya@intern.kspm', phone: '0000-0000-0013' },
+  { id: 'KSPM-INT-014', name: 'Samuel Partogi', role: 'Internship', dept: 'Internship', avatar: 'SP', color: 'from-gray-500 to-slate-600', email: 'samuel.partogi@intern.kspm', phone: '0000-0000-0014' },
+  { id: 'KSPM-INT-015', name: 'Lili Purwati', role: 'Internship', dept: 'Internship', avatar: 'LP', color: 'from-gray-500 to-slate-600', email: 'lili.purwati@intern.kspm', phone: '0000-0000-0015' },
+  { id: 'KSPM-INT-016', name: 'Nasywa Putri Khalila', role: 'Internship', dept: 'Internship', avatar: 'NP', color: 'from-gray-500 to-slate-600', email: 'nasywa.putri@intern.kspm', phone: '0000-0000-0016' },
+  { id: 'KSPM-INT-017', name: 'Rahma Wibawanty', role: 'Internship', dept: 'Internship', avatar: 'RW', color: 'from-gray-500 to-slate-600', email: 'rahma.wibawanty@intern.kspm', phone: '0000-0000-0017' },
+  { id: 'KSPM-INT-018', name: 'Putro Aji Satrio', role: 'Internship', dept: 'Internship', avatar: 'PA', color: 'from-gray-500 to-slate-600', email: 'putro.aji@intern.kspm', phone: '0000-0000-0018' },
+  { id: 'KSPM-INT-019', name: 'M. Hanif Al Fatih', role: 'Internship', dept: 'Internship', avatar: 'MH', color: 'from-gray-500 to-slate-600', email: 'm.hanif@intern.kspm', phone: '0000-0000-0019' }
 ];
 
 // Helper Tanggal YYYY-MM-DD
