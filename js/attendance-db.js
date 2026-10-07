@@ -6,7 +6,7 @@
 
 const DB_KEYS = {
   EMPLOYEES: 'kspm_members_v4',
-  SCHEDULES: 'kspm_schedules_v6',
+  SCHEDULES: 'kspm_schedules_v7',
   ATTENDANCE: 'kspm_attendance_v4',
   SHIFTS: 'kspm_shifts_v4',
   HOLIDAYS: 'kspm_holidays_v4'
