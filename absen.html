@@ -372,95 +372,104 @@
       </div>
 
 
-      <!-- ================= VIEW LANGKAH 2: KAMERA FULL SE-HALAMAN ================= -->
-      <div id="step2Container"
-        class="hidden w-full min-h-[75vh] sm:min-h-[82vh] rounded-3xl overflow-hidden relative shadow-2xl border-2 border-red-500/30 flex flex-col justify-between p-3 sm:p-4 bg-black animate-scaleUp select-none">
-
-        <!-- Live Video Element (Clean Full Background Cover) -->
-        <video id="kamera" autoplay playsinline muted
-          class="absolute inset-0 w-full h-full object-cover object-center z-0 block transition-transform duration-300"></video>
-
-        <!-- Camera Flash Animation Overlay -->
-        <div id="cameraFlashOverlay"
-          class="absolute inset-0 bg-white z-40 opacity-0 pointer-events-none transition-opacity duration-150"></div>
-
-        <!-- Status Loading / Error Overlay -->
-        <div id="kioskCameraStatus"
-          class="absolute inset-0 flex items-center justify-center text-white bg-black/80 z-20 px-4 text-center font-bold">
-          <div class="space-y-2 flex flex-col items-center">
-            <div
-              class="w-10 h-10 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center animate-pulse">
-              <i data-feather="camera" class="w-5 h-5"></i>
-            </div>
-            <p class="text-xs text-red-400 font-extrabold">Menghubungkan Kamera...</p>
-          </div>
-        </div>
-
-        <!-- TOP BAR: Clean Minimal HUD (Back Button + User Profile Pill + Mirror Toggle) -->
-        <div class="relative z-20 w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
-
-          <!-- Tombol Kembali -->
-          <button type="button" onclick="goToStep1()"
-            class="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-lg">
-            <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
-            <span>Kembali</span>
-          </button>
-
-          <!-- Profile Badge (Top-Center) -->
-          <div
-            class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-xl border border-white/20 shadow-xl select-none">
-            <i data-feather="user" class="w-3.5 h-3.5 text-red-400"></i>
-            <span id="step2EmpName" class="font-extrabold text-xs text-white truncate max-w-[160px]">-</span>
-          </div>
-
-          <!-- Mirror Toggle -->
-          <div class="flex items-center gap-1.5">
-            <button type="button" onclick="toggleCameraMirror()" id="btnToggleMirror"
-              class="p-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white font-bold transition active:scale-95 shadow-lg flex items-center justify-center"
-              title="Mode Cermin">
-              <i data-feather="repeat" class="w-3.5 h-3.5 text-red-400"></i>
-            </button>
-            <div id="mirrorModeToast" class="hidden"></div>
-          </div>
-
-        </div>
-
-        <!-- HIDDEN / COMPATIBILITY REFERENCES -->
-        <div id="step2CategoryBadge" class="hidden"></div>
-        <div id="step2SubDetails" class="hidden"></div>
-
-        <!-- BOTTOM BAR: Clean Minimal Shutter Button & GPS -->
-        <div class="relative z-20 w-full max-w-sm mx-auto space-y-2">
-
-          <!-- Status Message (Subtle) -->
-          <p id="statusMesej" class="text-center text-xs font-semibold text-white/90 min-h-[1rem] drop-shadow-md"></p>
-
-          <!-- CLEAN SHUTTER BUTTON -->
-          <button onclick="mintaLokasiLaluKirim()" id="btnScanKiosk"
-            class="w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold py-3.5 rounded-2xl shadow-2xl shadow-red-600/50 border border-white/20 transition transform hover:-translate-y-0.5 active:scale-[0.98] text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2">
-            <i data-feather="camera" class="w-4 h-4"></i>
-            <span id="btnScanText">Jepret Foto Presensi</span>
-          </button>
-
-          <!-- Simple Clickable GPS Tag -->
-          <div id="kioskGpsBar" onclick="detectKioskGPS()"
-            class="w-full bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] text-gray-300 font-medium flex items-center justify-between border border-white/10 shadow cursor-pointer hover:text-white transition">
-            <div class="flex items-center gap-1.5 truncate">
-              <i data-feather="map-pin" class="w-3 h-3 text-red-500 flex-shrink-0"></i>
-              <span id="kioskGpsText" class="truncate text-gray-300">Galeri Investasi Unsoed</span>
-            </div>
-            <span class="text-gray-400 text-[9px] flex-shrink-0">GPS Aktif</span>
-          </div>
-
-        </div>
-
-      </div>
-
       <canvas id="kanvas" class="hidden"></canvas>
       <input type="file" id="cameraFileInput" accept="image/*" capture="user" onchange="handleCameraFileUpload(event)"
         class="hidden">
     </div>
   </main>
+
+  <!-- ================= OVERLAY KAMERA FULL-SCREEN (FIXED, DI LUAR MAIN CARD) ================= -->
+  <div id="step2Container"
+    class="hidden fixed inset-0 z-50 w-screen h-screen bg-black flex flex-col justify-between p-3 sm:p-4 select-none">
+
+    <!-- Live Video Element (Clean Full Background Cover) -->
+    <video id="kamera" autoplay playsinline muted
+      class="absolute inset-0 w-full h-full object-cover object-center z-0 block transition-transform duration-300"></video>
+
+    <!-- Camera Flash Animation Overlay -->
+    <div id="cameraFlashOverlay"
+      class="absolute inset-0 bg-white z-40 opacity-0 pointer-events-none transition-opacity duration-150"></div>
+
+    <!-- Status Loading / Error Overlay -->
+    <div id="kioskCameraStatus"
+      class="absolute inset-0 flex items-center justify-center text-white bg-black/80 z-20 px-4 text-center font-bold">
+      <div class="space-y-2 flex flex-col items-center">
+        <div
+          class="w-10 h-10 rounded-2xl bg-red-600/20 border border-red-500/40 text-red-500 flex items-center justify-center animate-pulse">
+          <i data-feather="camera" class="w-5 h-5"></i>
+        </div>
+        <p class="text-xs text-red-400 font-extrabold">Menghubungkan Kamera...</p>
+      </div>
+    </div>
+
+    <!-- TOP BAR: Clean Minimal HUD (Back Button + User Profile Pill + Mirror Toggle) -->
+    <div class="relative z-20 w-full max-w-4xl mx-auto flex items-center justify-between gap-2">
+
+      <!-- Tombol Kembali -->
+      <button type="button" onclick="goToStep1()"
+        class="px-3 py-1.5 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white text-xs font-bold flex items-center gap-1.5 transition active:scale-95 shadow-lg">
+        <i data-feather="arrow-left" class="w-3.5 h-3.5"></i>
+        <span>Kembali</span>
+      </button>
+
+      <!-- Profile Badge (Top-Center) -->
+      <div
+        class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-black/75 backdrop-blur-xl border border-white/20 shadow-xl select-none">
+        <i data-feather="user" class="w-3.5 h-3.5 text-red-400"></i>
+        <span id="step2EmpName" class="font-extrabold text-xs text-white truncate max-w-[160px]">-</span>
+      </div>
+
+      <!-- Mirror Toggle -->
+      <div class="flex items-center gap-1.5">
+        <button type="button" onclick="toggleCameraMirror()" id="btnToggleMirror"
+          class="p-2 rounded-xl bg-black/60 hover:bg-black/80 backdrop-blur-xl border border-white/20 text-white font-bold transition active:scale-95 shadow-lg flex items-center justify-center"
+          title="Mode Cermin">
+          <i data-feather="repeat" class="w-3.5 h-3.5 text-red-400"></i>
+        </button>
+        <div id="mirrorModeToast"
+          class="text-[10px] font-bold text-white/90 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-md border border-white/10 opacity-0 pointer-events-none transition-all duration-300 -translate-x-1">
+        </div>
+      </div>
+
+    </div>
+
+    <!-- HIDDEN / COMPATIBILITY REFERENCES -->
+    <div id="step2CategoryBadge" class="hidden"></div>
+    <div id="step2SubDetails" class="hidden"></div>
+
+    <!-- BOTTOM BAR: Clean Minimal Shutter Button & GPS -->
+    <div class="relative z-20 w-full max-w-sm mx-auto space-y-2">
+
+      <!-- Status Message (Subtle) -->
+      <p id="statusMesej" class="text-center text-xs font-semibold text-white/90 min-h-[1rem] drop-shadow-md"></p>
+
+      <!-- CLEAN SHUTTER BUTTON -->
+      <button onclick="mintaLokasiLaluKirim()" id="btnScanKiosk"
+        class="w-full bg-gradient-to-r from-red-600 via-rose-600 to-red-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold py-3.5 rounded-2xl shadow-2xl shadow-red-600/50 border border-white/20 transition transform hover:-translate-y-0.5 active:scale-[0.98] text-xs sm:text-sm tracking-wider flex items-center justify-center gap-2">
+        <i data-feather="camera" class="w-4 h-4"></i>
+        <span id="btnScanText">Jepret Foto Presensi</span>
+      </button>
+
+      <!-- Upload alternatif (Kamera HP / File) -->
+      <button type="button" onclick="document.getElementById('cameraFileInput').click()"
+        class="w-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white text-xs font-bold py-2 rounded-xl border border-white/15 transition active:scale-95 flex items-center justify-center gap-1.5">
+        <i data-feather="upload" class="w-3.5 h-3.5 text-amber-400"></i>
+        <span>Upload Foto / Kamera HP</span>
+      </button>
+
+      <!-- Simple Clickable GPS Tag -->
+      <div id="kioskGpsBar" onclick="detectKioskGPS()"
+        class="w-full bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] text-gray-300 font-medium flex items-center justify-between border border-white/10 shadow cursor-pointer hover:text-white transition">
+        <div class="flex items-center gap-1.5 truncate">
+          <i data-feather="map-pin" class="w-3 h-3 text-red-500 flex-shrink-0"></i>
+          <span id="kioskGpsText" class="truncate text-gray-300">Galeri Investasi Unsoed</span>
+        </div>
+        <span class="text-gray-400 text-[9px] flex-shrink-0">GPS Aktif</span>
+      </div>
+
+    </div>
+
+  </div>
 
   <!-- Clean Minimal Footer & Watermark -->
   <footer
@@ -807,66 +816,29 @@
 
       currentStep = 2;
 
-      // Update Header & Indicator
-      const stepBadge = document.getElementById('stepBadge');
-      const stepTitle = document.getElementById('stepTitle');
-      const dot1 = document.getElementById('stepDot1');
-      const dot2 = document.getElementById('stepDot2');
-
-      if (stepBadge) stepBadge.innerText = 'Langkah 2';
-      if (stepTitle) stepTitle.innerText = 'Ambil Foto Presensi';
-      if (dot1) {
-        dot1.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300';
-      }
-      if (dot2) {
-        dot2.className = 'w-2.5 h-2.5 rounded-full bg-red-600 transition-all duration-300';
-      }
-
       // Isi mini profile info di Step 2
       const step2Name = document.getElementById('step2EmpName');
-      const step2Details = document.getElementById('step2SubDetails');
-      const step2Badge = document.getElementById('step2CategoryBadge');
-
       if (step2Name) step2Name.innerText = emp.name;
 
-      const shiftName = currentShift === 'shift_pagi' ? 'Sesi Pagi' : 'Sesi Siang';
-      const typeText = currentAttendanceType === 'PULANG' ? 'Pulang' : 'Berangkat';
-      if (step2Details) step2Details.innerText = `${emp.dept} • ${shiftName} • ${typeText}`;
-
-      if (step2Badge) {
-        if (currentCategory === 'sukarela') {
-          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-blue-900/20 text-blue-900 dark:text-blue-200 border border-blue-600/40">Sukarela / Main</span>`;
-        } else if (currentCategory === 'pengganti') {
-          const repDate = document.getElementById('kioskReplacedDate').value || '';
-          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">Pengganti (${repDate})</span>`;
-        } else {
-          step2Badge.innerHTML = `<span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-red-100 text-red-700 dark:bg-red-950/60 dark:text-red-400 border border-red-200 dark:border-red-800">Piket Biasa</span>`;
-        }
-      }
-
-      // Update text tombol jepret di atas kamera
+      // Update text tombol jepret
       updateActionButtonText();
 
-      // Melebarkan card utama menjadi full se-halaman
-      const mainCard = document.getElementById('mainAttendanceCard');
-      if (mainCard) {
-        mainCard.className = 'w-full max-w-5xl mx-auto my-auto bg-transparent border-0 shadow-none p-0 relative transition-all duration-300 space-y-0';
+      // Tampilkan overlay kamera full-screen
+      const overlay = document.getElementById('step2Container');
+      if (overlay) {
+        overlay.classList.remove('hidden');
+        // Kunci scroll background
+        document.body.style.overflow = 'hidden';
       }
-      const titleBox = document.getElementById('kioskCardTitleBox');
-      if (titleBox) titleBox.classList.add('hidden');
-      const stepProg = document.getElementById('kioskStepProgBox');
-      if (stepProg) stepProg.classList.add('hidden');
-      const topBar = document.getElementById('kioskCardTopBar');
-      if (topBar) topBar.classList.add('hidden');
-
-      // Transisi view ke mode kamera full se-halaman
-      document.getElementById('step1Container').classList.add('hidden');
-      document.getElementById('step2Container').classList.remove('hidden');
 
       // Reset state foto manual jika ada
       uploadedPhotoBase64 = null;
       const previewImg = document.getElementById('uploadedPhotoPreview');
       if (previewImg) previewImg.remove();
+
+      // Reset status message
+      const pesan = document.getElementById('statusMesej');
+      if (pesan) pesan.innerHTML = '';
 
       // Nyalakan kamera & GPS
       startKioskCamera();
@@ -874,7 +846,6 @@
       showMirrorToast(isCameraMirrored ? 'Mode Cermin: Aktif' : 'Mode Cermin: Nonaktif (Normal)');
 
       feather.replace();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     function goToStep1() {
@@ -891,35 +862,12 @@
         videoStream = null;
       }
 
-      // Mengembalikan card utama ke ukuran semula
-      const mainCard = document.getElementById('mainAttendanceCard');
-      if (mainCard) {
-        mainCard.className = 'w-full max-w-xl mx-auto my-auto bg-white/90 dark:bg-[#131823]/90 backdrop-blur-xl rounded-3xl p-5 sm:p-8 relative overflow-hidden shadow-xl border border-gray-200 dark:border-gray-800 space-y-4 sm:space-y-5 transition-all duration-300';
-      }
-      const titleBox = document.getElementById('kioskCardTitleBox');
-      if (titleBox) titleBox.classList.remove('hidden');
-      const stepProg = document.getElementById('kioskStepProgBox');
-      if (stepProg) stepProg.classList.remove('hidden');
-      const topBar = document.getElementById('kioskCardTopBar');
-      if (topBar) topBar.classList.remove('hidden');
+      // Sembunyikan overlay kamera full-screen
+      const overlay = document.getElementById('step2Container');
+      if (overlay) overlay.classList.add('hidden');
 
-      // Update Step Indicators
-      const stepBadge = document.getElementById('stepBadge');
-      const stepTitle = document.getElementById('stepTitle');
-      const dot1 = document.getElementById('stepDot1');
-      const dot2 = document.getElementById('stepDot2');
-
-      if (stepBadge) stepBadge.innerText = 'Langkah 1';
-      if (stepTitle) stepTitle.innerText = 'Kategori & Data Pengurus';
-      if (dot1) {
-        dot1.className = 'w-2.5 h-2.5 rounded-full bg-red-600 transition-all duration-300';
-      }
-      if (dot2) {
-        dot2.className = 'w-2.5 h-2.5 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300';
-      }
-
-      document.getElementById('step2Container').classList.add('hidden');
-      document.getElementById('step1Container').classList.remove('hidden');
+      // Buka kembali scroll body
+      document.body.style.overflow = '';
 
       feather.replace();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1302,11 +1250,12 @@
 
       // Bersihkan stream lama jika masih aktif
       if (videoStream) {
-        try {
-          videoStream.getTracks().forEach(track => track.stop());
-        } catch (e) { }
+        try { videoStream.getTracks().forEach(t => t.stop()); } catch (e) { }
         videoStream = null;
       }
+
+      // Bersihkan srcObject lama agar tidak hang
+      try { video.srcObject = null; } catch (e) { }
 
       if (statusText) {
         statusText.innerHTML = `
@@ -1328,7 +1277,7 @@
 
       if (!getMedia) {
         showCameraError(
-          'Browser tidak mengizinkan akses kamera langsung (biasanya karena dibuka via IP/HTTP tanpa HTTPS). Anda tetap bisa mengambil foto menggunakan tombol Kamera HP / Upload File di bawah:',
+          'Browser tidak mendukung akses kamera (perlu HTTPS). Gunakan tombol Upload di bawah untuk mengambil foto lewat HP:',
           true
         );
         return;
@@ -1336,10 +1285,9 @@
 
       // Daftar kandidat constraints resolusi (dari Full HD hingga basic)
       const constraintCandidates = [
-        { video: { facingMode: 'user', width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false },
         { video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
         { video: { facingMode: 'user' }, audio: false },
-        { video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false },
+        { video: { width: { ideal: 640 }, height: { ideal: 480 } }, audio: false },
         { video: true, audio: false }
       ];
 
@@ -1348,7 +1296,11 @@
 
       for (const candidate of constraintCandidates) {
         try {
-          stream = await getMedia(candidate);
+          // Timeout 8 detik per percobaan agar tidak hang selamanya
+          stream = await Promise.race([
+            getMedia(candidate),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 8000))
+          ]);
           if (stream) break;
         } catch (err) {
           lastError = err;
@@ -1357,14 +1309,17 @@
 
       if (!stream) {
         console.warn('Gagal mendapatkan stream kamera:', lastError);
-        let errMsg = 'Tidak dapat mengakses perangkat kamera.';
+        let errMsg = 'Tidak dapat mengakses kamera.';
         if (lastError) {
-          if (lastError.name === 'NotAllowedError' || lastError.name === 'PermissionDeniedError') {
-            errMsg = 'Izin kamera diblokir browser. Klik ikon gembok/kamera di samping URL browser untuk mengizinkan kamera, lalu coba lagi:';
-          } else if (lastError.name === 'NotFoundError' || lastError.name === 'DevicesNotFoundError') {
-            errMsg = 'Perangkat kamera tidak ditemukan pada laptop/HP ini.';
-          } else if (lastError.name === 'NotReadableError' || lastError.name === 'TrackStartError') {
-            errMsg = 'Kamera sedang dipakai aplikasi lain (seperti Zoom/Meet). Tutup aplikasi tersebut dan coba lagi.';
+          const n = lastError.name || '';
+          if (n === 'NotAllowedError' || n === 'PermissionDeniedError') {
+            errMsg = 'Izin kamera diblokir. Klik ikon 🔒 di address bar browser → izinkan kamera → klik "Coba Lagi".';
+          } else if (n === 'NotFoundError' || n === 'DevicesNotFoundError') {
+            errMsg = 'Kamera tidak ditemukan pada perangkat ini.';
+          } else if (n === 'NotReadableError' || n === 'TrackStartError') {
+            errMsg = 'Kamera sedang dipakai aplikasi lain (Zoom/Meet/Teams). Tutup aplikasi tersebut dan coba lagi.';
+          } else if (lastError.message === 'timeout') {
+            errMsg = 'Timeout: Kamera terlalu lama merespons. Coba reload halaman atau gunakan Upload Foto.';
           }
         }
         showCameraError(errMsg, true);
@@ -1378,23 +1333,29 @@
         video.setAttribute('autoplay', 'true');
         video.muted = true;
 
-        // Pastikan video mulai diputar
-        await new Promise((resolve) => {
-          const p = video.play();
-          if (p !== undefined) {
-            p.then(resolve).catch(() => {
-              video.onloadedmetadata = () => video.play().then(resolve).catch(resolve);
-              setTimeout(resolve, 300);
-            });
-          } else {
-            resolve();
-          }
-        });
+        // Tunggu metadata video siap, dengan timeout 5 detik agar tidak hang
+        await Promise.race([
+          new Promise((resolve) => {
+            if (video.readyState >= 2) { resolve(); return; }
+            video.onloadedmetadata = resolve;
+            video.oncanplay = resolve;
+          }),
+          new Promise(resolve => setTimeout(resolve, 5000))
+        ]);
+
+        // Jalankan play() dengan penanganan error
+        try {
+          await video.play();
+        } catch (playErr) {
+          console.warn('play() gagal, mencoba lagi sekali:', playErr);
+          try { await video.play(); } catch (e) { /* abaikan */ }
+        }
 
         applyCameraMirrorState();
         if (statusText) statusText.classList.add('hidden');
       } catch (err) {
-        console.warn('Video stream play error:', err);
+        console.warn('Video stream error:', err);
+        // Tetap sembunyikan loading, kamera mungkin sudah jalan meski ada error kecil
         applyCameraMirrorState();
         if (statusText) statusText.classList.add('hidden');
       }
@@ -1674,7 +1635,7 @@
     }
 
     function executeAttendanceSubmission(payload) {
-      stopPoseExpressionDetectionLoop();
+      // (pose detection loop tidak dipakai di versi ini)
 
       const { emp, recordType, currentCategory, replacedDate, reason, currentShift, kioskCoords, notes } = payload;
       const btn = document.getElementById('btnScanKiosk');
@@ -1728,7 +1689,10 @@
         photoBase64 = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
       }
 
-      document.body.classList.remove('overflow-hidden');
+      // Tutup overlay kamera
+      const camOverlay = document.getElementById('step2Container');
+      if (camOverlay) camOverlay.classList.add('hidden');
+      document.body.style.overflow = '';
 
       // Simpan instan (< 10ms) & kirim sync di latar belakang
       const log = AttendanceDB.recordAttendance({
