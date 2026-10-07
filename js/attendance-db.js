@@ -345,10 +345,6 @@ const AttendanceDB = {
                 gformLink: gformSetting ? gformSetting.value : ''
               }));
             }
-            const rosterSetting = settings.find(s => s.key === 'WEEKLY_ROSTER');
-            if (rosterSetting) {
-              localStorage.setItem(DB_KEYS.SCHEDULES, rosterSetting.value);
-            }
           }
         }
 
@@ -1044,37 +1040,49 @@ const AttendanceDB = {
   },
 
   getWeeklyRosterMap() {
-    const data = localStorage.getItem(DB_KEYS.SCHEDULES);
-    let roster = data ? JSON.parse(data) : null;
-    
-    // Convert old array format or empty to weekly roster map
-    if (Array.isArray(roster) || !roster) {
-      roster = {
-        0: { shift_pagi: [], shift_siang: [] },
-        1: { shift_pagi: [], shift_siang: [] },
-        2: { shift_pagi: [], shift_siang: [] },
-        3: { shift_pagi: [], shift_siang: [] },
-        4: { shift_pagi: [], shift_siang: [] },
-        5: { shift_pagi: [], shift_siang: [] },
-        6: { shift_pagi: [], shift_siang: [] }
-      };
-    }
-    return roster;
+    return {
+      0: { shift_pagi: [], shift_siang: [] },
+      1: { shift_pagi: [], shift_siang: [] },
+      2: { shift_pagi: [], shift_siang: [] },
+      3: { shift_pagi: [], shift_siang: [] },
+      4: { shift_pagi: [], shift_siang: [] },
+      5: { shift_pagi: [], shift_siang: [] },
+      6: { shift_pagi: [], shift_siang: [] }
+    };
   },
 
-  saveFullWeeklyRoster(rosterMap, unusedOpts = {}) {
-    localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(rosterMap));
+  saveFullWeeklyRoster(rosterMap, opts = {}) {
+    let totalCreated = 0;
     
-    this.postToSupabase('settings?on_conflict=key', {
-      key: 'WEEKLY_ROSTER',
-      value: JSON.stringify(rosterMap)
-    });
-    
-    let count = 0;
+    // Convert matrix into individual recurring schedules (6 months by default)
     for (let d = 0; d < 7; d++) {
-      count += (rosterMap[d]?.shift_pagi?.length || 0) + (rosterMap[d]?.shift_siang?.length || 0);
+      const dayData = rosterMap[d];
+      if (!dayData) continue;
+      
+      if (dayData.shift_pagi && dayData.shift_pagi.length > 0) {
+        totalCreated += this.addRecurringWeeklySchedule({
+          daysOfWeek: [d],
+          shiftId: 'shift_pagi',
+          empIds: dayData.shift_pagi,
+          startDate: opts.startDate,
+          endDate: opts.endDate,
+          notes: opts.notes || 'Jadwal Rutin Mingguan dari Template'
+        });
+      }
+      
+      if (dayData.shift_siang && dayData.shift_siang.length > 0) {
+        totalCreated += this.addRecurringWeeklySchedule({
+          daysOfWeek: [d],
+          shiftId: 'shift_siang',
+          empIds: dayData.shift_siang,
+          startDate: opts.startDate,
+          endDate: opts.endDate,
+          notes: opts.notes || 'Jadwal Rutin Mingguan dari Template'
+        });
+      }
     }
-    return count;
+    
+    return totalCreated;
   },
 
   // --- MATRIKS JADWAL RESMI KSPM 2026 (SESUAI DOKUMEN & FOTO RESMI GALERI INVESTASI) ---
