@@ -109,8 +109,8 @@ const DEFAULT_EMPLOYEES = [
   { id: 'KSPM-INT-016', name: 'Nasywa Putri Khalila', role: 'Internship', dept: 'Internship', avatar: 'NP', color: 'from-gray-500 to-slate-600', email: 'nasywa.putri@intern.kspm', phone: '0000-0000-0016' },
   { id: 'KSPM-INT-017', name: 'Rahma Wibawanty', role: 'Internship', dept: 'Internship', avatar: 'RW', color: 'from-gray-500 to-slate-600', email: 'rahma.wibawanty@intern.kspm', phone: '0000-0000-0017' },
   { id: 'KSPM-INT-018', name: 'Putro Aji Satrio', role: 'Internship', dept: 'Internship', avatar: 'PA', color: 'from-gray-500 to-slate-600', email: 'putro.aji@intern.kspm', phone: '0000-0000-0018' },
-  { id: 'KSPM-INT-019', name: 'M. Hanif Al Fatih', role: 'Internship', dept: 'Internship', avatar: 'MH', color: 'from-gray-500 to-slate-600', email: 'm.hanif@intern.kspm', phone: '0000-0000-0019' },
-  { id: 'KSPM-INT-020', name: 'Galang Raya Rambo A.', role: 'Internship', dept: 'Internship', avatar: 'GR', color: 'from-gray-500 to-slate-600', email: 'galang.raya@intern.kspm', phone: '0000-0000-0020' }
+  { id: 'KSPM-INT-019', name: 'Muhammad Hanif Al Fatih', role: 'Internship', dept: 'Internship', avatar: 'MH', color: 'from-gray-500 to-slate-600', email: 'm.hanif@intern.kspm', phone: '0000-0000-0019' },
+  { id: 'KSPM-INT-020', name: 'Galang Raya Rambo Anaki', role: 'Internship', dept: 'Internship', avatar: 'GR', color: 'from-gray-500 to-slate-600', email: 'galang.raya@intern.kspm', phone: '0000-0000-0020' }
 ];
 
 // Helper Tanggal YYYY-MM-DD
