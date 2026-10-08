@@ -1590,9 +1590,12 @@ const AttendanceDB = {
       const shift = shifts.find(s => s.id === schedule.shiftId) || shifts[0];
       const empLogs = logs.filter(l => l.empId === schedule.empId);
       
-      const masukLog = empLogs.find(l => l.type === 'MASUK');
-      const pulangLog = empLogs.find(l => l.type === 'PULANG');
-      const izinLog = empLogs.find(l => l.type === 'IZIN');
+      // Log pengganti tidak boleh menutupi jadwal reguler hari ini
+      const regularLogs = empLogs.filter(l => l.category !== 'pengganti' && !(l.category === 'sukarela' && l.replacedDate));
+      
+      const masukLog = regularLogs.find(l => l.type === 'MASUK');
+      const pulangLog = regularLogs.find(l => l.type === 'PULANG');
+      const izinLog = regularLogs.find(l => l.type === 'IZIN');
       const activeLog = masukLog || pulangLog || izinLog;
 
       let currentStatus = 'TIDAK_HADIR';
@@ -1684,9 +1687,16 @@ const AttendanceDB = {
         };
         const shift = shifts.find(s => s.id === log.shiftId) || shifts[0];
 
+        let autoCategory = log.category;
+        if (!autoCategory || autoCategory === 'biasa') {
+          autoCategory = log.replacedDate ? 'pengganti' : 'sukarela';
+        }
+
         if (log.type === 'IZIN') {
           countIzin++;
-        } else {
+        } else if (autoCategory !== 'pengganti') {
+          // Jangan tambahkan ke countHadir hari ini jika itu log pengganti,
+          // karena log pengganti hanya menambah 'Hadir' pada tanggal masa lalu.
           countHadir++;
         }
 
