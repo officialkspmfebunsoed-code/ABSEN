@@ -1706,10 +1706,7 @@ const AttendanceDB = {
           if (match) driveFolder = match[1];
         }
 
-        let autoCategory = log.category;
-        if (!autoCategory || autoCategory === 'biasa') {
-          autoCategory = log.replacedDate ? 'pengganti' : 'sukarela';
-        }
+
 
         let autoNotes = log.notes;
         if (!autoNotes) {
