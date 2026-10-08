@@ -1675,7 +1675,9 @@ const AttendanceDB = {
 
     // Cek apakah ada anggota yang absen tanpa jadwal (Piket Sukarela / Main / Walk-in / Pengganti)
     logs.forEach(log => {
-      const alreadyInList = monitoringList.some(item => item.empId === log.empId);
+      // Pastikan log walk-in (termasuk pengganti) tetap dimasukkan meskipun orang tsb ada jadwal reguler hari ini
+      const logCat = log.category || (log.replacedDate ? 'pengganti' : 'sukarela');
+      const alreadyInList = monitoringList.some(item => item.empId === log.empId && item.category === logCat);
       if (!alreadyInList) {
         const emp = employees.find(e => e.id === log.empId) || {
           id: log.empId,

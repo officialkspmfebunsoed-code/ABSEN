@@ -431,8 +431,11 @@
         (lastMonthData[date].monitoringList || []).forEach(item => {
           const c = AttendanceCalendar.classifyItem(item, date, todayStr);
           if (c === 'libur') return;
-          t++;
+          
+          if (c !== 'pengganti') t++;
+          
           if (c === 'hadir') { h++; successful.push({ date, item }); }
+          else if (c === 'pengganti') { successful.push({ date, item, isPengganti: true }); }
           else if (c === 'izin') i++;
           else if (c === 'alpa') { a++; needReplace.push({ date, item }); }
         });
@@ -487,14 +490,14 @@
       const box = document.getElementById('successfulList');
       box.innerHTML = items.length === 0
         ? '<p class="text-xs text-gray-400 italic">Belum ada riwayat kehadiran di bulan ini.</p>'
-        : items.map(({ date, item }) => `
+        : items.map(({ date, item, isPengganti }) => `
         <button onclick="calendarInstance.handleDayClick('${date}')"
-          class="w-full text-left p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border border-emerald-100 dark:border-emerald-900/40 transition flex items-center justify-between gap-2">
+          class="w-full text-left p-2.5 rounded-xl ${isPengganti ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-100 dark:border-amber-900/40' : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/40'} border transition flex items-center justify-between gap-2">
           <div class="min-w-0">
             <p class="text-xs font-bold text-gray-900 dark:text-white">${formatShortDate(date)}</p>
             <p class="text-[10px] text-gray-500 dark:text-gray-400">${shiftText(item)}</p>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-600 text-white">Hadir</span>
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${isPengganti ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'}">${isPengganti ? 'Pengganti' : 'Hadir'}</span>
         </button>`).join('');
     }
 

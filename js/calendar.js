@@ -96,6 +96,7 @@ class AttendanceCalendar {
    * pending = terjadwal tapi belum lewat (hari ini / mendatang), tidak dihitung alpa.
    */
   static classifyItem(item, dateStr, todayStr) {
+    if (item.category === 'pengganti' && item.isWalkIn) return 'pengganti';
     const st = String(item.status || '').toUpperCase();
     if (st === 'BEBAS_TUGAS') return 'libur';
     if (st.includes('IZIN') || st === 'SAKIT') return 'izin';
@@ -183,14 +184,19 @@ class AttendanceCalendar {
       if (this.options.deptName || this.options.empId) {
         const list = (dayData.monitoringList || []).filter(x =>
           this.options.empId ? x.empId === this.options.empId : x.dept === this.options.deptName);
-        let hadir = 0, izin = 0, alpa = 0;
+        let hadir = 0, izin = 0, alpa = 0, pengganti = 0;
+        let schedList = list.filter(x => {
+          const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
+          return c !== 'pengganti' && c !== 'libur';
+        });
         list.forEach(x => {
           const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
           if (c === 'hadir') hadir++;
           else if (c === 'izin') izin++;
           else if (c === 'alpa') alpa++;
+          else if (c === 'pengganti') pengganti++;
         });
-        dayData = { ...dayData, totalScheduled: list.length, hadir, izin, alpa, monitoringList: list };
+        dayData = { ...dayData, totalScheduled: schedList.length, hadir, izin, alpa, pengganti, monitoringList: list };
       }
       monthData[dateStr] = dayData;
 
@@ -209,6 +215,8 @@ class AttendanceCalendar {
         else if (dayData.izin > 0 && dayData.hadir === 0) statusBadge = `<span class="${base} bg-blue-600 text-white">Izin</span>`;
         else if (dayData.hadir > 0) statusBadge = `<span class="${base} bg-emerald-600 text-white">Hadir</span>`;
         else statusBadge = `<span class="${base} bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100">Jadwal</span>`;
+      } else if (this.options.empId && dayData.pengganti > 0) {
+        statusBadge = `<span class="inline-block text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold bg-amber-600 text-white">Pengganti</span>`;
       } else if (dayData.totalScheduled > 0) {
         indicators = '<div class="flex items-center justify-center gap-1 mt-0.5 sm:mt-1 flex-wrap">';
         if (dayData.hadir > 0) indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 flex-shrink-0" title="${dayData.hadir} Hadir"></span>`;
