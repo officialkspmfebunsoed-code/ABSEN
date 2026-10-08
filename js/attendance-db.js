@@ -1563,6 +1563,7 @@ const AttendanceDB = {
     const employees = this.getEmployees();
     const schedules = this.getSchedules(targetDate);
     const logs = this.getAttendanceLogs(targetDate);
+    const allLogs = this.getAttendanceLogs();
     const shifts = this.getShifts();
 
     const holidayInfo = this.isHoliday(targetDate);
@@ -1628,7 +1629,16 @@ const AttendanceDB = {
         currentStatus = 'SEDANG_BERTUGAS';
         countHadir++;
       } else {
+        let replacementLog = null;
         if (isDatePassed) {
+          replacementLog = allLogs.find(l => l.empId === schedule.empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate === targetDate);
+        }
+
+        if (replacementLog) {
+          currentStatus = 'SELESAI';
+          notes = `Telah digantikan pada ${replacementLog.date}`;
+          countHadir++;
+        } else if (isDatePassed) {
           currentStatus = 'TIDAK_HADIR';
           countAlpa++;
         } else {
