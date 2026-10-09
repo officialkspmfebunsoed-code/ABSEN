@@ -1433,7 +1433,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/attendance-db.js?v=9"></script>
+  <script src="js/attendance-db.js?v=10"></script>
   <script src="js/calendar.js?v=3"></script>
 
   <script>
@@ -2147,7 +2147,7 @@
                   </button>
                 `}
                 ${item.hasAttended || item.isReplaced ? `
-                  <button onclick="confirmDeleteAttendance('${item.empId}', '${item.name.replace(/'/g, "\\'")}', '${activeDateStr}', '${item.attendanceId || item.replacementLogId || ''}', '${item.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi Anggota Ini">
+                  <button onclick="confirmDeleteAttendance('${item.empId}', '${item.name.replace(/'/g, "\\'")}', '${activeDateStr}', '${item.attendanceIds ? item.attendanceIds.join(',') : (item.attendanceId || item.replacementLogId || '')}', '${item.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi Anggota Ini">
                     <i data-feather="trash-2" class="w-3 h-3"></i> Hapus
                   </button>
                 ` : ''}
@@ -3445,7 +3445,7 @@
             </td>
             <td class="px-4 py-2.5 text-gray-500 text-[11px]">${row.notes || '-'}</td>
             <td class="px-4 py-2.5 text-right">
-              <button onclick="confirmDeleteAttendance('${row.empId}', '${row.name.replace(/'/g, "\\'")}', '${row.date}', '${row.attendanceId || row.replacementLogId || ''}', '${row.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi">
+              <button onclick="confirmDeleteAttendance('${row.empId}', '${row.name.replace(/'/g, "\\'")}', '${row.date}', '${row.attendanceIds ? row.attendanceIds.join(',') : (row.attendanceId || row.replacementLogId || '')}', '${row.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi">
                 <i data-feather="trash-2" class="w-3 h-3"></i> Hapus
               </button>
             </td>
@@ -3846,11 +3846,17 @@
       if (!deleteTarget.empId || !deleteTarget.date) return;
 
       if (deleteTarget.logId) {
-        AttendanceDB.deleteAttendanceLog(deleteTarget.logId);
+        const ids = deleteTarget.logId.split(',');
+        ids.forEach(id => {
+          if (id) AttendanceDB.deleteAttendanceLog(id);
+        });
       } else if (deleteTarget.scheduleId) {
         AttendanceDB.deleteSchedule(deleteTarget.scheduleId);
       }
-      AttendanceDB.deleteAttendanceByEmpAndDate(deleteTarget.empId, deleteTarget.date);
+      
+      if (!deleteTarget.logId) {
+        AttendanceDB.deleteAttendanceByEmpAndDate(deleteTarget.empId, deleteTarget.date);
+      }
 
       closeDeleteAttendanceModal();
       renderMonitoringView();
