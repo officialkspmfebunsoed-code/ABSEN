@@ -570,6 +570,9 @@ const AttendanceDB = {
       this.syncFromCloud();
       this.initRealtime();
     }
+    
+    // Start background alarm polling
+    this.initAlarmDaemon();
   },
 
   // Reset total basis data ke kondisi awal bersih
@@ -2200,6 +2203,27 @@ const AttendanceDB = {
 
   clearSavedIdentity() {
     localStorage.removeItem('kspm_saved_identity');
+  },
+
+  initAlarmDaemon() {
+    setInterval(() => {
+      const alarmTimeStr = localStorage.getItem('kspm_alarm_time');
+      if (!alarmTimeStr) return;
+      
+      const alarmTime = parseInt(alarmTimeStr, 10);
+      if (Date.now() >= alarmTime) {
+        localStorage.removeItem('kspm_alarm_time');
+        const empName = localStorage.getItem('kspm_alarm_name') || 'Kak';
+        
+        if (Notification.permission === 'granted') {
+          new Notification('Waktunya Absen Pulang!', {
+            body: `Hai ${empName}, sepertinya sudah 2 jam sejak kamu piket. Jangan lupa ambil foto absen pulang sekarang ya!`,
+            icon: 'https://cdn-icons-png.flaticon.com/512/2874/2874808.png', // Default icon bell
+            requireInteraction: true
+          });
+        }
+      }
+    }, 60000); // Cek tiap 1 menit
   }
 };
 

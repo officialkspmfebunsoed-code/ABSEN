@@ -620,8 +620,23 @@
         </div>
       </div>
 
+      <!-- Notifikasi Pulang Offer (Awalnya Sembunyi) -->
+      <div id="alarmOfferBox" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 text-left relative z-10 shadow-inner">
+        <h4 class="text-[12px] font-bold text-amber-900 dark:text-amber-400 flex items-center gap-1.5 mb-2">
+          <i data-feather="bell" class="w-4 h-4"></i> Ingin diingatkan Absen Pulang?
+        </h4>
+        <p class="text-[10px] text-amber-700/90 dark:text-amber-400/80 mb-3 leading-relaxed">
+          Sistem akan mengirim notifikasi ke perangkat ini dalam <b class="font-black">2 jam</b> agar kamu tidak lupa absen pulang. <br/>(Pastikan browser tetap aktif di background).
+        </p>
+        <div class="flex gap-2">
+          <button id="btnAlarmYes" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[11px] shadow-lg shadow-amber-500/30 transition transform hover:-translate-y-0.5 active:scale-95">Ya, Ingatkan</button>
+          <button id="btnAlarmNo" class="flex-1 py-2 rounded-xl bg-white dark:bg-[#181d28] text-gray-700 dark:text-gray-300 font-extrabold text-[11px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition transform hover:-translate-y-0.5 active:scale-95">Nanti Saja</button>
+        </div>
+        <button id="btnAlarmNever" class="w-full mt-3 py-1 text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-semibold underline decoration-dotted transition">Jangan pernah tanya lagi di perangkat ini</button>
+      </div>
+
       <!-- Action & Auto-Redirect Notice -->
-      <div class="space-y-2 pt-1 relative z-10">
+      <div class="space-y-2 pt-1 relative z-10" id="redirectNoticeBox">
         <a href="index.html"
           class="w-full block py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 transition transform hover:-translate-y-0.5 active:scale-95">
           Kembali ke Beranda Sekarang (<span id="redirectCountdown">5</span>s)
@@ -1851,18 +1866,66 @@
       modal.classList.remove('hidden');
       feather.replace();
 
-      // Hitung mundur & alihkan ke Beranda / Dashboard (5 detik)
-      let countdown = 5;
-      const countdownEl = document.getElementById('redirectCountdown');
-      if (countdownEl) countdownEl.innerText = countdown;
-      const interval = setInterval(() => {
-        countdown--;
+      // Manajemen Alarm Pulang
+      const pref = localStorage.getItem('kspm_alarm_pref');
+      const isMasuk = (recordType === 'MASUK' || recordType === 'SUKARELA' || currentCategory === 'pengganti' && recordType === 'MASUK');
+      
+      let interval = null;
+      const startCountdown = () => {
+        document.getElementById('redirectNoticeBox').classList.remove('hidden');
+        document.getElementById('alarmOfferBox').classList.add('hidden');
+        let countdown = 5;
+        const countdownEl = document.getElementById('redirectCountdown');
         if (countdownEl) countdownEl.innerText = countdown;
-        if (countdown <= 0) {
-          clearInterval(interval);
-          window.location.href = 'index.html';
+        interval = setInterval(() => {
+          countdown--;
+          if (countdownEl) countdownEl.innerText = countdown;
+          if (countdown <= 0) {
+            clearInterval(interval);
+            window.location.href = 'index.html';
+          }
+        }, 1000);
+      };
+
+      const setAlarm = () => {
+        // 2 jam dari sekarang
+        const alarmTime = Date.now() + (2 * 60 * 60 * 1000);
+        localStorage.setItem('kspm_alarm_time', alarmTime);
+        localStorage.setItem('kspm_alarm_name', emp.name);
+      };
+
+      if (isMasuk && pref === 'always') {
+        if (Notification.permission === 'granted') {
+          setAlarm();
         }
-      }, 1000);
+        startCountdown();
+      } else if (isMasuk && pref !== 'never') {
+        // Tampilkan opsi Alarm, jeda redirect
+        document.getElementById('redirectNoticeBox').classList.add('hidden');
+        document.getElementById('alarmOfferBox').classList.remove('hidden');
+        
+        document.getElementById('btnAlarmYes').onclick = async () => {
+          const perm = await Notification.requestPermission();
+          if (perm === 'granted') {
+            localStorage.setItem('kspm_alarm_pref', 'always');
+            setAlarm();
+            // Test notification
+            new Notification('Alarm Diaktifkan!', { body: 'Kami akan mengingatkanmu 2 jam lagi.', icon: 'img/logo.png' });
+          }
+          startCountdown();
+        };
+        
+        document.getElementById('btnAlarmNo').onclick = () => {
+          startCountdown();
+        };
+        
+        document.getElementById('btnAlarmNever').onclick = () => {
+          localStorage.setItem('kspm_alarm_pref', 'never');
+          startCountdown();
+        };
+      } else {
+        startCountdown();
+      }
     }
   </script>
 </body>
