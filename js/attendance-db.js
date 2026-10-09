@@ -1737,9 +1737,9 @@ const AttendanceDB = {
       if (l.type === 'MASUK') sessionByMasukId[l.id] = s;
     });
     logs.filter(l => l.type === 'PULANG').forEach(l => {
-      const paired = logs.find(m => m.empId === l.empId && m.date === l.date && m.type === 'MASUK');
-      const s = paired ? sessionByMasukId[paired.id] : null;
-      if (s && !s.pulang) {
+      // Cari sesi MASUK dari orang yang sama, di tanggal yang sama, dan BELUM punya pasangan PULANG
+      const s = sessions.find(sess => sess.masuk && sess.masuk.empId === l.empId && sess.masuk.date === l.date && !sess.pulang);
+      if (s) {
         s.pulang = l;
       } else {
         sessions.push({ masuk: null, izin: null, pulang: l, base: l });
