@@ -292,6 +292,38 @@
           </div>
         </div>
 
+        <!-- Panel Server & Database Health -->
+        <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-6">
+          <!-- Server Status -->
+          <div class="flex items-center gap-3 flex-1 w-full">
+            <div id="serverStatusIcon" class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 flex-shrink-0">
+              <i data-feather="server" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400">Status Mesin Supabase</h3>
+              <p id="serverStatusText" class="text-sm font-black text-gray-900 dark:text-white mt-0.5">Mengecek...</p>
+            </div>
+          </div>
+          
+          <div class="h-12 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
+          
+          <!-- Database Capacity -->
+          <div class="flex items-center gap-3 flex-1 w-full border-t border-gray-100 dark:border-gray-800 sm:border-0 pt-4 sm:pt-0">
+            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 flex-shrink-0">
+              <i data-feather="database" class="w-6 h-6"></i>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400">Kapasitas Database</h3>
+              <div class="flex items-center gap-2 mt-0.5">
+                <p id="dbSizeText" class="text-sm font-black text-gray-900 dark:text-white truncate">Belum dicek</p>
+                <button onclick="checkDatabaseSize()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-[10px] font-bold transition whitespace-nowrap active:scale-95 shadow-md flex-shrink-0">
+                  Cek Kapasitas
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Tabel Log Presensi KSPM -->
         <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
           
@@ -3908,7 +3940,100 @@
         window.open('https://drive.google.com', '_blank', 'noopener,noreferrer');
       }
     }
-  </script>
+    // ==========================================
+  // SERVER HEALTH & DATABASE SIZE LOGIC
+  // ==========================================
+  async function checkServerHealth() {
+    const iconDiv = document.getElementById('serverStatusIcon');
+    const textEl = document.getElementById('serverStatusText');
+    if (!iconDiv || !textEl) return;
+
+    try {
+      iconDiv.innerHTML = '<i data-feather="loader" class="w-6 h-6 animate-spin"></i>';
+      feather.replace();
+      
+      const start = Date.now();
+      // Ping API Supabase
+      const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/`, { 
+        headers: { 'apikey': SUPABASE_CONFIG.ANON_KEY },
+        cache: 'no-store'
+      });
+      
+      const ms = Date.now() - start;
+
+      if (res.ok || res.status === 400 || res.status === 404) {
+        // Jika respons ada, berarti server hidup. 
+        iconDiv.className = 'w-12 h-12 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-emerald-500 flex-shrink-0';
+        iconDiv.innerHTML = '<i data-feather="check-circle" class="w-6 h-6"></i>';
+        textEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400">Aktif & Merespon</span> <span class="text-[10px] text-gray-400 ml-1 font-normal">(${ms}ms)</span>`;
+      } else {
+        throw new Error('Merespon dengan kode ' + res.status);
+      }
+    } catch (err) {
+      iconDiv.className = 'w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center text-rose-500 flex-shrink-0';
+      iconDiv.innerHTML = '<i data-feather="moon" class="w-6 h-6"></i>';
+      textEl.innerHTML = `<span class="text-rose-600 dark:text-rose-400">Sedang Tidur (Paused)</span>`;
+    }
+    feather.replace();
+  }
+
+  async function checkDatabaseSize() {
+    const txt = document.getElementById('dbSizeText');
+    txt.innerHTML = `<i data-feather="loader" class="w-3.5 h-3.5 animate-spin inline"></i>`;
+    feather.replace();
+
+    try {
+      // Supabase REST API doesn't expose database size natively.
+      // We must call an RPC function if it exists.
+      const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/rpc/get_db_size`, {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_CONFIG.ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        cache: 'no-store'
+      });
+
+      if (res.ok) {
+        const sizeStr = await res.json();
+        // sizeStr is usually like "15 MB"
+        txt.innerHTML = `<span class="text-indigo-600 dark:text-indigo-400">${sizeStr}</span> <span class="text-[10px] text-gray-500 font-normal">/ 500 MB</span>`;
+      } else {
+        // RPC not found or permission denied
+        txt.innerHTML = `<span class="text-rose-500 text-xs">Perlu Setup SQL</span>`;
+        Swal.fire({
+          title: 'Setup Database Size',
+          html: `
+            <div class="text-left text-sm space-y-3">
+              <p>Untuk melihat ukuran database, kamu perlu menambahkan satu Fungsi SQL di Supabase.</p>
+              <p>1. Buka <b>Supabase Dashboard > SQL Editor</b></p>
+              <p>2. Buat query baru, lalu <i>Copy-Paste</i> kode ini:</p>
+              <div class="bg-gray-100 dark:bg-gray-800 p-3 rounded-lg text-xs font-mono select-all overflow-x-auto text-gray-800 dark:text-gray-300">
+CREATE OR REPLACE FUNCTION get_db_size()
+RETURNS text AS $$
+  SELECT pg_size_pretty(pg_database_size(current_database()));
+$$ LANGUAGE sql;
+              </div>
+              <p>3. Tekan <b>RUN</b>.</p>
+              <p>Setelah itu, tekan tombol Cek Kapasitas lagi di sini.</p>
+            </div>
+          `,
+          icon: 'info',
+          confirmButtonText: 'Mengerti',
+          confirmButtonColor: '#4f46e5'
+        });
+      }
+    } catch (e) {
+      txt.innerHTML = `<span class="text-red-500 text-xs">Gagal Cek</span>`;
+    }
+  }
+
+  // Panggil pengecekan server otomatis saat halaman load
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(checkServerHealth, 1000);
+  });
+</script>
 </body>
 </html>
 
