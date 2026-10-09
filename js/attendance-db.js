@@ -219,17 +219,18 @@ const AttendanceDB = {
           'apikey': SUPABASE_CONFIG.ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
         };
+        const reqOpts = { headers, cache: 'no-store' };
 
         const twoMonthsAgo = new Date();
         twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
         const dateFilter = twoMonthsAgo.toISOString().split('T')[0];
 
         const [empRes, attRes, schRes, holRes, setRes] = await Promise.all([
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/employees?select=*`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilter}&order=date.desc,time.desc&limit=2000`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${dateFilter}&limit=3000`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/holidays?select=*`, { headers }),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*`, { headers })
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/employees?select=*`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilter}&order=date.desc,time.desc&limit=2000`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${dateFilter}&limit=3000`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/holidays?select=*`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*`, reqOpts)
         ]);
 
         if (empRes.ok) {
@@ -375,9 +376,10 @@ const AttendanceDB = {
 
     try {
       const headers = this.getHeaders();
+      const reqOpts = { headers, cache: 'no-store' };
       const [attRes, schRes] = await Promise.all([
-        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=3000`, { headers }),
-        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=2000`, { headers })
+        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=3000`, reqOpts),
+        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=2000`, reqOpts)
       ]);
 
       if (attRes.ok) {

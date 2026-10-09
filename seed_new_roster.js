@@ -93,14 +93,15 @@ async function seedSchedules() {
     return null;
   }
 
-  // Set start date to today
-  const startDateStr = new Date().toISOString().split('T')[0];
-  const startDate = new Date(startDateStr); // e.g. Oct 8
-  const endDate = new Date('2027-01-31'); 
+  // Set date specifically for Oct 1 to Oct 5
+  const startDateStr = '2026-10-01';
+  const endDateStr = '2026-10-05';
+  const startDate = new Date(startDateStr); 
+  const endDate = new Date(endDateStr); 
   
-  console.log(`Deleting existing schedules from ${startDateStr} onwards...`);
+  console.log(`Deleting existing schedules from ${startDateStr} to ${endDateStr}...`);
   try {
-    const delRes = await fetch(`${SUPABASE_URL}/rest/v1/schedules?date=gte.${startDateStr}`, {
+    const delRes = await fetch(`${SUPABASE_URL}/rest/v1/schedules?date=gte.${startDateStr}&date=lte.${endDateStr}`, {
       method: 'DELETE',
       headers
     });
