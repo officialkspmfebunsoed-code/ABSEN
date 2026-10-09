@@ -1729,22 +1729,30 @@ const AttendanceDB = {
     };
     const scheduledEmpIds = new Set(monitoringList.map(item => item.empId));
     const sessions = [];
-    const sessionByMasukId = {};
+    const sessionStack = {};
 
-    logs.filter(l => l.type === 'MASUK' || l.type === 'IZIN').forEach(l => {
-      const s = { masuk: l.type === 'MASUK' ? l : null, izin: l.type === 'IZIN' ? l : null, pulang: null, base: l };
-      sessions.push(s);
-      if (l.type === 'MASUK') sessionByMasukId[l.id] = s;
-    });
-    logs.filter(l => l.type === 'PULANG').forEach(l => {
-      // Cari sesi MASUK dari orang yang sama, di tanggal yang sama, dan BELUM punya pasangan PULANG
-      const s = sessions.find(sess => sess.masuk && sess.masuk.empId === l.empId && sess.masuk.date === l.date && !sess.pulang);
-      if (s) {
-        s.pulang = l;
-      } else {
-        sessions.push({ masuk: null, izin: null, pulang: l, base: l });
+    // Proses secara kronologis agar MASUK-PULANG dipasangkan sesuai urutan waktu nyatanya
+    const chronologicalLogs = [...logs].reverse();
+
+    chronologicalLogs.forEach(l => {
+      if (l.type === 'IZIN') {
+        sessions.push({ masuk: null, izin: l, pulang: null, base: l });
+      } else if (l.type === 'MASUK') {
+        const newSession = { masuk: l, izin: null, pulang: null, base: l };
+        sessions.push(newSession);
+        sessionStack[l.empId] = newSession;
+      } else if (l.type === 'PULANG') {
+        const active = sessionStack[l.empId];
+        if (active && !active.pulang) {
+          active.pulang = l;
+        } else {
+          sessions.push({ masuk: null, izin: null, pulang: l, base: l });
+        }
       }
     });
+
+    // Balikkan lagi agar log terbaru (waktu terakhir) berada di atas (sama seperti urutan logs bawaan)
+    sessions.reverse();
 
     sessions.forEach(s => {
       const base = s.base;
