@@ -1749,7 +1749,14 @@ const AttendanceDB = {
     const sessionStack = {};
 
     // Proses secara kronologis agar MASUK-PULANG dipasangkan sesuai urutan waktu nyatanya
-    const chronologicalLogs = [...logs].reverse();
+    const chronologicalLogs = [...logs].sort((a, b) => {
+      const cmp = (a.date + ' ' + a.time).localeCompare(b.date + ' ' + b.time);
+      if (cmp !== 0) return cmp;
+      // Jika waktu sama persis (misal ditambah manual), MASUK selalu mendahului PULANG
+      if (a.type === 'MASUK' && b.type === 'PULANG') return -1;
+      if (b.type === 'MASUK' && a.type === 'PULANG') return 1;
+      return 0;
+    });
 
     chronologicalLogs.forEach(l => {
       if (l.type === 'IZIN') {
