@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="id" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Pusat Bantuan - Absensi KSPM</title>
+  
+  <meta name="theme-color" content="#0e1219" id="theme-color-meta">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/feather-icons"></script>
+  <script src="js/config.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    
+    .glass-card {
+      background: rgba(255, 255, 255, 0.6);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+    }
+    
+    .dark .glass-card {
+      background: rgba(19, 24, 35, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: { primary: '#dc2626' } // Red-600
+        }
+      }
+    };
+  </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-[#0e1219] min-h-screen text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+  <!-- Ambient Glow Backgrounds -->
+  <div class="fixed top-[-10%] left-[-10%] w-96 h-96 bg-red-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+  <div class="fixed bottom-[-10%] right-[-10%] w-96 h-96 bg-rose-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+  <!-- Header Minimal -->
+  <header class="sticky top-0 z-40 w-full bg-white/70 dark:bg-[#0e1219]/70 backdrop-blur-xl border-b border-gray-200/50 dark:border-gray-800/50 transition-colors">
+    <div class="max-w-xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button onclick="window.history.back()" class="p-2 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+          <i data-feather="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <div>
+          <h1 class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Pusat Bantuan</h1>
+          <p class="text-[10px] text-gray-500 font-medium">Panduan & Dukungan KSPM</p>
+        </div>
+      </div>
+      <!-- Logo -->
+      <div class="w-8 h-8 rounded-lg bg-red-50 dark:bg-red-950/30 flex items-center justify-center border border-red-100 dark:border-red-900/30">
+        <img src="assets/logo.png" alt="Logo" class="w-5 h-5 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/2874/2874808.png'">
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-xl mx-auto px-4 py-6 space-y-6 relative z-10 pb-20">
+
+    <!-- Card WhatsApp Support -->
+    <section class="glass-card rounded-3xl p-5 sm:p-6 overflow-hidden relative">
+      <div class="absolute -right-4 -top-4 w-24 h-24 bg-green-500/10 dark:bg-green-500/20 rounded-full blur-xl pointer-events-none"></div>
+      
+      <div class="flex items-center gap-4 mb-4 relative z-10">
+        <div class="w-12 h-12 rounded-2xl bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 flex flex-shrink-0 items-center justify-center">
+          <i data-feather="message-circle" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-black text-gray-900 dark:text-white">Customer Support</h2>
+          <p class="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">Punya kendala absen? Jangan ragu hubungi kami.</p>
+        </div>
+      </div>
+      
+      <a href="https://wa.me/" target="_blank"
+        class="w-full relative z-10 flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold text-xs shadow-lg shadow-green-500/25 transition transform hover:-translate-y-0.5 active:scale-95">
+        <i data-feather="message-square" class="w-4 h-4"></i>
+        Chat Bantuan via WhatsApp
+      </a>
+      <p class="text-[9px] text-center text-gray-400 mt-3 relative z-10">Nomor WhatsApp belum diatur, silakan edit link wa.me</p>
+    </section>
+
+    <!-- Card Panduan Instalasi -->
+    <section class="glass-card rounded-3xl p-5 sm:p-6 space-y-5 relative">
+      <div class="flex items-center gap-3 mb-2 border-b border-gray-200 dark:border-gray-800 pb-4">
+        <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center">
+          <i data-feather="smartphone" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-black text-gray-900 dark:text-white">Panduan Instal Aplikasi</h2>
+          <p class="text-[11px] text-gray-500 dark:text-gray-400">Jadikan web ini sebagai aplikasi di HP-mu.</p>
+        </div>
+      </div>
+
+      <!-- Android -->
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <svg class="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993.0004.5511-.4482.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0222 3.503C15.5458 8.2435 13.8443 7.85 12 7.85c-1.8443 0-3.5458.3935-5.1374 1.1004L4.8404 5.447a.4158.4158 0 00-.5676-.1521.416.416 0 00-.1521.5676l1.9973 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
+          Instal di Android (Chrome)
+        </h3>
+        <ol class="list-decimal list-outside ml-4 space-y-2 text-[11px] text-gray-600 dark:text-gray-400">
+          <li>Buka web absen ini menggunakan browser <b class="text-gray-900 dark:text-gray-200">Google Chrome</b>.</li>
+          <li>Tekan ikon <b class="text-gray-900 dark:text-gray-200">Titik Tiga (⋮)</b> di pojok kanan atas browser.</li>
+          <li>Pilih opsi <b class="text-gray-900 dark:text-gray-200">"Tambahkan ke Layar Utama"</b> (Add to Home Screen) atau "Instal Aplikasi".</li>
+          <li>Aplikasi Absen KSPM kini muncul di daftar aplikasi / menu HP-mu layaknya aplikasi biasa!</li>
+        </ol>
+      </div>
+
+      <div class="w-full h-px bg-gray-200 dark:bg-gray-800 my-4"></div>
+
+      <!-- iOS -->
+      <div class="space-y-3">
+        <h3 class="text-xs font-bold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+          <svg class="w-4 h-4 text-gray-900 dark:text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm3.178 14.375c-.378.118-1.077.34-1.997.34-2.106 0-3.64-1.282-3.64-3.619 0-2.316 1.488-3.69 3.52-3.69.839 0 1.405.19 1.666.307l-.317 1.486c-.225-.095-.738-.25-1.354-.25-1.127 0-1.874.676-1.874 1.986 0 1.25.7 1.95 1.815 1.95.533 0 1.054-.153 1.28-.271l.9 1.761zM14.61 7H16v9h-1.39V7z"/></svg>
+          Instal di iPhone / iOS (Safari)
+        </h3>
+        <ol class="list-decimal list-outside ml-4 space-y-2 text-[11px] text-gray-600 dark:text-gray-400">
+          <li>Buka web absen ini menggunakan browser bawaan <b class="text-gray-900 dark:text-gray-200">Safari</b>.</li>
+          <li>Tekan tombol <b class="text-gray-900 dark:text-gray-200">Share (Bagikan)</b> berupa kotak dengan panah ke atas di bagian bawah layar.</li>
+          <li>Gulir daftar opsi ke bawah lalu pilih <b class="text-gray-900 dark:text-gray-200">"Tambah ke Layar Utama"</b> (Add to Home Screen).</li>
+          <li>Tekan "Tambah" (Add) di pojok kanan atas.</li>
+          <li>Selesai! Buka aplikasi dari Home Screen untuk mendapatkan fitur notifikasi alarm penuh (mulai iOS 16.4+).</li>
+        </ol>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    feather.replace();
+    
+    // Sinkronisasi tema
+    const applyTheme = () => {
+      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+        document.getElementById('theme-color-meta').setAttribute('content', '#0e1219');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.getElementById('theme-color-meta').setAttribute('content', '#ffffff');
+      }
+    };
+    applyTheme();
+  </script>
+</body>
+</html>
