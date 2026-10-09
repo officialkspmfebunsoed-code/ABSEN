@@ -577,7 +577,7 @@
   <div id="successPopupModal"
     class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay hidden transition-opacity duration-300">
     <div
-      class="glass-modal-card rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 animate-scaleUp relative overflow-hidden">
+      class="glass-modal-card rounded-3xl p-5 sm:p-6 max-w-sm w-[90%] mx-auto text-center space-y-3 animate-scaleUp relative overflow-hidden">
 
       <!-- Ambient Glow Decorator -->
       <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/20 rounded-full blur-2xl pointer-events-none">
@@ -587,61 +587,60 @@
 
       <!-- Icon Success Pulsing -->
       <div
-        class="w-16 h-16 rounded-full bg-emerald-500/15 backdrop-blur-md text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25 border border-emerald-400/40 relative z-10 animate-bounce">
-        <i data-feather="check-circle" class="w-8 h-8"></i>
+        class="w-14 h-14 rounded-full bg-emerald-500/15 backdrop-blur-md text-emerald-500 flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/25 border border-emerald-400/40 relative z-10 animate-bounce">
+        <i data-feather="check-circle" class="w-7 h-7"></i>
       </div>
 
       <div class="relative z-10">
-        <h3 class="text-lg font-black text-gray-900 dark:text-white" id="successPopupTitle">Presensi Berhasil!</h3>
-        <p class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1" id="successGreetingMessage">
+        <h3 class="text-lg font-black text-gray-900 dark:text-white leading-tight" id="successPopupTitle">Presensi Berhasil!</h3>
+        <p class="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 mt-1 leading-tight px-2" id="successGreetingMessage">
           Terima kasih, jangan lupa absen pulang nanti ya!
         </p>
       </div>
 
       <!-- Detail Card (Frosted Glass) -->
       <div
-        class="p-4 rounded-2xl bg-white/60 dark:bg-[#181d28]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-left text-xs space-y-2 shadow-inner relative z-10">
-        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
-          <span class="text-gray-400">Nama:</span>
-          <span class="font-bold text-gray-900 dark:text-white truncate max-w-[170px]" id="successEmpName">-</span>
+        class="p-3 rounded-2xl bg-white/60 dark:bg-[#181d28]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 text-left text-[11px] space-y-2 shadow-inner relative z-10">
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5 gap-2">
+          <span class="text-gray-400 flex-shrink-0">Nama:</span>
+          <span class="font-bold text-gray-900 dark:text-white truncate" id="successEmpName">-</span>
         </div>
-        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
-          <span class="text-gray-400">Divisi:</span>
-          <span class="font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[170px]"
-            id="successEmpDept">-</span>
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5 gap-2">
+          <span class="text-gray-400 flex-shrink-0">Divisi:</span>
+          <span class="font-semibold text-gray-700 dark:text-gray-300 truncate" id="successEmpDept">-</span>
         </div>
-        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5">
-          <span class="text-gray-400">Jenis:</span>
-          <span class="font-black text-red-600 dark:text-red-400 uppercase tracking-wide" id="successTypeLabel">-</span>
+        <div class="flex justify-between items-center border-b border-gray-200/40 dark:border-white/5 pb-1.5 gap-2">
+          <span class="text-gray-400 flex-shrink-0">Jenis:</span>
+          <span class="font-black text-red-600 dark:text-red-400 uppercase tracking-wide truncate" id="successTypeLabel">-</span>
         </div>
-        <div class="flex justify-between items-center">
-          <span class="text-gray-400">Waktu:</span>
-          <span class="font-mono font-bold text-gray-900 dark:text-white" id="successTime">-</span>
+        <div class="flex justify-between items-center gap-2">
+          <span class="text-gray-400 flex-shrink-0">Waktu:</span>
+          <span class="font-mono font-bold text-gray-900 dark:text-white truncate" id="successTime">-</span>
         </div>
       </div>
 
       <!-- Notifikasi Pulang Offer (Awalnya Sembunyi) -->
-      <div id="alarmOfferBox" class="hidden p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 text-left relative z-10 shadow-inner">
-        <h4 class="text-[12px] font-bold text-amber-900 dark:text-amber-400 flex items-center gap-1.5 mb-2">
-          <i data-feather="bell" class="w-4 h-4"></i> Ingin diingatkan Absen Pulang?
+      <div id="alarmOfferBox" class="hidden p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 text-left relative z-10 shadow-inner">
+        <h4 class="text-[11px] font-bold text-amber-900 dark:text-amber-400 flex items-center gap-1.5 mb-1.5">
+          <i data-feather="bell" class="w-3.5 h-3.5"></i> Ingatkan Absen Pulang?
         </h4>
-        <p class="text-[10px] text-amber-700/90 dark:text-amber-400/80 mb-3 leading-relaxed">
-          Sistem akan mengirim notifikasi ke perangkat ini dalam <b class="font-black">2 jam</b> agar kamu tidak lupa absen pulang. <br/>(Pastikan browser tetap aktif di background).
+        <p class="text-[10px] text-amber-700/90 dark:text-amber-400/80 mb-2.5 leading-tight">
+          Notifikasi otomatis dalam <b class="font-black">2 jam</b>. Pastikan tab browser tetap aktif di background.
         </p>
         <div class="flex gap-2">
-          <button id="btnAlarmYes" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[11px] shadow-lg shadow-amber-500/30 transition transform hover:-translate-y-0.5 active:scale-95">Ya, Ingatkan</button>
-          <button id="btnAlarmNo" class="flex-1 py-2 rounded-xl bg-white dark:bg-[#181d28] text-gray-700 dark:text-gray-300 font-extrabold text-[11px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition transform hover:-translate-y-0.5 active:scale-95">Nanti Saja</button>
+          <button id="btnAlarmYes" class="flex-1 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-extrabold text-[10px] shadow-md shadow-amber-500/20 transition transform hover:-translate-y-0.5 active:scale-95">Ya, Ingatkan</button>
+          <button id="btnAlarmNo" class="flex-1 py-1.5 rounded-xl bg-white dark:bg-[#181d28] text-gray-700 dark:text-gray-300 font-extrabold text-[10px] border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition transform hover:-translate-y-0.5 active:scale-95">Nanti Saja</button>
         </div>
-        <button id="btnAlarmNever" class="w-full mt-3 py-1 text-center text-[10px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-semibold underline decoration-dotted transition">Jangan pernah tanya lagi di perangkat ini</button>
+        <button id="btnAlarmNever" class="w-full mt-2 py-1 text-center text-[9px] text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 font-semibold underline decoration-dotted transition">Jangan pernah tanya lagi di perangkat ini</button>
       </div>
 
       <!-- Action & Auto-Redirect Notice -->
-      <div class="space-y-2 pt-1 relative z-10" id="redirectNoticeBox">
+      <div class="space-y-1.5 pt-1 relative z-10" id="redirectNoticeBox">
         <a href="index.html"
-          class="w-full block py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 transition transform hover:-translate-y-0.5 active:scale-95">
-          Kembali ke Beranda Sekarang (<span id="redirectCountdown">5</span>s)
+          class="w-full block py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-[11px] shadow-md shadow-red-600/20 transition transform hover:-translate-y-0.5 active:scale-95">
+          Kembali ke Beranda (<span id="redirectCountdown">5</span>s)
         </a>
-        <p class="text-[10px] text-gray-400 font-mono">Otomatis dialihkan ke beranda...</p>
+        <p class="text-[9px] text-gray-400 font-mono">Otomatis dialihkan ke beranda...</p>
       </div>
 
     </div>
