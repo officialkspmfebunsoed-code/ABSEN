@@ -279,7 +279,11 @@ const AttendanceDB = {
               if (l && l.id) {
                 l.date = normalizeCloudDate(l.date);
                 l.time = normalizeCloudTime(l.time);
-                logMap.set(l.id, l);
+                // Hanya pertahankan data lokal yang di luar rentang filter (lama)
+                // Data dalam rentang filter yang tidak ada di Supabase berarti sudah dihapus di cloud.
+                if (l.date < dateFilter) {
+                  logMap.set(l.id, l);
+                }
               }
             });
 
@@ -310,11 +314,13 @@ const AttendanceDB = {
               }
             });
 
-            // Merge local schedules that might not have synced yet
+            // Merge local schedules that might not have synced yet, but ONLY if they are older than dateFilter
             localSchedules.forEach(s => {
               if (s && s.id) {
                 s.date = normalizeCloudDate(s.date);
-                schMap.set(s.id, s);
+                if (s.date < dateFilter) {
+                  schMap.set(s.id, s);
+                }
               }
             });
 
@@ -379,7 +385,14 @@ const AttendanceDB = {
         if (Array.isArray(attendance)) {
           const localLogs = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE) || '[]');
           const logMap = new Map();
-          localLogs.forEach(l => logMap.set(l.id, l));
+          localLogs.forEach(l => {
+            if (l && l.id) {
+              l.date = normalizeCloudDate(l.date);
+              if (l.date < startDate || l.date > endDate) {
+                logMap.set(l.id, l);
+              }
+            }
+          });
           
           attendance.forEach(l => {
             logMap.set(l.id, {
@@ -411,7 +424,14 @@ const AttendanceDB = {
         if (Array.isArray(schedules)) {
           const localSch = JSON.parse(localStorage.getItem(DB_KEYS.SCHEDULES) || '[]');
           const schMap = new Map();
-          localSch.forEach(s => schMap.set(s.id, s));
+          localSch.forEach(s => {
+            if (s && s.id) {
+              s.date = normalizeCloudDate(s.date);
+              if (s.date < startDate || s.date > endDate) {
+                schMap.set(s.id, s);
+              }
+            }
+          });
           
           schedules.forEach(s => {
             schMap.set(s.id, {
