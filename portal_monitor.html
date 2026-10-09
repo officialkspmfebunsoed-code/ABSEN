@@ -494,12 +494,21 @@
             const badgeBg = isPengganti ? 'bg-amber-600' : (isReplaced ? 'bg-blue-600' : 'bg-emerald-600');
             const boxBg = isPengganti ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-100 dark:border-amber-900/40' : (isReplaced ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 border-blue-100 dark:border-blue-900/40' : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/40');
             const text = isPengganti ? 'Pengganti' : (isReplaced ? 'Diganti' : 'Hadir');
+            
+            let extraDesc = '';
+            if (isPengganti && item.replacedDate) {
+              extraDesc = `<span class="text-[9px] block text-amber-700/80 dark:text-amber-400/80 mt-0.5">Menggantikan tgl ${formatShortDate(item.replacedDate)}</span>`;
+            } else if (isReplaced) {
+              extraDesc = `<span class="text-[9px] block text-blue-700/80 dark:text-blue-400/80 mt-0.5">Sudah lunas digantikan</span>`;
+            }
+
             return `
         <button onclick="calendarInstance.handleDayClick('${date}')"
           class="w-full text-left p-2.5 rounded-xl ${boxBg} border transition flex items-center justify-between gap-2">
           <div class="min-w-0">
             <p class="text-xs font-bold text-gray-900 dark:text-white">${formatShortDate(date)}</p>
             <p class="text-[10px] text-gray-500 dark:text-gray-400">${shiftText(item)}</p>
+            ${extraDesc}
           </div>
           <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${badgeBg} text-white">${text}</span>
         </button>`;
@@ -533,12 +542,22 @@
         izin: ['Izin', 'bg-blue-600 text-white', 'Izin sudah tercatat.'],
         alpa: ['Alpa', 'bg-red-600 text-white', 'Piket ini terlewat. Segera lakukan piket pengganti.'],
         pending: ['Jadwal', 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100', activeDateStr === todayStr ? 'Jadwalmu hari ini. Jangan lupa absen!' : 'Jadwal piket mendatang.'],
-        libur: ['Libur', 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300', 'Bebas tugas (libur / sistem dijeda).']
+        libur: ['Libur', 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300', 'Bebas tugas (libur / sistem dijeda).'],
+        pengganti: ['Pengganti', 'bg-amber-600 text-white', 'Piket pengganti berjalan.']
       };
 
       box.innerHTML = [...list].sort((a, b) => String(a.shift?.start || '').localeCompare(String(b.shift?.start || ''))).map(item => {
         const c = AttendanceCalendar.classifyItem(item, activeDateStr, todayStr);
-        const [label, badgeCls, desc] = info[c];
+        let [label, badgeCls, desc] = info[c] || ['Lainnya', 'bg-gray-500 text-white', ''];
+        
+        if (c === 'hadir' && item.isReplaced) {
+          label = 'Diganti';
+          badgeCls = 'bg-blue-600 text-white';
+          desc = 'Jadwal ini sudah lunas digantikan oleh piket pengganti.';
+        }
+        if (c === 'pengganti' && item.replacedDate) {
+          desc = `Menggantikan jadwal tanggal ${formatShortDate(item.replacedDate)}.`;
+        }
         const hasTime = item.timeMasuk && item.timeMasuk !== '-';
         const tag = item.category === 'pengganti' ? 'Piket pengganti' : (item.category === 'sukarela' ? 'Piket sukarela' : '');
         return `
