@@ -335,22 +335,23 @@
 
     <!-- Quick Info Strip / Ketentuan Piket Galeri Investasi -->
     <div
-      class="rounded-2xl bg-white/70 dark:bg-[#131823]/70 backdrop-blur-md p-4 sm:p-5 border border-gray-200 dark:border-gray-800 flex flex-wrap items-center justify-between gap-4 text-xs">
-      <div class="flex items-center gap-3 text-left">
-        <div class="w-8 h-8 rounded-xl bg-red-500/10 text-red-500 flex items-center justify-center flex-shrink-0">
+      class="rounded-2xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-4 text-xs bg-gradient-to-br from-red-600 via-rose-600 to-red-700 text-white shadow-xl shadow-red-600/20 relative overflow-hidden">
+      <!-- Decorative Backdrop Circles -->
+      <div class="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white/10 blur-xl pointer-events-none"></div>
+      
+      <div class="flex items-center gap-3 text-left relative z-10">
+        <div class="w-8 h-8 rounded-xl bg-white/20 text-white flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/30">
           <i data-feather="info" class="w-4 h-4"></i>
         </div>
         <div>
-          <p class="font-bold text-gray-900 dark:text-gray-200">Ketentuan Jam Piket Galeri Investasi:</p>
-          <p class="text-[11px] text-gray-500 dark:text-gray-400">
+          <p class="font-bold text-white">Ketentuan Jam Piket Galeri Investasi:</p>
+          <p class="text-[11px] text-red-100/90 leading-relaxed">
             Sesi Pagi (07:00 - 12:00 WIB) • Sesi Siang (12:00 - 18:00 WIB). Bebas datang jam berapa pun dalam rentang
             sesi, dengan durasi piket minimal 2 jam.
           </p>
         </div>
       </div>
-
     </div>
-
     <!-- Tombol Pusat Bantuan -->
     <a href="bantuan.html"
       class="block w-full mt-4 rounded-2xl bg-white/70 dark:bg-[#131823]/70 backdrop-blur-md p-4 border border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1a202c] transition-colors flex items-center justify-between text-left group">
