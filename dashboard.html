@@ -292,38 +292,6 @@
           </div>
         </div>
 
-        <!-- Panel Server & Database Health -->
-        <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-md p-4 sm:p-5 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6 mb-6">
-          <!-- Server Status -->
-          <div class="flex items-center gap-3 flex-1 w-full">
-            <div id="serverStatusIcon" class="w-12 h-12 rounded-2xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-500 flex-shrink-0">
-              <i data-feather="server" class="w-6 h-6"></i>
-            </div>
-            <div>
-              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400">Status Mesin Supabase</h3>
-              <p id="serverStatusText" class="text-sm font-black text-gray-900 dark:text-white mt-0.5">Mengecek...</p>
-            </div>
-          </div>
-          
-          <div class="h-12 w-px bg-gray-200 dark:bg-gray-800 hidden sm:block"></div>
-          
-          <!-- Database Capacity -->
-          <div class="flex items-center gap-3 flex-1 w-full border-t border-gray-100 dark:border-gray-800 sm:border-0 pt-4 sm:pt-0">
-            <div class="w-12 h-12 rounded-2xl bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-500 flex-shrink-0">
-              <i data-feather="database" class="w-6 h-6"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-[11px] font-bold text-gray-500 dark:text-gray-400">Kapasitas Database</h3>
-              <div class="flex items-center gap-2 mt-0.5">
-                <p id="dbSizeText" class="text-sm font-black text-gray-900 dark:text-white truncate">Belum dicek</p>
-                <button onclick="checkDatabaseSize()" class="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-md text-[10px] font-bold transition whitespace-nowrap active:scale-95 shadow-md flex-shrink-0">
-                  Cek Kapasitas
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
         <!-- Tabel Log Presensi KSPM -->
         <div class="bg-white dark:bg-[#141822] rounded-3xl border border-gray-200 dark:border-gray-800 shadow-xl overflow-hidden">
           
