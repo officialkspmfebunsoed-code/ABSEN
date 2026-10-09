@@ -632,7 +632,7 @@
     </div>
   </div>
 
-  <script src="js/attendance-db.js?v=3"></script>
+  <script src="js/attendance-db.js?v=4"></script>
   <script>
     let kioskCoords = 'Galeri Investasi Unsoed [-7.403280, 109.246801]';
     let videoStream = null;
@@ -1214,6 +1214,28 @@
         return;
       }
 
+      // Jika hari ini sudah Piket Berangkat sebagai pengganti (belum pulang),
+      // tanggal yang diganti DIKUNCI ke tanggal yang dipilih saat berangkat.
+      const openReplacementMasuk = getTodayOpenReplacementMasuk(empId);
+      if (openReplacementMasuk) {
+        const lockedDate = openReplacementMasuk.replacedDate;
+        container.innerHTML = `
+          <div class="eligible-date-card p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border-2 border-amber-500 text-xs shadow-xs flex items-center justify-between" data-date="${lockedDate}">
+            <div>
+              <p class="font-black text-gray-900 dark:text-white">${lockedDate}</p>
+              <p class="text-[10px] text-gray-500">Terkunci: sesuai tanggal yang dipilih saat Piket Berangkat (${openReplacementMasuk.time} WIB)</p>
+            </div>
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-300">Sesi Berjalan</span>
+          </div>
+        `;
+        const repDateInput = document.getElementById('kioskReplacedDate');
+        if (repDateInput) {
+          repDateInput.value = lockedDate;
+          onManualReplacedDateChange(lockedDate);
+        }
+        return;
+      }
+
       const eligibleList = AttendanceDB.getEligibleReplacementSchedules(empId);
       if (eligibleList.length === 0) {
         container.innerHTML = `
@@ -1250,6 +1272,17 @@
       if (eligibleList.length > 0) {
         selectEligibleReplacementDate(eligibleList[0].date, eligibleList[0].shiftName, eligibleList[0].daysAgo);
       }
+    }
+
+    // Mencari log Piket Berangkat (MASUK) pengganti hari ini yang belum ditutup Piket Pulang
+    function getTodayOpenReplacementMasuk(empId) {
+      if (!empId) return null;
+      const todayStr = window.getTodayString ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+      const todayLogs = AttendanceDB.getAttendanceLogs(todayStr).filter(l => l.empId === empId);
+      const masuk = todayLogs.find(l => l.type === 'MASUK' && l.replacedDate);
+      if (!masuk) return null;
+      const hasPulang = todayLogs.some(l => l.type === 'PULANG');
+      return hasPulang ? null : masuk;
     }
 
     function selectEligibleReplacementDate(dateStr, shiftName, daysAgo) {
@@ -1541,6 +1574,11 @@
 
       if (currentCategory === 'pengganti') {
         replacedDate = document.getElementById('kioskReplacedDate').value;
+        // Piket Pulang WAJIB memakai tanggal yang sama dengan Piket Berangkat hari ini
+        if (currentAttendanceType === 'PULANG') {
+          const openMasuk = getTodayOpenReplacementMasuk(emp.id);
+          if (openMasuk) replacedDate = openMasuk.replacedDate;
+        }
         if (!replacedDate) {
           alert("Silakan pilih tanggal piket sebelumnya yang ingin Anda gantikan!");
           return;

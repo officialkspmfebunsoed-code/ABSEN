@@ -729,7 +729,7 @@ const AttendanceDB = {
     
     // Cek apakah jadwal di tanggal ini sudah diganti di hari lain
     const allLogs = this.getAttendanceLogs();
-    const isReplaced = allLogs.some(l => l.empId === empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate === targetDate);
+    const isReplaced = allLogs.some(l => l.empId === empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && this.getEffectiveReplacedDate(l, allLogs) === targetDate);
 
     return (hasMasuk && hasPulang) || isSelesai || isReplaced;
   },
@@ -1426,7 +1426,7 @@ const AttendanceDB = {
     const alreadyReplacedDates = new Set(
       allLogs
         .filter(l => l.empId === empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate)
-        .map(l => l.replacedDate)
+        .map(l => this.getEffectiveReplacedDate(l, allLogs))
     );
 
     const eligibleList = [];
@@ -1460,6 +1460,19 @@ const AttendanceDB = {
     return eligibleList;
   },
 
+  // Tanggal yang benar-benar digantikan oleh sebuah log.
+  // Log PULANG selalu mengikuti tanggal pengganti dari log MASUK di hari yang sama,
+  // karena 1 sesi (Berangkat + Pulang) hanya boleh mengganti 1 tanggal.
+  getEffectiveReplacedDate(log, allLogs = null) {
+    if (!log) return null;
+    if (log.type === 'PULANG') {
+      const source = allLogs || this.getAttendanceLogs();
+      const masuk = source.find(m => m.empId === log.empId && m.date === log.date && m.type === 'MASUK' && m.replacedDate);
+      if (masuk) return masuk.replacedDate;
+    }
+    return log.replacedDate || null;
+  },
+
   recordAttendance({ empId, name, date = null, type = 'MASUK', category = 'biasa', replacedDate = null, reason = '', shiftId = null, photo = '', location = '', notes = '' }) {
     const logs = this.getAttendanceLogs();
     const employees = this.getEmployees();
@@ -1478,6 +1491,15 @@ const AttendanceDB = {
     if (!assignedShiftId) {
       const currentHour = now.getHours();
       assignedShiftId = (currentHour < 12) ? 'shift_pagi' : 'shift_siang';
+    }
+
+    // Piket Pulang mewarisi kategori & tanggal pengganti dari Piket Berangkat hari yang sama
+    if (type === 'PULANG') {
+      const sameDayMasuk = logs.find(l => l.empId === empId && l.date === recordDate && l.type === 'MASUK');
+      if (sameDayMasuk && sameDayMasuk.replacedDate) {
+        replacedDate = sameDayMasuk.replacedDate;
+        category = sameDayMasuk.category || category;
+      }
     }
 
     // Validasi batas 1 bulan untuk piket pengganti
@@ -1653,7 +1675,7 @@ const AttendanceDB = {
         countHadir++;
       } else {
         if (isDatePassed) {
-          replacementLog = allLogs.find(l => l.empId === schedule.empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate === targetDate);
+          replacementLog = allLogs.find(l => l.empId === schedule.empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && this.getEffectiveReplacedDate(l, allLogs) === targetDate);
         }
 
         if (replacementLog) {
@@ -1689,6 +1711,7 @@ const AttendanceDB = {
         attendanceIds: attendanceIds,
         driveFolder: driveFolder,
         isReplaced: !!replacementLog,
+        replacementLogId: replacementLog ? replacementLog.id : null,
         hasAttended: !!(masukLog || pulangLog || izinLog)
       });
     });
@@ -1943,7 +1966,10 @@ const AttendanceDB = {
           timePulang: item.timePulang,
           photo: item.photo || '',
           location: item.location,
-          notes: item.notes
+          notes: item.notes,
+          attendanceId: item.attendanceId,
+          replacementLogId: item.replacementLogId,
+          scheduleId: item.scheduleId
         });
       });
     });
