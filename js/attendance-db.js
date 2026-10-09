@@ -1737,7 +1737,7 @@ const AttendanceDB = {
       if (l.type === 'MASUK') sessionByMasukId[l.id] = s;
     });
     logs.filter(l => l.type === 'PULANG').forEach(l => {
-      const paired = this.findPairedMasuk(l, logs);
+      const paired = logs.find(m => m.empId === l.empId && m.date === l.date && m.type === 'MASUK');
       const s = paired ? sessionByMasukId[paired.id] : null;
       if (s && !s.pulang) {
         s.pulang = l;
