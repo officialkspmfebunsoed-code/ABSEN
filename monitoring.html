@@ -268,7 +268,7 @@
     </div>
   </footer>
 
-  <script src="js/attendance-db.js?v=14"></script>
+  <script src="js/attendance-db.js?v=15"></script>
   <script src="js/calendar.js?v=3"></script>
   <script>
     const PREF_KEY = 'kspm_monitoring_pref';
@@ -434,7 +434,7 @@
           
           if (c !== 'pengganti') t++;
           
-          if (c === 'hadir') { h++; successful.push({ date, item }); }
+          if (c === 'hadir') { h++; successful.push({ date, item, isReplaced: item.isReplaced }); }
           else if (c === 'pengganti') { successful.push({ date, item, isPengganti: true }); }
           else if (c === 'izin') i++;
           else if (c === 'alpa') { a++; needReplace.push({ date, item }); }
@@ -490,15 +490,20 @@
       const box = document.getElementById('successfulList');
       box.innerHTML = items.length === 0
         ? '<p class="text-xs text-gray-400 italic">Belum ada riwayat kehadiran di bulan ini.</p>'
-        : items.map(({ date, item, isPengganti }) => `
+        : items.map(({ date, item, isPengganti, isReplaced }) => {
+            const badgeBg = isPengganti ? 'bg-amber-600' : (isReplaced ? 'bg-blue-600' : 'bg-emerald-600');
+            const boxBg = isPengganti ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-100 dark:border-amber-900/40' : (isReplaced ? 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 border-blue-100 dark:border-blue-900/40' : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/40');
+            const text = isPengganti ? 'Pengganti' : (isReplaced ? 'Diganti' : 'Hadir');
+            return `
         <button onclick="calendarInstance.handleDayClick('${date}')"
-          class="w-full text-left p-2.5 rounded-xl ${isPengganti ? 'bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/20 dark:hover:bg-amber-950/40 border-amber-100 dark:border-amber-900/40' : 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/40'} border transition flex items-center justify-between gap-2">
+          class="w-full text-left p-2.5 rounded-xl ${boxBg} border transition flex items-center justify-between gap-2">
           <div class="min-w-0">
             <p class="text-xs font-bold text-gray-900 dark:text-white">${formatShortDate(date)}</p>
             <p class="text-[10px] text-gray-500 dark:text-gray-400">${shiftText(item)}</p>
           </div>
-          <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${isPengganti ? 'bg-amber-600 text-white' : 'bg-emerald-600 text-white'}">${isPengganti ? 'Pengganti' : 'Hadir'}</span>
-        </button>`).join('');
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${badgeBg} text-white">${text}</span>
+        </button>`;
+          }).join('');
     }
 
     /* ---------- Detail tanggal ---------- */
