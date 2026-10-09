@@ -953,6 +953,7 @@
                   <th class="px-4 py-3">Status</th>
                   <th class="px-4 py-3">Masuk / Pulang</th>
                   <th class="px-4 py-3">Keterangan</th>
+                  <th class="px-4 py-3 text-right">Aksi</th>
                 </tr>
               </thead>
               <tbody id="reportTableBody" class="divide-y divide-gray-200 dark:border-gray-800 text-xs">
@@ -2099,8 +2100,8 @@
                     Ubah Manual
                   </button>
                 `}
-                ${item.hasAttended ? `
-                  <button onclick="confirmDeleteAttendance('${item.empId}', '${item.name.replace(/'/g, "\\'")}', '${activeDateStr}', '${item.attendanceId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi Anggota Ini">
+                ${item.hasAttended || item.isReplaced ? `
+                  <button onclick="confirmDeleteAttendance('${item.empId}', '${item.name.replace(/'/g, "\\'")}', '${activeDateStr}', '${item.attendanceId || item.replacementLogId || ''}', '${item.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi Anggota Ini">
                     <i data-feather="trash-2" class="w-3 h-3"></i> Hapus
                   </button>
                 ` : ''}
@@ -3352,7 +3353,7 @@
       if (reportRows.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="px-4 py-8 text-center text-gray-400 text-xs">
+            <td colspan="8" class="px-4 py-8 text-center text-gray-400 text-xs">
               Tidak ada rekaman presensi pada filter periode ini.
             </td>
           </tr>
@@ -3397,9 +3398,15 @@
               ${row.timePulang !== '-' ? '| Pulang: ' + row.timePulang : ''}
             </td>
             <td class="px-4 py-2.5 text-gray-500 text-[11px]">${row.notes || '-'}</td>
+            <td class="px-4 py-2.5 text-right">
+              <button onclick="confirmDeleteAttendance('${row.empId}', '${row.name.replace(/'/g, "\\'")}', '${row.date}', '${row.attendanceId || row.replacementLogId || ''}', '${row.scheduleId || ''}')" class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/30 text-[10px] font-bold transition inline-flex items-center gap-1 shadow-xs" title="Hapus Riwayat Presensi">
+                <i data-feather="trash-2" class="w-3 h-3"></i> Hapus
+              </button>
+            </td>
           </tr>
         `;
       }).join('');
+      feather.replace();
     }
 
     function hitungDurasiPiket(tMasuk, tPulang) {
@@ -3730,8 +3737,8 @@
     // --- MODAL HAPUS RIWAYAT PRESENSI ---
     let deleteTarget = { empId: null, name: '', date: '', logId: null };
 
-    function confirmDeleteAttendance(empId, name, date, logId) {
-      deleteTarget = { empId, name, date, logId };
+    function confirmDeleteAttendance(empId, name, date, logId, scheduleId) {
+      deleteTarget = { empId, name, date, logId, scheduleId };
       const nameEl = document.getElementById('deleteTargetEmpName');
       const dateEl = document.getElementById('deleteTargetDate');
       if (nameEl) nameEl.innerText = `${name} (${empId})`;
@@ -3749,6 +3756,8 @@
 
       if (deleteTarget.logId) {
         AttendanceDB.deleteAttendanceLog(deleteTarget.logId);
+      } else if (deleteTarget.scheduleId) {
+        AttendanceDB.deleteSchedule(deleteTarget.scheduleId);
       }
       AttendanceDB.deleteAttendanceByEmpAndDate(deleteTarget.empId, deleteTarget.date);
 
@@ -3757,6 +3766,7 @@
       if (fullCalendar) fullCalendar.render();
       if (typeof renderRekapTable === 'function') renderRekapTable();
       if (typeof renderLeaderboardView === 'function') renderLeaderboardView();
+      if (typeof renderReportTable === 'function') renderReportTable();
     }
 
     function zoomPhoto(photoUrl, name, folderUrl = '') {
