@@ -1720,85 +1720,102 @@ const AttendanceDB = {
     });
 
     // Cek apakah ada anggota yang absen tanpa jadwal (Piket Sukarela / Main / Walk-in / Pengganti)
-    logs.forEach(log => {
-      // Pastikan log walk-in (termasuk pengganti) tetap dimasukkan meskipun orang tsb ada jadwal reguler hari ini
-      let logCat = log.category;
-      if (!logCat || logCat === 'biasa') {
-        logCat = log.replacedDate ? 'pengganti' : 'sukarela';
+    // Log dikelompokkan per SESI: 1 Piket Berangkat (MASUK) + Piket Pulang (PULANG) pasangannya.
+    // Kategori & tanggal pengganti sesi selalu mengikuti log MASUK.
+    const normCat = (l) => {
+      let c = l.category;
+      if (!c || c === 'biasa') c = l.replacedDate ? 'pengganti' : 'sukarela';
+      return c;
+    };
+    const scheduledEmpIds = new Set(monitoringList.map(item => item.empId));
+    const sessions = [];
+    const sessionByMasukId = {};
+
+    logs.filter(l => l.type === 'MASUK' || l.type === 'IZIN').forEach(l => {
+      const s = { masuk: l.type === 'MASUK' ? l : null, izin: l.type === 'IZIN' ? l : null, pulang: null, base: l };
+      sessions.push(s);
+      if (l.type === 'MASUK') sessionByMasukId[l.id] = s;
+    });
+    logs.filter(l => l.type === 'PULANG').forEach(l => {
+      const paired = this.findPairedMasuk(l, logs);
+      const s = paired ? sessionByMasukId[paired.id] : null;
+      if (s && !s.pulang) {
+        s.pulang = l;
+      } else {
+        sessions.push({ masuk: null, izin: null, pulang: l, base: l });
+      }
+    });
+
+    sessions.forEach(s => {
+      const base = s.base;
+      const autoCategory = normCat(base);
+      const replacedDate = base.replacedDate || null;
+
+      // Log non-pengganti milik anggota yang punya jadwal hari ini sudah tampil di baris jadwalnya
+      if (autoCategory !== 'pengganti' && scheduledEmpIds.has(base.empId)) return;
+
+      const emp = employees.find(e => e.id === base.empId) || {
+        id: base.empId,
+        name: base.name,
+        role: 'Anggota KSPM',
+        dept: 'KSPM',
+        avatar: 'KP',
+        color: 'from-gray-600 to-gray-700'
+      };
+      const shift = shifts.find(sh => sh.id === base.shiftId) || shifts[0];
+
+      let status;
+      if (s.izin) status = 'IZIN';
+      else if (s.pulang || (s.masuk && s.masuk.status === 'SELESAI')) status = 'SELESAI';
+      else status = 'SEDANG_BERTUGAS';
+
+      if (status === 'IZIN') {
+        countIzin++;
+      } else if (autoCategory !== 'pengganti') {
+        // Log pengganti hanya menambah 'Hadir' pada tanggal masa lalu yang digantikan
+        countHadir++;
       }
 
-      let shouldSkip = false;
-      if (logCat === 'sukarela') {
-        const hasRegular = monitoringList.some(item => item.empId === log.empId && item.category === 'biasa');
-        if (hasRegular) shouldSkip = true;
+      const photo = s.masuk?.photo || s.pulang?.photo || s.izin?.photo || '';
+      let driveFolder = s.masuk?.driveFolder || s.pulang?.driveFolder || (photo && photo.includes('drive.google.com') ? photo : null);
+      if (!driveFolder) {
+        const combinedNotes = [s.masuk?.notes, s.pulang?.notes, s.izin?.notes].filter(Boolean).join(' ');
+        const match = combinedNotes.match(/\[DriveFolder:\s*(https:\/\/[^\]]+)\]/);
+        if (match) driveFolder = match[1];
       }
 
-      const alreadyInList = monitoringList.some(item => item.empId === log.empId && item.category === logCat);
-      if (!shouldSkip && !alreadyInList) {
-        const emp = employees.find(e => e.id === log.empId) || {
-          id: log.empId,
-          name: log.name,
-          role: 'Anggota KSPM',
-          dept: 'KSPM',
-          avatar: 'KP',
-          color: 'from-gray-600 to-gray-700'
-        };
-        const shift = shifts.find(s => s.id === log.shiftId) || shifts[0];
-
-        let autoCategory = log.category;
-        if (!autoCategory || autoCategory === 'biasa') {
-          autoCategory = log.replacedDate ? 'pengganti' : 'sukarela';
-        }
-
-        if (log.type === 'IZIN') {
-          countIzin++;
-        } else if (autoCategory !== 'pengganti') {
-          // Jangan tambahkan ke countHadir hari ini jika itu log pengganti,
-          // karena log pengganti hanya menambah 'Hadir' pada tanggal masa lalu.
-          countHadir++;
-        }
-
-        let driveFolder = log.driveFolder || (log.photo && log.photo.includes('drive.google.com') ? log.photo : null);
-        if (!driveFolder && log.notes) {
-          const match = log.notes.match(/\[DriveFolder:\s*(https:\/\/[^\]]+)\]/);
-          if (match) driveFolder = match[1];
-        }
-
-
-
-        let autoNotes = log.notes;
-        if (!autoNotes) {
-          if (autoCategory === 'pengganti' && log.replacedDate) {
-            autoNotes = `Piket Pengganti (Mengganti tanggal ${log.replacedDate})`;
-          } else {
-            autoNotes = 'Piket Sukarela / Main';
-          }
-        }
-
-        monitoringList.push({
-          scheduleId: null,
-          empId: emp.id,
-          name: emp.name,
-          role: emp.role,
-          dept: emp.dept,
-          avatar: emp.avatar,
-          color: emp.color,
-          shift: shift,
-          category: autoCategory,
-          replacedDate: log.replacedDate,
-          status: log.status,
-          timeMasuk: log.type === 'MASUK' ? log.time : '-',
-          timePulang: log.type === 'PULANG' ? log.time : '-',
-          photo: log.photo,
-          location: log.location,
-          notes: autoNotes,
-          attendanceId: log.id,
-          attendanceIds: [log.id],
-          driveFolder: driveFolder,
-          hasAttended: true,
-          isWalkIn: true
-        });
+      let autoNotes = base.notes;
+      if (!autoNotes) {
+        autoNotes = (autoCategory === 'pengganti' && replacedDate)
+          ? `Piket Pengganti (Mengganti tanggal ${replacedDate})`
+          : 'Piket Sukarela / Main';
       }
+
+      const ids = [s.masuk, s.pulang, s.izin].filter(Boolean).map(l => l.id);
+
+      monitoringList.push({
+        scheduleId: null,
+        empId: emp.id,
+        name: emp.name,
+        role: emp.role,
+        dept: emp.dept,
+        avatar: emp.avatar,
+        color: emp.color,
+        shift: shift,
+        category: autoCategory,
+        replacedDate: replacedDate,
+        status: status,
+        timeMasuk: s.masuk ? s.masuk.time : '-',
+        timePulang: s.pulang ? s.pulang.time : '-',
+        photo: photo,
+        location: s.masuk?.location || s.pulang?.location || s.izin?.location || '-',
+        notes: autoNotes,
+        attendanceId: base.id,
+        attendanceIds: ids,
+        driveFolder: driveFolder,
+        hasAttended: true,
+        isWalkIn: true
+      });
     });
 
     return {
