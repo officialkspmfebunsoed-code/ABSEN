@@ -703,14 +703,19 @@ const AttendanceDB = {
 
     dates.forEach(d => {
       const dayLogs = filteredLogs.filter(l => l.date === d);
-      const hasMasuk = dayLogs.some(l => l.type === 'MASUK');
-      const hasPulang = dayLogs.some(l => l.type === 'PULANG');
-      const isSelesai = dayLogs.some(l => l.status === 'SELESAI' || l.status === 'HADIR');
+      const categories = Array.from(new Set(dayLogs.map(l => l.category || 'biasa')));
 
-      // 1 Sesi Piket Sah = Ada Absen Masuk & Pulang Lengkap atau Status Selesai
-      if ((hasMasuk && hasPulang) || isSelesai) {
-        completedCount++;
-      }
+      categories.forEach(cat => {
+        const catLogs = dayLogs.filter(l => (l.category || 'biasa') === cat);
+        const hasMasuk = catLogs.some(l => l.type === 'MASUK');
+        const hasPulang = catLogs.some(l => l.type === 'PULANG');
+        const isSelesai = catLogs.some(l => l.status === 'SELESAI' || l.status === 'HADIR');
+
+        // 1 Sesi Piket Sah per Kategori = Ada Absen Masuk & Pulang Lengkap atau Status Selesai
+        if ((hasMasuk && hasPulang) || isSelesai) {
+          completedCount++;
+        }
+      });
     });
 
     return completedCount;
@@ -721,7 +726,12 @@ const AttendanceDB = {
     const hasMasuk = dayLogs.some(l => l.type === 'MASUK');
     const hasPulang = dayLogs.some(l => l.type === 'PULANG');
     const isSelesai = dayLogs.some(l => l.status === 'SELESAI' || l.status === 'HADIR');
-    return (hasMasuk && hasPulang) || isSelesai;
+    
+    // Cek apakah jadwal di tanggal ini sudah diganti di hari lain
+    const allLogs = this.getAttendanceLogs();
+    const isReplaced = allLogs.some(l => l.empId === empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate === targetDate);
+
+    return (hasMasuk && hasPulang) || isSelesai || isReplaced;
   },
 
   // --- PERHITUNGAN DURASI WAKTU NYATA & POIN KEAKTIFAN (SUKARELA/MAIN VS PENGGANTI) ---
