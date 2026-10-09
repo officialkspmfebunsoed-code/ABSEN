@@ -142,18 +142,6 @@
 
   <script>
     feather.replace();
-    
-    // Sinkronisasi tema
-    const applyTheme = () => {
-      if (localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark');
-        document.getElementById('theme-color-meta').setAttribute('content', '#0e1219');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.getElementById('theme-color-meta').setAttribute('content', '#ffffff');
-      }
-    };
-    applyTheme();
   </script>
 </body>
 </html>
