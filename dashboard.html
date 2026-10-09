@@ -1284,12 +1284,28 @@
 
         <div>
           <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Status / Kategori</label>
-          <select id="addManualStatusSelect" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+          <select id="addManualStatusSelect" onchange="document.getElementById('addManualReplacedDateContainer').classList.toggle('hidden', this.value !== 'PENGGANTI')" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
             <option value="HADIR">HADIR (Piket Biasa)</option>
             <option value="SUKARELA">HADIR - SUKARELA / MAIN (Masuk Tambahan)</option>
             <option value="PENGGANTI">HADIR - PIKET PENGGANTI</option>
             <option value="IZIN">IZIN (Kuliah / Lomba / Acara Kampus)</option>
           </select>
+        </div>
+
+        <div id="addManualReplacedDateContainer" class="hidden">
+          <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Tanggal yang Digantikan</label>
+          <input type="date" id="addManualReplacedDate" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Waktu Masuk</label>
+            <input type="time" id="addManualTimeMasuk" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-gray-500 dark:text-gray-400 uppercase mb-1">Waktu Pulang</label>
+            <input type="time" id="addManualTimePulang" class="w-full bg-white/60 dark:bg-[#181d26]/70 backdrop-blur-md border border-gray-200/80 dark:border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-gray-800 dark:text-gray-200 outline-none focus:border-red-500">
+          </div>
         </div>
 
         <div>
@@ -1433,7 +1449,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/attendance-db.js?v=10"></script>
+  <script src="js/attendance-db.js?v=11"></script>
   <script src="js/calendar.js?v=3"></script>
 
   <script>
@@ -3752,7 +3768,12 @@
       const employees = AttendanceDB.getEmployees();
       select.innerHTML = '<option value="">-- Pilih Anggota --</option>' + employees.map(e => `<option value="${e.id}">${e.name} (${e.dept})</option>`).join('');
       document.getElementById('addManualStatusSelect').value = 'HADIR';
+      document.getElementById('addManualStatusSelect').value = 'HADIR';
       document.getElementById('addManualReasonInput').value = '';
+      document.getElementById('addManualReplacedDateContainer').classList.add('hidden');
+      document.getElementById('addManualReplacedDate').value = '';
+      document.getElementById('addManualTimeMasuk').value = '';
+      document.getElementById('addManualTimePulang').value = '';
       document.getElementById('addManualAttendanceModal').classList.remove('hidden');
     }
 
@@ -3761,6 +3782,10 @@
       const status = document.getElementById('addManualStatusSelect').value;
       const reason = document.getElementById('addManualReasonInput').value || 'Ditambahkan Manual oleh Admin';
       const dateStr = document.getElementById('monitoringDatePicker').value || (window.getTodayString ? window.getTodayString(0) : new Date().toISOString().substring(0, 10));
+      
+      const replacedDate = document.getElementById('addManualReplacedDate').value;
+      const timeMasuk = document.getElementById('addManualTimeMasuk').value;
+      const timePulang = document.getElementById('addManualTimePulang').value;
 
       if (!empId) {
         alert("Pilih anggota terlebih dahulu!");
@@ -3785,6 +3810,8 @@
       }
 
       const emp = AttendanceDB.getEmployeeById(empId);
+      
+      // Data Log Masuk / Izin
       const attendanceData = {
         empId: empId,
         name: emp ? emp.name : empId,
@@ -3795,11 +3822,18 @@
         location: 'Diverifikasi oleh Admin KSPM'
       };
       
+      if (cat === 'pengganti' && replacedDate) attendanceData.replacedDate = replacedDate;
+      if (timeMasuk) attendanceData.time = timeMasuk + ':00';
+      
       AttendanceDB.recordAttendance(attendanceData);
       
+      // Data Log Pulang (hanya jika MASUK dan waktu pulang diset, atau default ditambahkan)
       if (type === 'MASUK') {
-        attendanceData.type = 'PULANG';
-        AttendanceDB.recordAttendance(attendanceData);
+        const pulangData = { ...attendanceData, type: 'PULANG' };
+        if (timePulang) pulangData.time = timePulang + ':00';
+        // Hapus ID supaya recordAttendance bikin ID baru
+        delete pulangData.id;
+        AttendanceDB.recordAttendance(pulangData);
       }
 
       document.getElementById('addManualAttendanceModal').classList.add('hidden');
