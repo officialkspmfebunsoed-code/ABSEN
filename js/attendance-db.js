@@ -1503,7 +1503,7 @@ const AttendanceDB = {
       employee = { id: empId, name: name || 'Anggota ' + empId, dept: 'KSPM' };
     }
 
-    const now = new Date();
+
     const recordDate = date || (typeof getTodayString === 'function' ? getTodayString(0) : now.toISOString().substring(0, 10));
     const recordTime = time || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
