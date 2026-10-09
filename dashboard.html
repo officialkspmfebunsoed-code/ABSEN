@@ -1433,7 +1433,7 @@
   </div>
 
   <!-- Scripts -->
-  <script src="js/attendance-db.js?v=4"></script>
+  <script src="js/attendance-db.js?v=5"></script>
   <script src="js/calendar.js?v=3"></script>
 
   <script>
@@ -3592,9 +3592,10 @@
         const refDate = new Date(dateStr + 'T00:00:00');
         const maxDate = new Date(refDate); maxDate.setDate(maxDate.getDate() - 1);
         const minDate = new Date(refDate); minDate.setDate(minDate.getDate() - 31);
-        repInput.max = maxDate.toISOString().substring(0, 10);
-        repInput.min = minDate.toISOString().substring(0, 10);
-        repInput.value = maxDate.toISOString().substring(0, 10);
+        const fmtLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        repInput.max = fmtLocal(maxDate);
+        repInput.min = fmtLocal(minDate);
+        repInput.value = fmtLocal(maxDate);
       }
 
       document.getElementById('editStatusModal').classList.remove('hidden');

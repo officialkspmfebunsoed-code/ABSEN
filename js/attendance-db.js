@@ -1405,13 +1405,16 @@ const AttendanceDB = {
     const refDateStr = referenceDateStr || getTodayString(0);
     const refDate = new Date(refDateStr + 'T00:00:00');
 
+    // Format tanggal LOKAL (jangan pakai toISOString karena itu UTC → mundur 1 hari di WIB)
+    const fmtLocal = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+
     const minDate = new Date(refDate);
     minDate.setDate(minDate.getDate() - 31);
-    const minDateStr = minDate.toISOString().substring(0, 10);
+    const minDateStr = fmtLocal(minDate);
 
     const maxDate = new Date(refDate);
     maxDate.setDate(maxDate.getDate() - 1);
-    const maxDateStr = maxDate.toISOString().substring(0, 10);
+    const maxDateStr = fmtLocal(maxDate);
 
     const allSchedules = this.getSchedules();
     const allLogs = this.getAttendanceLogs();
