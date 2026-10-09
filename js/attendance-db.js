@@ -884,8 +884,17 @@ const AttendanceDB = {
 
   getSchedules(dateStr = null) {
     const data = localStorage.getItem(DB_KEYS.SCHEDULES);
-    const schedules = data ? JSON.parse(data) : [];
-    if (!Array.isArray(schedules)) return []; // in case it was a JSON object previously
+    const rawSchedules = data ? JSON.parse(data) : [];
+    if (!Array.isArray(rawSchedules)) return [];
+
+    const seen = new Set();
+    const schedules = rawSchedules.filter(s => {
+      const key = `${s.empId}_${s.date}_${s.shiftId}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
     if (dateStr) {
       return schedules.filter(s => s.date === dateStr);
     }
@@ -1614,6 +1623,7 @@ const AttendanceDB = {
         if (match) driveFolder = match[1];
       }
 
+      let replacementLog = null;
       if (isExempted) {
         currentStatus = 'BEBAS_TUGAS';
         if (holidayInfo) {
@@ -1632,7 +1642,6 @@ const AttendanceDB = {
         currentStatus = 'SEDANG_BERTUGAS';
         countHadir++;
       } else {
-        let replacementLog = null;
         if (isDatePassed) {
           replacementLog = allLogs.find(l => l.empId === schedule.empId && (l.category === 'pengganti' || (l.category === 'sukarela' && l.replacedDate)) && l.replacedDate === targetDate);
         }
@@ -1669,6 +1678,7 @@ const AttendanceDB = {
         attendanceId: attendanceId,
         attendanceIds: attendanceIds,
         driveFolder: driveFolder,
+        isReplaced: !!replacementLog,
         hasAttended: !!(masukLog || pulangLog || izinLog)
       });
     });
@@ -1680,8 +1690,15 @@ const AttendanceDB = {
       if (!logCat || logCat === 'biasa') {
         logCat = log.replacedDate ? 'pengganti' : 'sukarela';
       }
+
+      let shouldSkip = false;
+      if (logCat === 'sukarela') {
+        const hasRegular = monitoringList.some(item => item.empId === log.empId && item.category === 'biasa');
+        if (hasRegular) shouldSkip = true;
+      }
+
       const alreadyInList = monitoringList.some(item => item.empId === log.empId && item.category === logCat);
-      if (!alreadyInList) {
+      if (!shouldSkip && !alreadyInList) {
         const emp = employees.find(e => e.id === log.empId) || {
           id: log.empId,
           name: log.name,

@@ -185,18 +185,22 @@ class AttendanceCalendar {
         const list = (dayData.monitoringList || []).filter(x =>
           this.options.empId ? x.empId === this.options.empId : x.dept === this.options.deptName);
         let hadir = 0, izin = 0, alpa = 0, pengganti = 0;
+        let isReplaced = false;
         let schedList = list.filter(x => {
           const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
           return c !== 'pengganti' && c !== 'libur';
         });
         list.forEach(x => {
           const c = AttendanceCalendar.classifyItem(x, dateStr, todayStr);
-          if (c === 'hadir') hadir++;
+          if (c === 'hadir') {
+            hadir++;
+            if (x.isReplaced) isReplaced = true;
+          }
           else if (c === 'izin') izin++;
           else if (c === 'alpa') alpa++;
           else if (c === 'pengganti') pengganti++;
         });
-        dayData = { ...dayData, totalScheduled: schedList.length, hadir, izin, alpa, pengganti, monitoringList: list };
+        dayData = { ...dayData, totalScheduled: schedList.length, hadir, izin, alpa, pengganti, isReplaced, monitoringList: list };
       }
       monthData[dateStr] = dayData;
 
@@ -213,7 +217,13 @@ class AttendanceCalendar {
         const base = 'inline-block text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold';
         if (dayData.alpa > 0) statusBadge = `<span class="${base} bg-red-600 text-white">Alpa</span>`;
         else if (dayData.izin > 0 && dayData.hadir === 0) statusBadge = `<span class="${base} bg-blue-600 text-white">Izin</span>`;
-        else if (dayData.hadir > 0) statusBadge = `<span class="${base} bg-emerald-600 text-white">Hadir</span>`;
+        else if (dayData.hadir > 0) {
+          if (dayData.isReplaced) {
+            statusBadge = `<span class="${base} bg-blue-600 text-white">Diganti</span>`;
+          } else {
+            statusBadge = `<span class="${base} bg-emerald-600 text-white">Hadir</span>`;
+          }
+        }
         else statusBadge = `<span class="${base} bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100">Jadwal</span>`;
       } else if (this.options.empId && dayData.pengganti > 0) {
         statusBadge = `<span class="inline-block text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold bg-amber-600 text-white">Pengganti</span>`;
