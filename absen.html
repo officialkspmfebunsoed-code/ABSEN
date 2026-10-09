@@ -632,7 +632,7 @@
     </div>
   </div>
 
-  <script src="js/attendance-db.js?v=12"></script>
+  <script src="js/attendance-db.js?v=13"></script>
   <script>
     let kioskCoords = 'Galeri Investasi Unsoed [-7.403280, 109.246801]';
     let videoStream = null;
@@ -1774,19 +1774,40 @@
       if (camOverlay) camOverlay.classList.add('hidden');
       document.body.style.overflow = '';
 
-      // Simpan instan (< 10ms) & kirim sync di latar belakang
-      const log = AttendanceDB.recordAttendance({
-        empId: emp.id,
-        name: emp.name,
-        type: recordType,
-        category: currentCategory,
-        replacedDate: replacedDate,
-        reason: reason,
-        shiftId: currentShift,
-        photo: photoBase64,
-        location: kioskCoords,
-        notes: notes
-      });
+      let log;
+      try {
+        log = AttendanceDB.recordAttendance({
+          empId: emp.id,
+          name: emp.name,
+          type: recordType,
+          category: currentCategory,
+          replacedDate: replacedDate,
+          reason: reason,
+          shiftId: currentShift,
+          photo: photoBase64,
+          location: kioskCoords,
+          notes: notes
+        });
+      } catch (err) {
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('opacity-75');
+        }
+        if (btnStep1) {
+          btnStep1.disabled = false;
+          btnStep1.classList.remove('opacity-75');
+        }
+        Swal.fire({
+          title: 'Presensi Ditolak!',
+          text: err.message,
+          icon: 'warning',
+          confirmButtonColor: '#3085d6',
+          confirmButtonText: 'Kembali'
+        }).then(() => {
+          window.location.href = 'index.html';
+        });
+        return;
+      }
 
       if (btn) {
         btn.disabled = false;

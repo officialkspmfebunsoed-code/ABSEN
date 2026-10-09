@@ -1476,8 +1476,25 @@ const AttendanceDB = {
     return log.replacedDate || null;
   },
 
-  recordAttendance({ empId, name, date = null, type = 'MASUK', category = 'biasa', replacedDate = null, reason = '', shiftId = null, photo = '', location = '', notes = '' }) {
+  recordAttendance({ empId, name, date = null, type = 'MASUK', category = 'biasa', replacedDate = null, reason = '', shiftId = null, photo = '', location = '', notes = '', time = null }) {
     const logs = this.getAttendanceLogs();
+
+    // MENCEGAH DOUBLE SUBMIT KIOSK (COOLDOWN 3 MENIT)
+    const now = new Date();
+    if (!time) {
+      const targetDateStr = date || (typeof getTodayString === 'function' ? getTodayString(0) : now.toISOString().substring(0, 10));
+      const recentLog = logs.find(l => l.empId === empId && l.type === type && l.date === targetDateStr);
+      if (recentLog && recentLog.time) {
+        const logParts = recentLog.time.split(':');
+        const logDateObj = new Date(now);
+        logDateObj.setHours(parseInt(logParts[0], 10), parseInt(logParts[1], 10), 0, 0);
+        const diffMinutes = Math.abs(now - logDateObj) / 1000 / 60;
+        if (diffMinutes < 3) {
+           throw new Error(`Anda baru saja melakukan Presensi ${type} kurang dari 3 menit yang lalu! Mohon tunggu sebentar untuk menghindari data ganda.`);
+        }
+      }
+    }
+
     const employees = this.getEmployees();
     const shifts = this.getShifts();
 
@@ -1487,8 +1504,8 @@ const AttendanceDB = {
     }
 
     const now = new Date();
-    const recordDate = date || getTodayString(0);
-    const recordTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+    const recordDate = date || (typeof getTodayString === 'function' ? getTodayString(0) : now.toISOString().substring(0, 10));
+    const recordTime = time || `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
     let assignedShiftId = shiftId;
     if (!assignedShiftId) {
