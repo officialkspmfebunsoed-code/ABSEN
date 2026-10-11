@@ -235,11 +235,11 @@ class AttendanceCalendar {
         indicators += '</div>';
 
         if (dayData.alpa > 0) {
-          statusBadge = `<span class="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400 font-bold">${dayData.alpa} Alpa</span>`;
+          statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400 font-bold">${dayData.alpa} Alpa</span>`;
         } else if (dayData.hadir > 0) {
-          statusBadge = `<span class="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 font-bold">${dayData.hadir}/${dayData.totalScheduled}</span>`;
+          statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 font-bold">${dayData.hadir}/${dayData.totalScheduled}</span>`;
         } else {
-          statusBadge = `<span class="hidden sm:inline-block text-[9px] px-1 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 font-medium">${dayData.totalScheduled}</span>`;
+          statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 font-medium">${dayData.totalScheduled}</span>`;
         }
       }
 
