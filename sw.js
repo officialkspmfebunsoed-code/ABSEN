@@ -4,15 +4,13 @@
  * Galeri Investasi FEB Universitas Jenderal Soedirman
  */
 
-const CACHE_NAME = 'kspm-absen-v1';
+const CACHE_NAME = 'kspm-absen-v2';
 
 const STATIC_ASSETS = [
   './',
   './index.html',
   './absen.html',
   './monitoring.html',
-  './portal_jadwal.html',
-  './portal_monitor.html',
   './bantuan.html',
   './dashboard.html',
   './manifest.json',
