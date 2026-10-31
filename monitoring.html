@@ -289,8 +289,8 @@
     </div>
   </footer>
 
-    <script src="js/attendance-db.js?v=16"></script>
-  <script src="js/calendar.js?v=4"></script>
+    <script src="js/attendance-db.js?v=21"></script>
+  <script src="js/calendar.js?v=6"></script>
   <script>
     const PREF_KEY = 'kspm_monitoring_pref';
     const todayStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
@@ -648,16 +648,17 @@
         hadir: ['Hadir', 'bg-emerald-600 text-white', 'Sudah piket. Terima kasih!'],
         izin: ['Izin', 'bg-blue-600 text-white', 'Izin sudah tercatat.'],
         alpa: ['Alpa', 'bg-red-600 text-white', 'Piket ini terlewat. Segera lakukan piket pengganti.'],
-        pending: ['Jadwal', 'bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100', activeDateStr === todayStr ? 'Jadwal hari ini. Jangan lupa absen!' : 'Jadwal piket mendatang.'],
+        pending: ['Terjadwal', 'bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-300 font-extrabold border border-sky-300 dark:border-sky-800', activeDateStr === todayStr ? 'Jadwal hari ini. Jangan lupa absen!' : 'Jadwal piket mendatang.'],
         libur: ['Libur', 'bg-rose-100 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300', 'Bebas tugas (libur / sistem dijeda).'],
         pengganti: ['Pengganti', 'bg-amber-600 text-white', 'Piket pengganti berjalan.']
       };
 
       let html = '';
+      const isFutureSelected = activeDateStr > todayStr;
       if (!loadedEmp) {
-        html += `<div class="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-300 text-[11px] font-semibold flex items-center justify-between mb-2">
-          <span>Daftar Petugas Piket (${list.length} Orang)</span>
-          <span class="text-[10px] text-blue-500 dark:text-blue-400">Semua Pengurus</span>
+        html += `<div class="p-2.5 rounded-xl ${isFutureSelected ? 'bg-sky-50 dark:bg-sky-950/30 border-sky-200 dark:border-sky-900/50 text-sky-700 dark:text-sky-300' : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900/40 text-blue-700 dark:text-blue-300'} border text-[11px] font-semibold flex items-center justify-between mb-2">
+          <span>${isFutureSelected ? 'Jadwal Piket Mendatang' : 'Daftar Petugas Piket'} (${list.length} Orang)</span>
+          <span class="text-[10px] ${isFutureSelected ? 'text-sky-500 dark:text-sky-400' : 'text-blue-500 dark:text-blue-400'}">Semua Pengurus</span>
         </div>`;
       }
 

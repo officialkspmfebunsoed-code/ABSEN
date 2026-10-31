@@ -157,6 +157,7 @@ class AttendanceCalendar {
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0"></span> <span>Sudah Piket / Selesai</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span> <span>Izin Piket</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 flex-shrink-0"></span> <span>Belum Piket (Alpa)</span></div>
+          <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-sky-500 flex-shrink-0"></span> <span>Jadwal Mendatang</span></div>
           <div class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-rose-500 flex-shrink-0"></span> <span>Hari Libur (Bebas Tugas)</span></div>
         </div>`}
 
@@ -206,6 +207,7 @@ class AttendanceCalendar {
 
       const isToday = dateStr === todayStr;
       const isSelected = dateStr === this.selectedDate;
+      const isFuture = dateStr > todayStr;
 
       let statusBadge = '';
       let indicators = '';
@@ -224,7 +226,11 @@ class AttendanceCalendar {
             statusBadge = `<span class="${base} bg-emerald-600 text-white">Hadir</span>`;
           }
         }
-        else statusBadge = `<span class="${base} bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100">Jadwal</span>`;
+        else if (isFuture || isToday) {
+          statusBadge = `<span class="${base} bg-sky-600 text-white shadow-xs">Jadwal</span>`;
+        } else {
+          statusBadge = `<span class="${base} bg-gray-200 text-gray-700 dark:bg-gray-700 dark:text-gray-100">Jadwal</span>`;
+        }
       } else if (this.options.empId && dayData.pengganti > 0) {
         statusBadge = `<span class="inline-block text-[8px] sm:text-[10px] px-1 sm:px-1.5 py-0.5 rounded-md font-extrabold bg-amber-600 text-white">Pengganti</span>`;
       } else if (dayData.totalScheduled > 0) {
@@ -232,12 +238,17 @@ class AttendanceCalendar {
         if (dayData.hadir > 0) indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-emerald-500 flex-shrink-0" title="${dayData.hadir} Hadir"></span>`;
         if (dayData.alpa > 0) indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 animate-pulse flex-shrink-0" title="${dayData.alpa} Belum Absen"></span>`;
         if (dayData.izin > 0) indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-blue-500 flex-shrink-0" title="${dayData.izin} Izin"></span>`;
+        if (dayData.hadir === 0 && dayData.alpa === 0 && dayData.izin === 0 && (isFuture || isToday)) {
+          indicators += `<span class="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-sky-500 flex-shrink-0" title="${dayData.totalScheduled} Terjadwal"></span>`;
+        }
         indicators += '</div>';
 
         if (dayData.alpa > 0) {
           statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-red-100 dark:bg-red-950/70 text-red-600 dark:text-red-400 font-bold">${dayData.alpa} Alpa</span>`;
         } else if (dayData.hadir > 0) {
           statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-600 dark:text-emerald-400 font-bold">${dayData.hadir}/${dayData.totalScheduled}</span>`;
+        } else if (isFuture || isToday) {
+          statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1.5 py-0.2 rounded bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 font-bold border border-sky-200 dark:border-sky-800/60">${dayData.totalScheduled} Piket</span>`;
         } else {
           statusBadge = `<span class="inline-block text-[8px] sm:text-[9px] px-1 py-0.2 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 font-medium">${dayData.totalScheduled}</span>`;
         }

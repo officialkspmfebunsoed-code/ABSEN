@@ -388,8 +388,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/attendance-db.js?v=16"></script>
-  <script src="js/calendar.js?v=4"></script>
+  <script src="js/attendance-db.js?v=21"></script>
+  <script src="js/calendar.js?v=6"></script>
   <script>
     let activeSelectedDate = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
 
@@ -653,6 +653,8 @@
     function renderRosterForDate(dateStr) {
       const daily = AttendanceDB.getDailyMonitoring(dateStr);
       const list = daily.monitoringList || [];
+      const todayStr = (typeof window.getTodayString === 'function') ? window.getTodayString(0) : new Date().toISOString().substring(0, 10);
+      const isFutureDate = dateStr > todayStr;
 
       // Quick summary badges
       const quickBadges = document.getElementById('rosterQuickBadges');
@@ -660,6 +662,13 @@
         quickBadges.innerHTML = `
           <span class="px-2.5 py-1 rounded-xl bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 font-bold border border-rose-300 dark:border-rose-800 text-center">
             🎉 Hari Libur: ${daily.holiday.name} (Bebas Tugas)
+          </span>
+        `;
+      } else if (isFutureDate) {
+        quickBadges.innerHTML = `
+          <span class="px-2.5 py-1 rounded-xl bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 font-bold border border-sky-300 dark:border-sky-800 text-center flex items-center gap-1.5">
+            <i data-feather="calendar" class="w-3.5 h-3.5 text-sky-600 dark:text-sky-400"></i>
+            <span>Jadwal Mendatang: ${daily.counts.totalScheduled} Petugas Terjadwal</span>
           </span>
         `;
       } else {
@@ -693,16 +702,16 @@
       const listSiangEl = document.getElementById('rosterListSiang');
 
       // Render Sesi Pagi
-      listPagiEl.innerHTML = renderShiftRosterCards(pagiItems, 'Pagi');
+      listPagiEl.innerHTML = renderShiftRosterCards(pagiItems, 'Pagi', isFutureDate);
 
       // Render Sesi Siang
-      listSiangEl.innerHTML = renderShiftRosterCards(siangItems, 'Siang');
+      listSiangEl.innerHTML = renderShiftRosterCards(siangItems, 'Siang', isFutureDate);
 
       feather.replace();
     }
 
     // Helper untuk merender kartu petugas piket dengan status jelas: Sedang Bertugas / Selesai / Izin / Belum Piket (Responsive & Ringkas)
-    function renderShiftRosterCards(items, shiftName) {
+    function renderShiftRosterCards(items, shiftName, isFutureDate = false) {
       if (items.length === 0) {
         return `
           <div class="p-4 text-center bg-gray-50/60 dark:bg-[#181d26]/40 rounded-2xl border border-dashed border-gray-200 dark:border-gray-800 text-gray-400 text-xs">
@@ -747,6 +756,14 @@
             </span>
           `;
           timeDetails = item.notes || 'Izin Terdaftar';
+        } else if (item.status === 'BELUM_MULAI' || isFutureDate) {
+          badgeHtml = `
+            <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border border-sky-300 dark:border-sky-700 flex items-center gap-1">
+              <i data-feather="clock" class="w-2.5 h-2.5 text-sky-600 dark:text-sky-400"></i>
+              <span>TERJADWAL</span>
+            </span>
+          `;
+          timeDetails = `Sesi ${shiftName} • Min. 2 Jam`;
         } else {
           badgeHtml = `
             <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-red-100 text-red-800 dark:bg-red-500/20 dark:text-red-400 border border-red-300 dark:border-red-700 flex items-center gap-1 animate-pulse">

@@ -115,12 +115,19 @@ const DEFAULT_EMPLOYEES = [
 
 // Helper Tanggal YYYY-MM-DD
 function getTodayString(offsetDays = 0) {
-  const d = new Date();
-  d.setDate(d.getDate() + offsetDays);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  try {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    // Standarisasi Waktu Indonesia Barat (WIB / GMT+7)
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(d);
+  } catch (e) {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 }
 
 function normalizeCloudDate(rawDate) {
@@ -165,6 +172,53 @@ const SUPABASE_CONFIG = {
 };
 
 const AttendanceDB = {
+  // --- OTOMATISASI MANAJEMEN MEMORI LOCALSTORAGE (ANTI-QUOTA EXCEEDED) ---
+  pruneOldData(keepDays = 120) {
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - keepDays);
+      const cutoffStr = cutoffDate.toISOString().split('T')[0];
+
+      const attRaw = localStorage.getItem(DB_KEYS.ATTENDANCE);
+      if (attRaw) {
+        const logs = JSON.parse(attRaw);
+        if (Array.isArray(logs) && logs.length > 300) {
+          const pruned = logs.filter(l => (l.date || '') >= cutoffStr);
+          this.safeSetItem(DB_KEYS.ATTENDANCE, JSON.stringify(pruned));
+        }
+      }
+
+      const schRaw = localStorage.getItem(DB_KEYS.SCHEDULES);
+      if (schRaw) {
+        const sch = JSON.parse(schRaw);
+        if (Array.isArray(sch) && sch.length > 300) {
+          const pruned = sch.filter(s => (s.date || '') >= cutoffStr);
+          this.safeSetItem(DB_KEYS.SCHEDULES, JSON.stringify(pruned));
+        }
+      }
+    } catch (e) {
+      console.warn('Pruning error:', e);
+    }
+  },
+
+  safeSetItem(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch (e) {
+      if (e && (e.name === 'QuotaExceededError' || e.code === 22)) {
+        console.warn('LocalStorage kuota penuh! Menjalankan pembersihan darurat...');
+        this.pruneOldData(30); // Bersihkan sisa 30 hari saja
+        try {
+          localStorage.setItem(key, value);
+        } catch (retryErr) {
+          console.error('Kapasitas browser kritis:', retryErr);
+        }
+      } else {
+        console.warn('LocalStorage setItem error:', e);
+      }
+    }
+  },
+
   _syncPromise: null,
   _realtimeClient: null,
 
@@ -174,6 +228,50 @@ const AttendanceDB = {
       'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
       'Content-Type': 'application/json'
     };
+  },
+
+
+  // --- OFFLINE SYNC QUEUE (PENYELAMAT PRESENSI SAAT SINYAL HILANG) ---
+  enqueuePendingSync(table, row) {
+    try {
+      const q = JSON.parse(localStorage.getItem('kspm_pending_sync') || '[]');
+      if (!q.some(item => item.table === table && item.row && item.row.id === row.id)) {
+        q.push({ table, row, timestamp: Date.now() });
+        this.safeSetItem('kspm_pending_sync', JSON.stringify(q));
+      }
+    } catch (e) {}
+  },
+
+  async flushPendingSync() {
+    try {
+      const raw = localStorage.getItem('kspm_pending_sync');
+      if (!raw) return;
+      const q = JSON.parse(raw);
+      if (!Array.isArray(q) || q.length === 0) return;
+
+      const remaining = [];
+      for (const item of q) {
+        try {
+          const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/${item.table}`, {
+            method: 'POST',
+            headers: {
+              ...this.getHeaders(),
+              'Prefer': 'resolution=merge-duplicates'
+            },
+            body: JSON.stringify(item.row)
+          });
+          if (!res.ok) {
+            remaining.push(item);
+          }
+        } catch (e) {
+          remaining.push(item);
+        }
+      }
+      this.safeSetItem('kspm_pending_sync', JSON.stringify(remaining));
+      if (remaining.length < q.length) {
+        console.log(`✅ [Offline-Sync] Berhasil mengirim ulang ${q.length - remaining.length} data yang sempat tertunda saat offline.`);
+      }
+    } catch (e) {}
   },
 
   async postToSupabase(table, row) {
@@ -187,9 +285,14 @@ const AttendanceDB = {
         },
         body: JSON.stringify(row)
       });
-      return { status: response.ok ? 'success' : 'error' };
+      if (!response.ok) {
+        this.enqueuePendingSync(table, row);
+        return { status: 'error' };
+      }
+      return { status: 'success' };
     } catch (err) {
       console.warn(`Post to Supabase [${table}] error:`, err);
+      this.enqueuePendingSync(table, row);
       return null;
     }
   },
@@ -208,6 +311,21 @@ const AttendanceDB = {
     }
   },
 
+  async patchToSupabase(table, filterQuery, row) {
+    if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.ANON_KEY) return null;
+    try {
+      const response = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/${table}?${filterQuery}`, {
+        method: 'PATCH',
+        headers: this.getHeaders(),
+        body: JSON.stringify(row)
+      });
+      return { status: response.ok ? 'success' : 'error' };
+    } catch (err) {
+      console.warn(`Patch to Supabase [${table}] error:`, err);
+      return null;
+    }
+  },
+
   // --- LIGHTNING-FAST SUPABASE REALTIME CLOUD SYNCHRONIZATION (~30-50ms) ---
   async syncFromCloud() {
     if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.ANON_KEY) return null;
@@ -215,20 +333,28 @@ const AttendanceDB = {
 
     this._syncPromise = (async () => {
       try {
+        // Kirim data offline yang sempat tertunda terlebih dahulu
+        await this.flushPendingSync();
+
         const headers = {
           'apikey': SUPABASE_CONFIG.ANON_KEY,
           'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`
         };
         const reqOpts = { headers, cache: 'no-store' };
 
-        const twoMonthsAgo = new Date();
-        twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
-        const dateFilter = twoMonthsAgo.toISOString().split('T')[0];
+        // FIX: Range diperluas 6 bulan ke belakang + 6 bulan ke depan
+        // agar semua jadwal (lampau & mendatang) tertangkap dari Supabase
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+        const dateFilterFrom = sixMonthsAgo.toISOString().split('T')[0];
+        const sixMonthsAhead = new Date();
+        sixMonthsAhead.setMonth(sixMonthsAhead.getMonth() + 6);
+        const dateFilterTo = sixMonthsAhead.toISOString().split('T')[0];
 
         const [empRes, attRes, schRes, holRes, setRes] = await Promise.all([
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/employees?select=*`, reqOpts),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilter}&order=date.desc,time.desc&limit=2000`, reqOpts),
-          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${dateFilter}&limit=3000`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilterFrom}&date=lte.${dateFilterTo}&order=date.desc,time.desc&limit=5000`, reqOpts),
+          fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${dateFilterFrom}&date=lte.${dateFilterTo}&order=date.asc&limit=1000`, reqOpts),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/holidays?select=*`, reqOpts),
           fetch(`${SUPABASE_CONFIG.URL}/rest/v1/settings?select=*`, reqOpts)
         ]);
@@ -249,8 +375,23 @@ const AttendanceDB = {
         }
 
         if (attRes.ok) {
-          const attendance = await attRes.json();
+          let attendance = await attRes.json();
           if (Array.isArray(attendance)) {
+            // FIX: Pagination attendance otomatis jika mencapai limit (ambil semua halaman hingga tuntas)
+            if (attendance.length >= 1000) {
+              let offset = attendance.length;
+              while (true) {
+                try {
+                  const nextRes = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${dateFilterFrom}&date=lte.${dateFilterTo}&order=date.desc,time.desc&limit=1000&offset=${offset}`, reqOpts);
+                  if (!nextRes.ok) break;
+                  const nextPage = await nextRes.json();
+                  if (!Array.isArray(nextPage) || nextPage.length === 0) break;
+                  attendance = attendance.concat(nextPage);
+                  if (nextPage.length < 1000) break;
+                  offset += 1000;
+                } catch (e) { break; }
+              }
+            }
             const localLogs = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE) || '[]');
             const logMap = new Map();
 
@@ -282,7 +423,7 @@ const AttendanceDB = {
                 l.time = normalizeCloudTime(l.time);
                 // Hanya pertahankan data lokal yang di luar rentang filter (lama)
                 // Data dalam rentang filter yang tidak ada di Supabase berarti sudah dihapus di cloud.
-                if (l.date < dateFilter) {
+                if (l.date < dateFilterFrom) {
                   logMap.set(l.id, l);
                 }
               }
@@ -295,8 +436,26 @@ const AttendanceDB = {
         }
 
         if (schRes.ok) {
-          const schedules = await schRes.json();
+          let schedules = await schRes.json();
           if (Array.isArray(schedules)) {
+            // Paginate remaining schedules if Supabase capped at 1000 rows
+            if (schedules.length === 1000) {
+              let offset = 1000;
+              while (true) {
+                try {
+                  const nextRes = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${dateFilterFrom}&date=lte.${dateFilterTo}&order=date.asc&limit=1000&offset=${offset}`, reqOpts);
+                  if (!nextRes.ok) break;
+                  const nextPage = await nextRes.json();
+                  if (!Array.isArray(nextPage) || nextPage.length === 0) break;
+                  schedules = schedules.concat(nextPage);
+                  if (nextPage.length < 1000) break;
+                  offset += 1000;
+                } catch (e) {
+                  break;
+                }
+              }
+            }
+
             const localSchedules = JSON.parse(localStorage.getItem(DB_KEYS.SCHEDULES) || '[]');
             const schMap = new Map();
 
@@ -319,7 +478,7 @@ const AttendanceDB = {
             localSchedules.forEach(s => {
               if (s && s.id) {
                 s.date = normalizeCloudDate(s.date);
-                if (s.date < dateFilter) {
+                if (s.date < dateFilterFrom) {
                   schMap.set(s.id, s);
                 }
               }
@@ -345,6 +504,7 @@ const AttendanceDB = {
             const pauseSetting = settings.find(s => s.key === 'SYSTEM_PAUSED');
             const reasonSetting = settings.find(s => s.key === 'SYSTEM_PAUSE_REASON');
             const gformSetting = settings.find(s => s.key === 'SYSTEM_PAUSE_GFORM_LINK');
+            const rosterSetting = settings.find(s => s.key === 'kspm_weekly_roster');
             if (pauseSetting) {
               localStorage.setItem('kspm_system_paused', JSON.stringify({
                 isPaused: pauseSetting.value === 'TRUE',
@@ -352,9 +512,18 @@ const AttendanceDB = {
                 gformLink: gformSetting ? gformSetting.value : ''
               }));
             }
+            if (rosterSetting && rosterSetting.value) {
+              try {
+                localStorage.setItem('kspm_weekly_roster', rosterSetting.value);
+              } catch (e) {}
+            }
           }
         }
 
+        // FIX: Reset cache range agar kalender paksa ambil data segar
+        this._fetchedRanges = new Set();
+        // Bersihkan data lama di LocalStorage agar memori selalu optimal
+        this.pruneOldData(120);
         return { status: 'success' };
       } catch (err) {
         console.warn('Supabase sync offline or error:', err);
@@ -379,12 +548,27 @@ const AttendanceDB = {
       const reqOpts = { headers, cache: 'no-store' };
       const [attRes, schRes] = await Promise.all([
         fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=3000`, reqOpts),
-        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&limit=2000`, reqOpts)
+        fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&order=date.asc&limit=1000`, reqOpts)
       ]);
 
       if (attRes.ok) {
-        const attendance = await attRes.json();
+        let attendance = await attRes.json();
         if (Array.isArray(attendance)) {
+          // FIX: Pagination attendance otomatis di fetchDataRange
+          if (attendance.length >= 1000) {
+            let offset = attendance.length;
+            while (true) {
+              try {
+                const nextRes = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?select=*&date=gte.${startDate}&date=lte.${endDate}&order=date.desc,time.desc&limit=1000&offset=${offset}`, reqOpts);
+                if (!nextRes.ok) break;
+                const nextPage = await nextRes.json();
+                if (!Array.isArray(nextPage) || nextPage.length === 0) break;
+                attendance = attendance.concat(nextPage);
+                if (nextPage.length < 1000) break;
+                offset += 1000;
+              } catch (e) { break; }
+            }
+          }
           const localLogs = JSON.parse(localStorage.getItem(DB_KEYS.ATTENDANCE) || '[]');
           const logMap = new Map();
           localLogs.forEach(l => {
@@ -422,8 +606,25 @@ const AttendanceDB = {
       }
 
       if (schRes.ok) {
-        const schedules = await schRes.json();
+        let schedules = await schRes.json();
         if (Array.isArray(schedules)) {
+          if (schedules.length === 1000) {
+            let offset = 1000;
+            while (true) {
+              try {
+                const nextRes = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/schedules?select=*&date=gte.${startDate}&date=lte.${endDate}&order=date.asc&limit=1000&offset=${offset}`, reqOpts);
+                if (!nextRes.ok) break;
+                const nextPage = await nextRes.json();
+                if (!Array.isArray(nextPage) || nextPage.length === 0) break;
+                schedules = schedules.concat(nextPage);
+                if (nextPage.length < 1000) break;
+                offset += 1000;
+              } catch (e) {
+                break;
+              }
+            }
+          }
+
           const localSch = JSON.parse(localStorage.getItem(DB_KEYS.SCHEDULES) || '[]');
           const schMap = new Map();
           localSch.forEach(s => {
@@ -575,6 +776,13 @@ const AttendanceDB = {
     
     // Start background alarm polling
     this.initAlarmDaemon();
+
+    // Auto kirim data saat perangkat kembali online
+    window.addEventListener('online', () => {
+      console.log('🌐 Koneksi internet terdeteksi pulih. Memulai flush data antrean...');
+      this.flushPendingSync();
+      this.syncFromCloud();
+    });
   },
 
   // Reset total basis data ke kondisi awal bersih
@@ -627,20 +835,24 @@ const AttendanceDB = {
       holidays.push(newHoliday);
     }
     localStorage.setItem(DB_KEYS.HOLIDAYS, JSON.stringify(holidays));
+    // Supabase holidays table uses SERIAL integer id and columns (date, name)
     this.postToSupabase('holidays', {
-      id: newHoliday.id,
       date: newHoliday.date,
-      name: newHoliday.name,
-      description: newHoliday.description || ''
+      name: newHoliday.name
     });
     return newHoliday;
   },
 
   deleteHoliday(id) {
     let holidays = this.getHolidays();
-    holidays = holidays.filter(h => h.id !== id);
+    const target = holidays.find(h => String(h.id) === String(id));
+    holidays = holidays.filter(h => String(h.id) !== String(id));
     localStorage.setItem(DB_KEYS.HOLIDAYS, JSON.stringify(holidays));
-    this.deleteFromSupabase('holidays', `id=eq.${id}`);
+    if (target && target.date) {
+      this.deleteFromSupabase('holidays', `date=eq.${target.date}`);
+    } else {
+      this.deleteFromSupabase('holidays', `id=eq.${id}`);
+    }
     return holidays;
   },
 
@@ -705,7 +917,13 @@ const AttendanceDB = {
 
     employees.push(newEmp);
     localStorage.setItem(DB_KEYS.EMPLOYEES, JSON.stringify(employees));
-    this.postToSupabase('employees', newEmp);
+    this.postToSupabase('employees', {
+      id: newEmp.id,
+      name: newEmp.name,
+      dept: newEmp.dept,
+      avatar: newEmp.avatar,
+      color: newEmp.color
+    });
     return newEmp;
   },
 
@@ -917,13 +1135,51 @@ const AttendanceDB = {
     return result;
   },
 
+  generateSchedulesForDateFromRoster(dateStr) {
+    if (!dateStr) return [];
+    if (this.isHoliday && this.isHoliday(dateStr)) return [];
+
+    const d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return [];
+    const dayOfWeek = d.getDay(); // 0 = Minggu, 1 = Senin, ..., 5 = Jumat, 6 = Sabtu
+    if (dayOfWeek === 0 || dayOfWeek === 6) return []; // Libur akhir pekan
+
+    const rosterMap = this.getWeeklyRosterMap();
+    const dayRoster = rosterMap[dayOfWeek];
+    if (!dayRoster) return [];
+
+    const generated = [];
+    ['shift_pagi', 'shift_siang'].forEach(shiftId => {
+      const empIds = dayRoster[shiftId] || [];
+      empIds.forEach(empId => {
+        generated.push({
+          id: `ROSTER-${dateStr}-${empId}-${shiftId}`,
+          empId,
+          date: dateStr,
+          shiftId,
+          category: 'biasa',
+          replacedDate: null,
+          notes: 'Jadwal Rutin Mingguan'
+        });
+      });
+    });
+
+    return generated;
+  },
+
   getSchedules(dateStr = null) {
     const data = localStorage.getItem(DB_KEYS.SCHEDULES);
     const rawSchedules = data ? JSON.parse(data) : [];
     if (!Array.isArray(rawSchedules)) return [];
 
     const seen = new Set();
-    const schedules = rawSchedules.filter(s => {
+    const schedules = rawSchedules.map(s => {
+      let cat = s.category;
+      if (!cat || cat === 'biasa') {
+        cat = s.replacedDate ? 'pengganti' : 'biasa';
+      }
+      return { ...s, category: cat };
+    }).filter(s => {
       const key = `${s.empId}_${s.date}_${s.shiftId}`;
       if (seen.has(key)) return false;
       seen.add(key);
@@ -931,7 +1187,20 @@ const AttendanceDB = {
     });
 
     if (dateStr) {
-      return schedules.filter(s => s.date === dateStr);
+      const forDate = schedules.filter(s => s.date === dateStr);
+      if (forDate.length > 0) {
+        return forDate;
+      }
+      // Otomatis generate dari Roster Mingguan jika jadwal tanggal ini belum tersimpan di database
+      const generated = this.generateSchedulesForDateFromRoster(dateStr);
+      if (generated.length > 0) {
+        try {
+          const merged = rawSchedules.concat(generated);
+          localStorage.setItem(DB_KEYS.SCHEDULES, JSON.stringify(merged));
+        } catch (e) {}
+        return generated;
+      }
+      return [];
     }
     return schedules;
   },
@@ -1082,6 +1351,13 @@ const AttendanceDB = {
   },
 
   getWeeklyRosterMap() {
+    try {
+      const data = localStorage.getItem('kspm_weekly_roster');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object') return parsed;
+      }
+    } catch (e) {}
     return this.getOfficialKspmRoster2026();
   },
 
@@ -1320,17 +1596,9 @@ const AttendanceDB = {
         }
 
         // 2. Update di Supabase Database (Hanya simpan link Drive singkat, sangat ringan!)
-        await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/attendance?id=eq.${logId}`, {
-          method: 'PATCH',
-          headers: {
-            'apikey': SUPABASE_CONFIG.ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_CONFIG.ANON_KEY}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            photo: photoUrl,
-            notes: (target && target.notes ? target.notes : 'Presensi Piket Terverifikasi') + (folderUrl ? ` [DriveFolder: ${folderUrl}]` : '')
-          })
+        await this.patchToSupabase('attendance', `id=eq.${logId}`, {
+          photo: photoUrl,
+          notes: (target && target.notes ? target.notes : 'Presensi Piket Terverifikasi') + (folderUrl ? ` [DriveFolder: ${folderUrl}]` : '')
         });
         return { photoUrl, folderUrl };
       }
@@ -1580,15 +1848,17 @@ const AttendanceDB = {
 
     // Validasi Wajib: Tidak bisa melakukan Presensi Pulang jika belum pernah ada Presensi Masuk di tanggal yang sama
     if (type === 'PULANG') {
-      const masukLog = logs.find(l => l.empId === empId && l.date === recordDate && l.type === 'MASUK');
-      if (!masukLog) {
+      const sameDayMasukLogs = logs.filter(l => l.empId === empId && l.date === recordDate && l.type === 'MASUK');
+      if (sameDayMasukLogs.length === 0) {
         const errMsg = `Presensi Pulang ditolak: ${employee.name} belum melakukan Presensi Masuk (Berangkat) pada tanggal ${recordDate}.`;
         console.warn(`[AttendanceDB] ${errMsg}`);
         throw new Error(errMsg);
       } else {
-        // Otomatis "menutup" status absen masuk (Piket Berangkat) menjadi SELESAI
-        masukLog.status = 'SELESAI';
-        this.postToSupabase('attendance', { id: masukLog.id, status: 'SELESAI' });
+        // Otomatis "menutup" status absen masuk (Piket Berangkat) menjadi SELESAI di LocalStorage & Supabase
+        sameDayMasukLogs.forEach(mLog => {
+          mLog.status = 'SELESAI';
+        });
+        this.patchToSupabase('attendance', `emp_id=eq.${empId}&date=eq.${recordDate}&type=eq.MASUK`, { status: 'SELESAI' });
       }
     }
 
