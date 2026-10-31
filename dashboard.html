@@ -46,6 +46,21 @@
     }
     .print-only { display: none; }
   </style>
+  <!-- Open Graph / WhatsApp / Telegram Card Preview -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="KSPM FEB UNSOED">
+  <meta property="og:title" content="Presensi Piket Galeri Investasi - KSPM FEB UNSOED">
+  <meta property="og:description" content="Portal Presensi dan Jadwal Piket Galeri Investasi Kelompok Studi Pasar Modal (KSPM) FEB Universitas Jenderal Soedirman.">
+  <meta property="og:image" content="assets/logo.png">
+  <meta property="og:image:width" content="512">
+  <meta property="og:image:height" content="512">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Presensi Piket Galeri Investasi - KSPM FEB UNSOED">
+  <meta name="twitter:description" content="Portal Presensi dan Jadwal Piket Galeri Investasi KSPM FEB UNSOED.">
+  <meta name="twitter:image" content="assets/logo.png">
+
 </head>
 
 <body class="font-sans bg-gray-50 text-gray-900 dark:bg-[#0b0e14] dark:text-gray-100 min-h-screen flex flex-col lg:flex-row overflow-x-hidden selection:bg-red-600 selection:text-white transition-colors duration-300 antialiased">
@@ -4002,6 +4017,17 @@ $$ LANGUAGE sql;
     setTimeout(checkServerHealth, 1000);
   });
 </script>
+
+  <!-- PWA Service Worker Registration -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('PWA Service Worker aktif:', reg.scope))
+          .catch(err => console.warn('PWA Service Worker gagal:', err));
+      });
+    }
+  </script>
 </body>
 </html>
 
