@@ -482,9 +482,9 @@
         class="w-full bg-black/50 backdrop-blur-md px-3 py-1 rounded-xl text-[10px] text-gray-300 font-medium flex items-center justify-between border border-white/10 shadow cursor-pointer hover:text-white transition">
         <div class="flex items-center gap-1.5 truncate">
           <i data-feather="map-pin" class="w-3 h-3 text-red-500 flex-shrink-0"></i>
-          <span id="kioskGpsText" class="truncate text-gray-300">Galeri Investasi Unsoed</span>
+          <span id="kioskGpsText" class="truncate text-gray-300">Menunggu deteksi GPS...</span>
         </div>
-        <span class="text-gray-400 text-[9px] flex-shrink-0">GPS Aktif</span>
+        <span class="text-gray-400 text-[9px] flex-shrink-0">GPS Wajib</span>
       </div>
 
     </div>
@@ -663,7 +663,8 @@
 
   <script src="js/attendance-db.js?v=21"></script>
   <script>
-    let kioskCoords = 'Galeri Investasi Unsoed [-7.403280, 109.246801]';
+    let kioskCoords = null;
+    let isGpsDetecting = false;
     let videoStream = null;
     let uploadedPhotoBase64 = null;
     let currentStep = 1;
@@ -1524,18 +1525,24 @@
       const gpsText = document.getElementById('kioskGpsText');
 
       if (!navigator.geolocation) {
-        kioskCoords = `Galeri Investasi Unsoed [-7.403280, 109.246801]`;
-        if (gpsText) gpsText.innerHTML = `GPS: <span class="font-bold text-red-400">Galeri Investasi Unsoed</span>`;
+        kioskCoords = null;
+        isGpsDetecting = false;
+        if (gpsText) {
+          gpsText.innerHTML = `<span class="text-rose-400 font-bold flex items-center gap-1"><i data-feather="x-circle" class="w-3.5 h-3.5"></i> Browser tidak mendukung GPS</span>`;
+          if (window.feather) feather.replace();
+        }
         return;
       }
 
+      isGpsDetecting = true;
       if (gpsText) {
-        gpsText.innerHTML = `<span class="text-red-400 animate-pulse flex items-center gap-1.5"><i data-feather="loader" class="w-3.5 h-3.5 animate-spin"></i> Mendeteksi koordinat GPS...</span>`;
-        feather.replace();
+        gpsText.innerHTML = `<span class="text-amber-400 animate-pulse flex items-center gap-1.5"><i data-feather="loader" class="w-3.5 h-3.5 animate-spin"></i> Mendeteksi koordinat GPS...</span>`;
+        if (window.feather) feather.replace();
       }
 
       navigator.geolocation.getCurrentPosition(
         pos => {
+          isGpsDetecting = false;
           const lat = pos.coords.latitude;
           const lng = pos.coords.longitude;
           const geo = AttendanceDB.checkLocationGeofence(lat, lng);
@@ -1544,24 +1551,33 @@
 
           if (geo.isInside) {
             if (gpsText) {
-              gpsText.innerHTML = `<span class="text-red-400 font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span> ${geo.label} (${geo.distanceMeters}m) • Akurat</span>`;
+              gpsText.innerHTML = `<span class="text-emerald-400 font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ${geo.label} (${geo.distanceMeters}m) • Akurat</span>`;
             }
           } else {
             if (gpsText) {
-              gpsText.innerHTML = `<span class="text-red-400 font-extrabold">Luar Area (${geo.distanceMeters}m dari Galeri Investasi)</span>`;
+              gpsText.innerHTML = `<span class="text-amber-400 font-extrabold flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-amber-500"></span> Luar Area (${geo.distanceMeters}m dari Galeri Investasi)</span>`;
             }
           }
-          feather.replace();
+          if (window.feather) feather.replace();
         },
         err => {
+          isGpsDetecting = false;
           console.warn('Geolocation error / permission denied:', err);
-          kioskCoords = `Galeri Investasi Unsoed [-7.403280, 109.246801]`;
-          if (gpsText) {
-            gpsText.innerHTML = `<span class="text-red-400 font-extrabold">Galeri Investasi Unsoed (Default)</span>`;
+          kioskCoords = null;
+          let pesanErr = 'Izin lokasi (GPS) ditolak/tidak aktif.';
+          if (err.code === 1) { // PERMISSION_DENIED
+            pesanErr = 'Izin GPS ditolak. Wajib aktifkan izin lokasi.';
+          } else if (err.code === 2) { // POSITION_UNAVAILABLE
+            pesanErr = 'Posisi GPS tidak ditemukan. Nyalakan lokasi HP/PC.';
+          } else if (err.code === 3) { // TIMEOUT
+            pesanErr = 'Waktu GPS habis. Ketuk untuk coba lagi.';
           }
-          feather.replace();
+          if (gpsText) {
+            gpsText.innerHTML = `<span class="text-rose-400 font-extrabold flex items-center gap-1.5"><i data-feather="alert-triangle" class="w-3.5 h-3.5 text-rose-400"></i> ${pesanErr}</span>`;
+          }
+          if (window.feather) feather.replace();
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
 
@@ -1574,15 +1590,26 @@
       let notes = document.getElementById('kioskNotesInput').value;
       const chkRemember = document.getElementById('chkRememberMe');
 
+      if (!deptName || !empId) {
+        alert("Silakan pilih Departemen di Kolom 1 dan Nama Anggota di Kolom 2 terlebih dahulu!");
+        return;
+      }
+
+      if (isGpsDetecting) {
+        alert("⏳ Koordinat GPS masih sedang dideteksi. Mohon tunggu beberapa detik hingga lokasi berhasil terbaca.");
+        return;
+      }
+
+      if (!kioskCoords) {
+        alert("❌ Akses Lokasi (GPS) Wajib Diaktifkan!\n\nPresensi tidak dapat dilakukan karena izin GPS ditolak atau lokasi belum terdeteksi.\n\nSilakan:\n1. Pastikan GPS/lokasi perangkat Anda menyala.\n2. Izinkan akses lokasi untuk situs ini pada browser.\n3. Ketuk bar status GPS di bawah layar kamera untuk mendeteksi ulang lokasi Anda.");
+        detectKioskGPS();
+        return;
+      }
+
       // Efek shutter kamera
       if (currentStep === 2) {
         playShutterClickSound();
         triggerCameraFlash();
-      }
-
-      if (!deptName || !empId) {
-        alert("Silakan pilih Departemen di Kolom 1 dan Nama Anggota di Kolom 2 terlebih dahulu!");
-        return;
       }
 
       const emp = AttendanceDB.getEmployeeById(empId);
