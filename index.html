@@ -98,6 +98,14 @@
 
 
 
+        <!-- Tombol Pasang Aplikasi (PWA Install) -->
+        <button id="btnHeaderInstall" onclick="triggerPwaInstallModal()"
+          class="hidden px-2.5 sm:px-3 py-1.5 rounded-full header-glass-btn text-xs font-bold text-gray-700 dark:text-gray-200 hover:text-red-500 transition flex items-center gap-1.5 shadow-xs flex-shrink-0"
+          title="Pasang Aplikasi Absen di Layar Utama HP">
+          <i data-feather="download" class="w-3.5 h-3.5 text-red-500"></i>
+          <span class="hidden sm:inline text-[11px]">Install</span>
+        </button>
+
         <!-- Tombol Lonceng Notifikasi PWA -->
         <button id="btnNotifToggle" onclick="handleNotifToggleClick()"
           class="px-2.5 sm:px-3 py-1.5 rounded-full header-glass-btn text-xs font-bold text-gray-700 dark:text-gray-200 hover:text-red-500 transition flex items-center gap-1.5 shadow-xs flex-shrink-0"
@@ -422,6 +430,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       feather.replace();
       updateNotifBtnUI();
+      initPwaInstallState();
 
 
 
@@ -904,7 +913,136 @@
     }
   </script>
 
-  <!-- PWA Service Worker Registration -->
+
+    // --- PWA INSTALL PROMPT & MODAL (ANDROID & IOS DIFFERENTIATED) ---
+    let deferredInstallPrompt = null;
+
+    function isIOSDevice() {
+      const ua = window.navigator.userAgent.toLowerCase();
+      return /iphone|ipad|ipod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    function isAppStandalone() {
+      return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      // Cegah default mini-infobar browser di Android
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      
+      const headerBtn = document.getElementById('btnHeaderInstall');
+      if (headerBtn && !isAppStandalone()) {
+        headerBtn.classList.remove('hidden');
+      }
+
+      checkAndShowInstallBanner();
+    });
+
+    window.addEventListener('appinstalled', () => {
+      deferredInstallPrompt = null;
+      hideInstallBanner();
+      const headerBtn = document.getElementById('btnHeaderInstall');
+      if (headerBtn) headerBtn.classList.add('hidden');
+      console.log('✅ PWA Absen KSPM berhasil terpasang di perangkat.');
+    });
+
+    function checkAndShowInstallBanner() {
+      if (isAppStandalone()) return; // Jika sudah standalone, sembunyikan
+
+      const lastDismissed = localStorage.getItem('kspm_pwa_dismissed');
+      if (lastDismissed && (Date.now() - parseInt(lastDismissed, 10) < 24 * 60 * 60 * 1000)) {
+        return; // Jangan tampilkan jika baru saja ditutup dalam 24 jam
+      }
+
+      setTimeout(() => {
+        const banner = document.getElementById('pwaInstallBanner');
+        if (banner) {
+          banner.classList.remove('translate-y-32', 'opacity-0', 'pointer-events-none');
+          banner.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        }
+      }, 1500);
+    }
+
+    function dismissInstallBanner() {
+      localStorage.setItem('kspm_pwa_dismissed', Date.now().toString());
+      hideInstallBanner();
+    }
+
+    function hideInstallBanner() {
+      const banner = document.getElementById('pwaInstallBanner');
+      if (banner) {
+        banner.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+        banner.classList.add('translate-y-32', 'opacity-0', 'pointer-events-none');
+      }
+    }
+
+    function triggerPwaInstallModal() {
+      const modal = document.getElementById('pwaInstallModal');
+      const contentAndroid = document.getElementById('installContentAndroid');
+      const contentIOS = document.getElementById('installContentIOS');
+      if (!modal || !contentAndroid || !contentIOS) return;
+
+      if (isIOSDevice()) {
+        // Tampilkan panduan langkah demi langkah khusus Apple iOS Safari
+        contentAndroid.classList.add('hidden');
+        contentIOS.classList.remove('hidden');
+      } else {
+        // Tampilkan 1-klik pasang untuk Android & Chrome Desktop
+        contentIOS.classList.add('hidden');
+        contentAndroid.classList.remove('hidden');
+      }
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        const modalInner = modal.querySelector('div.relative');
+        if (modalInner) modalInner.classList.remove('scale-95');
+      }, 10);
+      if (window.feather) feather.replace();
+    }
+
+    function closeInstallModal() {
+      const modal = document.getElementById('pwaInstallModal');
+      if (!modal) return;
+      modal.classList.add('opacity-0');
+      const modalInner = modal.querySelector('div.relative');
+      if (modalInner) modalInner.classList.add('scale-95');
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300);
+    }
+
+    async function executeAndroidInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const { outcome } = await deferredInstallPrompt.userChoice;
+        if (outcome === 'accepted') {
+          console.log('User menerima pemasangan aplikasi');
+        }
+        deferredInstallPrompt = null;
+        closeInstallModal();
+        hideInstallBanner();
+      } else {
+        alert('Tekan menu titik tiga (⋮) di browser Anda, lalu pilih "Install aplikasi" atau "Tambahkan ke Layar Utama".');
+        closeInstallModal();
+      }
+    }
+
+    // Inisialisasi awal untuk iOS di DOMContentLoaded
+    function initPwaInstallState() {
+      if (!isAppStandalone()) {
+        const headerBtn = document.getElementById('btnHeaderInstall');
+        if (headerBtn) {
+          headerBtn.classList.remove('hidden');
+        }
+        if (isIOSDevice()) {
+          checkAndShowInstallBanner();
+        }
+      }
+    }
+
+    <!-- PWA Service Worker Registration -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -914,6 +1052,101 @@
       });
     }
   </script>
+
+  <!-- ================= FLOATING BOTTOM PWA INSTALL BANNER ================= -->
+  <div id="pwaInstallBanner" class="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:bottom-6 sm:max-w-md z-50 transform transition-all duration-300 translate-y-32 opacity-0 pointer-events-none">
+    <div class="glass-card bg-white/95 dark:bg-[#121620]/95 backdrop-blur-2xl border border-gray-200/80 dark:border-white/10 rounded-2xl p-3.5 sm:p-4 shadow-2xl flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-white dark:bg-[#181d28] border border-gray-200 dark:border-white/10 p-1 flex items-center justify-center shadow-xs flex-shrink-0">
+          <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain">
+        </div>
+        <div class="min-w-0">
+          <h4 class="text-xs sm:text-sm font-black text-gray-900 dark:text-white truncate">Pasang Absen KSPM</h4>
+          <p class="text-[10px] text-gray-500 dark:text-gray-400 font-medium truncate">Akses cepat & offline di Layar Utama HP</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-1.5 flex-shrink-0">
+        <button onclick="dismissInstallBanner()" class="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-lg transition" title="Tutup">
+          <i data-feather="x" class="w-4 h-4"></i>
+        </button>
+        <button onclick="triggerPwaInstallModal()" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-xs shadow-md shadow-red-600/30 active:scale-95 transition flex items-center gap-1">
+          <i data-feather="download" class="w-3.5 h-3.5"></i>
+          <span>Install</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= PWA INSTALL MODAL (ANDROID & IOS DIFFERENTIATED) ================= -->
+  <div id="pwaInstallModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0">
+    <div class="relative w-full max-w-sm rounded-3xl bg-white dark:bg-[#131722] border border-gray-200 dark:border-white/10 shadow-2xl p-5 sm:p-6 text-gray-900 dark:text-white transition-all transform scale-95">
+      <!-- Tombol Tutup -->
+      <button onclick="closeInstallModal()" class="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 rounded-full bg-gray-100 dark:bg-gray-800 transition">
+        <i data-feather="x" class="w-4 h-4"></i>
+      </button>
+
+      <!-- App Logo & Judul -->
+      <div class="text-center mb-5">
+        <div class="w-14 h-14 mx-auto mb-3 rounded-2xl bg-white dark:bg-[#1a202c] border border-gray-200 dark:border-white/10 p-2 shadow-lg flex items-center justify-center">
+          <img src="assets/logo.png" alt="Logo KSPM" class="w-full h-full object-contain">
+        </div>
+        <h3 class="text-base font-black tracking-tight text-gray-900 dark:text-white">Pasang Aplikasi Absen</h3>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Galeri Investasi KSPM FEB UNSOED</p>
+      </div>
+
+      <!-- KONTEN KHUSUS ANDROID / CHROME / PC (One-Click Native Install) -->
+      <div id="installContentAndroid" class="hidden space-y-4">
+        <p class="text-xs text-gray-600 dark:text-gray-300 text-center leading-relaxed">
+          Pasang aplikasi langsung di HP Android Anda untuk presensi lebih cepat, mendukung mode offline, dan menerima alarm pengingat piket.
+        </p>
+        <button onclick="executeAndroidInstall()" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-red-600/30 flex items-center justify-center gap-2 transition active:scale-95">
+          <i data-feather="download" class="w-4 h-4"></i>
+          <span>Pasang Sekarang</span>
+        </button>
+      </div>
+
+      <!-- KONTEN KHUSUS APPLE IOS (iPhone / iPad Safari 3-Step Guide) -->
+      <div id="installContentIOS" class="hidden space-y-3.5">
+        <p class="text-xs text-gray-600 dark:text-gray-300 text-center font-medium leading-relaxed">
+          Untuk pengguna <b>iPhone / iPad (iOS)</b>, ikuti 3 langkah mudah berikut di browser Safari:
+        </p>
+
+        <div class="space-y-2.5 bg-gray-50 dark:bg-[#181d2a] p-3.5 rounded-2xl border border-gray-200/80 dark:border-white/5 text-xs">
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 font-black flex items-center justify-center flex-shrink-0 text-xs">
+              1
+            </div>
+            <div class="flex-1 text-[11px] leading-tight">
+              Tekan tombol <b>Bagikan (Share)</b> <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-gray-200 dark:bg-gray-700 font-mono text-[10px]"><i data-feather="share" class="w-3 h-3 inline mr-1"></i>Share</span> di bilah bawah Safari.
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 font-black flex items-center justify-center flex-shrink-0 text-xs">
+              2
+            </div>
+            <div class="flex-1 text-[11px] leading-tight">
+              Gulir menu ke bawah lalu pilih opsi <br><b class="text-red-600 dark:text-red-400">"Add to Home Screen"</b> (Tambahkan ke Layar Utama).
+            </div>
+          </div>
+
+          <div class="flex items-start gap-2.5">
+            <div class="w-6 h-6 rounded-full bg-red-100 dark:bg-red-950/80 text-red-600 dark:text-red-400 font-black flex items-center justify-center flex-shrink-0 text-xs">
+              3
+            </div>
+            <div class="flex-1 text-[11px] leading-tight">
+              Tekan tombol <b>"Add" (Tambah)</b> di pojok kanan atas. Ikon Absen KSPM akan langsung terpasang!
+            </div>
+          </div>
+        </div>
+
+        <button onclick="closeInstallModal()" class="w-full py-2.5 px-4 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 font-bold text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition">
+          Mengerti, Saya Pasang Sekarang
+        </button>
+      </div>
+    </div>
+  </div>
+
 </body>
 
 </html>
