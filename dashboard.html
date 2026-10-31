@@ -29,6 +29,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- ExcelJS for Professional Spreadsheet Export & Styling -->
   <script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js"></script>
+  <!-- SweetAlert2 for Alerts & Confirmations -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link rel="stylesheet" href="css/custom.css">
   <style>
     /* Security: Sembunyikan seluruh antarmuka admin sebelum autentikasi terverifikasi */
@@ -1724,11 +1726,19 @@
       const rekapMonth = document.getElementById('rekapMonthPicker');
       const statsMonth = document.getElementById('statsMonthPicker');
 
+      // Cek apakah ada data di bulan aktif saat ini; jika kosong, pilih bulan terbaru yang memiliki log di database
+      const allInitLogs = AttendanceDB.getAttendanceLogs();
+      const existingMonthsInit = Array.from(new Set(allInitLogs.map(l => (l.date || '').substring(0, 7)).filter(Boolean))).sort().reverse();
+      const currentMonthStr = activeDateStr.substring(0, 7);
+      const defaultActiveMonth = (existingMonthsInit.length > 0 && !allInitLogs.some(l => (l.date || '').startsWith(currentMonthStr)))
+        ? existingMonthsInit[0]
+        : currentMonthStr;
+
       if (repStart) repStart.value = (typeof window.getTodayString === 'function') ? window.getTodayString(-7) : new Date(Date.now() - 7 * 86400000).toISOString().substring(0, 10);
       if (repEnd) repEnd.value = activeDateStr;
       if (holDate) holDate.value = activeDateStr;
-      if (rekapMonth) rekapMonth.value = activeDateStr.substring(0, 7);
-      if (statsMonth) statsMonth.value = activeDateStr.substring(0, 7);
+      if (rekapMonth) rekapMonth.value = defaultActiveMonth;
+      if (statsMonth) statsMonth.value = defaultActiveMonth;
 
       populateReportDeptSelect();
       populateRekapDeptFilter();
@@ -3518,23 +3528,12 @@
       }
     }
 
-    // --- EKSPOR REKAPITULASI PIKET FORMAT RESMI EXCEL (.XLSX) ---
+    // --- EKSPOR REKAPITULASI PIKET FORMAT RESMI EXCEL (SEMUA BULAN DATABASE) ---
     async function exportRekapPiketOfficialExcel() {
       if (typeof ExcelJS === 'undefined') {
         alert("Library ExcelJS sedang dimuat atau koneksi terputus. Pastikan koneksi internet aktif lalu coba lagi.");
         return;
       }
-
-      const monthPicker = document.getElementById('rekapMonthPicker');
-      const monthVal = (monthPicker && monthPicker.value) 
-        ? monthPicker.value 
-        : (typeof activeDateStr !== 'undefined' ? activeDateStr.substring(0, 7) : new Date().toISOString().substring(0, 7));
-      const deptFilter = document.getElementById('rekapDeptFilter');
-      const deptVal = (deptFilter && deptFilter.value) ? deptFilter.value : 'ALL';
-
-      const [yearStr, monthStr] = monthVal.split('-');
-      const year = parseInt(yearStr, 10);
-      const month = parseInt(monthStr, 10);
 
       const namaBulanIndo = [
         "", "Januari", "Februari", "Maret", "April", "Mei", "Juni",
@@ -3543,78 +3542,49 @@
       const bulanSingkatIndo = [
         "", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"
       ];
-      const namaBulan = namaBulanIndo[month] || `Bulan-${month}`;
-      const sheetName = `REKAP PIKET ${namaBulan.toUpperCase()}`;
+
+      const getColLetter = (colIdx) => {
+        let result = '';
+        while (colIdx > 0) {
+          const rem = (colIdx - 1) % 26;
+          result = String.fromCharCode(65 + rem) + result;
+          colIdx = Math.floor((colIdx - 1) / 26);
+        }
+        return result;
+      };
 
       if (typeof Swal !== 'undefined') {
         Swal.fire({
-          title: 'Menyiapkan Rekap Excel...',
-          html: '<p class="text-xs text-gray-500">Menyusun format resmi KSPM & sinkronisasi data presensi...</p>',
+          title: 'Menyiapkan Rekap Seluruh Bulan...',
+          html: '<p class="text-xs text-gray-500">Menyinkronkan data database Supabase & menyusun lembar kerja Excel per bulan...</p>',
           allowOutsideClick: false,
           didOpen: () => { Swal.showLoading(); }
         });
       }
 
       try {
-        const daysInMonth = new Date(year, month, 0).getDate();
-        const startDate = `${yearStr}-${monthStr}-01`;
-        const endDate = `${yearStr}-${monthStr}-${String(daysInMonth).padStart(2, '0')}`;
-        await AttendanceDB.fetchDataRange(startDate, endDate);
+        const curYear = (typeof activeDateStr !== 'undefined' && activeDateStr) ? activeDateStr.substring(0, 4) : '2026';
+        await AttendanceDB.fetchDataRange(`${curYear}-01-01`, `${curYear}-12-31`);
+
+        const allLogs = AttendanceDB.getAttendanceLogs();
+
+        // Cari semua bulan unik yang ada di log database
+        let months = Array.from(new Set(
+          allLogs.map(l => (l.date || '').substring(0, 7)).filter(d => /^\d{4}-\d{2}$/.test(d))
+        )).sort();
+
+        if (months.length === 0) {
+          const fallbackMonth = (typeof activeDateStr !== 'undefined' && activeDateStr) ? activeDateStr.substring(0, 7) : `${curYear}-10`;
+          months = [fallbackMonth];
+        }
+
+        const deptFilter = document.getElementById('rekapDeptFilter') || document.getElementById('reportDeptFilter');
+        const deptVal = (deptFilter && deptFilter.value) ? deptFilter.value : 'ALL';
 
         let employees = AttendanceDB.getEmployees();
         if (deptVal && deptVal !== 'ALL') {
           employees = employees.filter(e => e.dept === deptVal);
         }
-        const allLogs = AttendanceDB.getAttendanceLogs();
-
-        // Hitung pembagian minggu kerja (Senin - Jumat) di bulan ini
-        const firstDay = new Date(year, month - 1, 1);
-        const lastDay = new Date(year, month, 0);
-        const dw = firstDay.getDay(); // 0: Sun, 1: Mon, ...
-        const mondayOffset = dw === 0 ? 1 : (dw === 1 ? 0 : (dw <= 5 ? -(dw - 1) : 2));
-        let currMonday = new Date(year, month - 1, 1 + mondayOffset);
-
-        const weeks = [];
-        let wNum = 1;
-
-        while (currMonday <= lastDay) {
-          const currFriday = new Date(currMonday);
-          currFriday.setDate(currMonday.getDate() + 4);
-
-          let startLabel = '';
-          if (currMonday.getMonth() !== month - 1) {
-            startLabel = `${currMonday.getDate()} ${bulanSingkatIndo[currMonday.getMonth() + 1]}`;
-          } else {
-            startLabel = `${currMonday.getDate()}`;
-          }
-
-          let endLabel = '';
-          if (currFriday.getMonth() !== month - 1) {
-            endLabel = `${lastDay.getDate()} ${bulanSingkatIndo[month]}`;
-          } else {
-            endLabel = `${currFriday.getDate()} ${bulanSingkatIndo[currFriday.getMonth() + 1]}`;
-          }
-
-          const fmt = (d) => {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}-${m}-${day}`;
-          };
-
-          weeks.push({
-            week: wNum,
-            monday: fmt(currMonday),
-            friday: fmt(currFriday),
-            label: `${startLabel}-${endLabel}`
-          });
-
-          currMonday.setDate(currMonday.getDate() + 7);
-          wNum++;
-        }
-
-        const numWeeks = weeks.length;
-        const totalSessionSlots = numWeeks * 2;
 
         const workbook = new ExcelJS.Workbook();
         workbook.creator = 'KSPM FEB UNSOED';
@@ -3622,48 +3592,7 @@
         workbook.created = new Date();
         workbook.modified = new Date();
 
-        const worksheet = workbook.addWorksheet(sheetName, {
-          views: [{ showGridLines: true }],
-          pageSetup: {
-            orientation: 'landscape',
-            paperSize: 9, // A4
-            fitToPage: true,
-            fitToWidth: 1,
-            fitToHeight: 0
-          }
-        });
-
-        const getColLetter = (colIdx) => {
-          let result = '';
-          while (colIdx > 0) {
-            const rem = (colIdx - 1) % 26;
-            result = String.fromCharCode(65 + rem) + result;
-            colIdx = Math.floor((colIdx - 1) / 26);
-          }
-          return result;
-        };
-
-        const colStartWeeks = 5;
-        const colEndWeeks = 4 + totalSessionSlots;
-        const colHadir = colEndWeeks + 1;
-        const colTidakHadir = colHadir + 1;
-        const colDenda = colTidakHadir + 1;
-        const colKeterangan = colDenda + 1;
-        const totalColumns = colKeterangan;
-
-        worksheet.getColumn(1).width = 3;  // Padding A
-        worksheet.getColumn(2).width = 6;  // No (B)
-        worksheet.getColumn(3).width = 28; // Nama (C)
-        worksheet.getColumn(4).width = 26; // Departemen (D)
-        for (let c = colStartWeeks; c <= colEndWeeks; c++) {
-          worksheet.getColumn(c).width = 7.5;
-        }
-        worksheet.getColumn(colHadir).width = 10;
-        worksheet.getColumn(colTidakHadir).width = 12;
-        worksheet.getColumn(colDenda).width = 16;
-        worksheet.getColumn(colKeterangan).width = 18;
-
-        // Embed Logo KSPM jika ada
+        let logoImageId = null;
         try {
           const resp = await fetch('assets/logo.png');
           if (resp.ok) {
@@ -3673,311 +3602,557 @@
               reader.onloadend = () => resolve(reader.result);
               reader.readAsDataURL(blob);
             });
-            const imageId = workbook.addImage({
+            logoImageId = workbook.addImage({
               base64: base64Data,
               extension: 'png'
-            });
-            worksheet.addImage(imageId, {
-              tl: { col: 1.2, row: 0.2 },
-              ext: { width: 52, height: 52 }
-            });
-            worksheet.addImage(imageId, {
-              tl: { col: totalColumns - 1.6, row: 0.2 },
-              ext: { width: 52, height: 52 }
             });
           }
         } catch (e) {
           console.warn('Logo KSPM skip:', e);
         }
 
-        // --- KOP SURAT ---
-        worksheet.mergeCells(1, 2, 1, totalColumns);
-        const cellR1 = worksheet.getCell(1, 2);
-        cellR1.value = 'KELOMPOK STUDI PASAR MODAL 2026';
-        cellR1.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF1E293B' } };
-        cellR1.alignment = { vertical: 'middle', horizontal: 'center' };
-        worksheet.getRow(1).height = 22;
+        const allMonthlyStats = {};
 
-        worksheet.mergeCells(2, 2, 2, totalColumns);
-        const cellR2 = worksheet.getCell(2, 2);
-        cellR2.value = 'UNIVERSITAS JENDERAL SOEDIRMAN';
-        cellR2.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF334155' } };
-        cellR2.alignment = { vertical: 'middle', horizontal: 'center' };
-        worksheet.getRow(2).height = 18;
+        // 1. Buat Sheet untuk Tiap Bulan yang Ada di Database
+        months.forEach(mYM => {
+          const [yStr, mStr] = mYM.split('-');
+          const year = parseInt(yStr, 10);
+          const month = parseInt(mStr, 10);
+          const namaBulan = namaBulanIndo[month] || `Bulan-${month}`;
+          const sheetTitle = `REKAP PIKET ${namaBulan.toUpperCase()}`;
 
-        worksheet.mergeCells(3, 2, 3, totalColumns);
-        const cellR3 = worksheet.getCell(3, 2);
-        cellR3.value = 'Jl. Prof. HR. Boenyamin No. 708, Grendeng, Purwokerto Utara 53122 Galeri Investasi Laboratorium Terpadu Lantai 1 FEB Unsoed';
-        cellR3.font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
-        cellR3.alignment = { vertical: 'middle', horizontal: 'center' };
-        worksheet.getRow(3).height = 16;
+          const ws = workbook.addWorksheet(sheetTitle, {
+            views: [{ showGridLines: true }],
+            pageSetup: {
+              orientation: 'landscape',
+              paperSize: 9,
+              fitToPage: true,
+              fitToWidth: 1,
+              fitToHeight: 0
+            }
+          });
 
-        worksheet.getRow(4).height = 8;
+          const firstDay = new Date(year, month - 1, 1);
+          const lastDay = new Date(year, month, 0);
+          const dw = firstDay.getDay();
+          const mondayOffset = dw === 0 ? 1 : (dw === 1 ? 0 : (dw <= 5 ? -(dw - 1) : 2));
+          let currMonday = new Date(year, month - 1, 1 + mondayOffset);
 
-        // Row 5: Banner Judul
-        worksheet.mergeCells(5, 2, 5, totalColumns);
-        const cellR5 = worksheet.getCell(5, 2);
-        cellR5.value = `REKAPITULASI PIKET ANGGOTA KSPM 2026 BULAN ${namaBulan.toUpperCase()} ${year}`;
-        cellR5.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF0F172A' } };
-        cellR5.alignment = { vertical: 'middle', horizontal: 'center' };
-        cellR5.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFE2E8F0' }
-        };
-        cellR5.border = {
+          const weeks = [];
+          let wNum = 1;
+
+          while (currMonday <= lastDay) {
+            const currSunday = new Date(currMonday);
+            currSunday.setDate(currMonday.getDate() + 6);
+            const currFriday = new Date(currMonday);
+            currFriday.setDate(currMonday.getDate() + 4);
+
+            let startLabel = '';
+            if (currMonday.getMonth() !== month - 1) {
+              startLabel = `${currMonday.getDate()} ${bulanSingkatIndo[currMonday.getMonth() + 1]}`;
+            } else {
+              startLabel = `${currMonday.getDate()}`;
+            }
+
+            let endLabel = '';
+            if (currFriday.getMonth() === month - 1) {
+              endLabel = `${currFriday.getDate()} ${bulanSingkatIndo[month]}`;
+            } else {
+              endLabel = `${lastDay.getDate()} ${bulanSingkatIndo[month]}`;
+            }
+
+            const fmt = (d) => {
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, '0');
+              const day = String(d.getDate()).padStart(2, '0');
+              return `${y}-${m}-${day}`;
+            };
+
+            weeks.push({
+              week: wNum,
+              start: fmt(currMonday),
+              end: fmt(currSunday),
+              label: `${startLabel}-${endLabel}`
+            });
+
+            currMonday.setDate(currMonday.getDate() + 7);
+            wNum++;
+          }
+
+          const numWeeks = weeks.length;
+          const totalSessionSlots = numWeeks * 2;
+
+          const colStartWeeks = 5;
+          const colEndWeeks = 4 + totalSessionSlots;
+          const colHadir = colEndWeeks + 1;
+          const colTidakHadir = colHadir + 1;
+          const colDenda = colTidakHadir + 1;
+          const colKeterangan = colDenda + 1;
+          const totalColumns = colKeterangan;
+
+          ws.getColumn(1).width = 3;  // Col A
+          ws.getColumn(2).width = 6;  // Col B (No.)
+          ws.getColumn(3).width = 28; // Col C (Nama)
+          ws.getColumn(4).width = 26; // Col D (Departemen)
+          for (let c = colStartWeeks; c <= colEndWeeks; c++) {
+            ws.getColumn(c).width = 7.5;
+          }
+          ws.getColumn(colHadir).width = 10;
+          ws.getColumn(colTidakHadir).width = 12;
+          ws.getColumn(colDenda).width = 16;
+          ws.getColumn(colKeterangan).width = 18;
+
+          if (logoImageId !== null) {
+            try {
+              ws.addImage(logoImageId, { tl: { col: 1.2, row: 0.2 }, ext: { width: 52, height: 52 } });
+              ws.addImage(logoImageId, { tl: { col: totalColumns - 1.6, row: 0.2 }, ext: { width: 52, height: 52 } });
+            } catch (e) {}
+          }
+
+          // Kop Surat
+          ws.mergeCells(1, 2, 1, totalColumns);
+          const cellR1 = ws.getCell(1, 2);
+          cellR1.value = 'KELOMPOK STUDI PASAR MODAL 2026';
+          cellR1.font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF1E293B' } };
+          cellR1.alignment = { vertical: 'middle', horizontal: 'center' };
+          ws.getRow(1).height = 22;
+
+          ws.mergeCells(2, 2, 2, totalColumns);
+          const cellR2 = ws.getCell(2, 2);
+          cellR2.value = 'UNIVERSITAS JENDERAL SOEDIRMAN';
+          cellR2.font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF334155' } };
+          cellR2.alignment = { vertical: 'middle', horizontal: 'center' };
+          ws.getRow(2).height = 18;
+
+          ws.mergeCells(3, 2, 3, totalColumns);
+          const cellR3 = ws.getCell(3, 2);
+          cellR3.value = 'Jl. Prof. HR. Boenyamin No. 708, Grendeng, Purwokerto Utara 53122 Galeri Investasi Laboratorium Terpadu Lantai 1 FEB Unsoed';
+          cellR3.font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
+          cellR3.alignment = { vertical: 'middle', horizontal: 'center' };
+          ws.getRow(3).height = 16;
+
+          ws.getRow(4).height = 8;
+
+          ws.mergeCells(5, 2, 5, totalColumns);
+          const cellR5 = ws.getCell(5, 2);
+          cellR5.value = `REKAPITULASI PIKET ANGGOTA KSPM 2026 BULAN ${namaBulan.toUpperCase()} ${year}`;
+          cellR5.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF0F172A' } };
+          cellR5.alignment = { vertical: 'middle', horizontal: 'center' };
+          cellR5.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+          cellR5.border = {
+            top: { style: 'medium', color: { argb: 'FF0284C7' } },
+            bottom: { style: 'medium', color: { argb: 'FF0284C7' } },
+            left: { style: 'medium', color: { argb: 'FF0284C7' } },
+            right: { style: 'medium', color: { argb: 'FF0284C7' } }
+          };
+          ws.getRow(5).height = 24;
+
+          ws.getRow(6).height = 10;
+
+          // Header Teal
+          const tealFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF26C6DA' } };
+          const headerBorder = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+          const headerFont = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF000000' } };
+          const applyH = (c) => {
+            c.fill = tealFill;
+            c.border = headerBorder;
+            c.font = headerFont;
+            c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+          };
+
+          ws.getRow(7).height = 20;
+          ws.getRow(8).height = 22;
+          ws.getRow(9).height = 20;
+
+          ws.mergeCells(7, 2, 9, 2);
+          ws.getCell(7, 2).value = 'No.';
+          ws.mergeCells(7, 3, 9, 3);
+          ws.getCell(7, 3).value = 'Nama';
+          ws.mergeCells(7, 4, 9, 4);
+          ws.getCell(7, 4).value = 'Departemen';
+
+          ws.mergeCells(7, colStartWeeks, 7, colEndWeeks);
+          ws.getCell(7, colStartWeeks).value = 'Minggu ke';
+
+          weeks.forEach((w, idx) => {
+            const cStart = colStartWeeks + (idx * 2);
+            const cEnd = cStart + 1;
+            ws.mergeCells(8, cStart, 8, cEnd);
+            ws.getCell(8, cStart).value = `${w.week}\n(${w.label})`;
+            ws.getCell(9, cStart).value = 1;
+            ws.getCell(9, cEnd).value = 2;
+          });
+
+          ws.mergeCells(7, colHadir, 8, colTidakHadir);
+          ws.getCell(7, colHadir).value = 'Total Kehadiran';
+          ws.getCell(9, colHadir).value = 'Hadir';
+          ws.getCell(9, colTidakHadir).value = 'Tidak Hadir';
+
+          ws.mergeCells(7, colDenda, 9, colDenda);
+          ws.getCell(7, colDenda).value = 'Total Denda';
+
+          ws.mergeCells(7, colKeterangan, 9, colKeterangan);
+          ws.getCell(7, colKeterangan).value = 'Keterangan\n(Lunas/Belum Lunas)';
+
+          for (let r = 7; r <= 9; r++) {
+            for (let c = 2; c <= totalColumns; c++) {
+              applyH(ws.getCell(r, c));
+            }
+          }
+
+          // Data rows
+          const dataBorder = { top: { style: 'thin', color: { argb: 'FFCBD5E1' } }, left: { style: 'thin', color: { argb: 'FFCBD5E1' } }, bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } }, right: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
+          const startDataRow = 10;
+          allMonthlyStats[mYM] = {};
+
+          employees.forEach((emp, eIdx) => {
+            const rowNum = startDataRow + eIdx;
+            ws.getRow(rowNum).height = 21;
+
+            const cNo = ws.getCell(rowNum, 2);
+            cNo.value = eIdx + 1;
+            cNo.alignment = { vertical: 'middle', horizontal: 'center' };
+            cNo.border = dataBorder;
+            cNo.font = { name: 'Calibri', size: 10 };
+
+            const cName = ws.getCell(rowNum, 3);
+            cName.value = emp.name;
+            cName.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+            cName.border = dataBorder;
+            cName.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+
+            const cDept = ws.getCell(rowNum, 4);
+            cDept.value = emp.dept || '-';
+            cDept.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+            cDept.border = dataBorder;
+            cDept.font = { name: 'Calibri', size: 9.5, color: { argb: 'FF475569' } };
+
+            let totalHadirOrg = 0;
+            weeks.forEach((w, wIdx) => {
+              const cStart = colStartWeeks + (wIdx * 2);
+              const cEnd = cStart + 1;
+              const sessionsCount = AttendanceDB.countCompletedSessions(emp.id, allLogs, w.start, w.end);
+
+              const cellS1 = ws.getCell(rowNum, cStart);
+              cellS1.border = dataBorder;
+              cellS1.alignment = { vertical: 'middle', horizontal: 'center' };
+              if (sessionsCount >= 1) {
+                cellS1.value = '✓';
+                cellS1.font = { name: 'Segoe UI Symbol', size: 11, bold: true, color: { argb: 'FF107C41' } };
+                totalHadirOrg++;
+              } else {
+                cellS1.value = '';
+              }
+
+              const cellS2 = ws.getCell(rowNum, cEnd);
+              cellS2.border = dataBorder;
+              cellS2.alignment = { vertical: 'middle', horizontal: 'center' };
+              if (sessionsCount >= 2) {
+                cellS2.value = '✓';
+                cellS2.font = { name: 'Segoe UI Symbol', size: 11, bold: true, color: { argb: 'FF107C41' } };
+                totalHadirOrg++;
+              } else {
+                cellS2.value = '';
+              }
+            });
+
+            const rangeSesi = `${getColLetter(colStartWeeks)}${rowNum}:${getColLetter(colEndWeeks)}${rowNum}`;
+            const cellHadir = ws.getCell(rowNum, colHadir);
+            cellHadir.value = { formula: `COUNTIF(${rangeSesi},"✓")`, result: totalHadirOrg };
+            cellHadir.alignment = { vertical: 'middle', horizontal: 'center' };
+            cellHadir.border = dataBorder;
+            cellHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
+
+            const colHadirLetter = getColLetter(colHadir);
+            const cellTidakHadir = ws.getCell(rowNum, colTidakHadir);
+            const tidakHadirOrg = Math.max(0, totalSessionSlots - totalHadirOrg);
+            cellTidakHadir.value = { formula: `${totalSessionSlots}-${colHadirLetter}${rowNum}`, result: tidakHadirOrg };
+            cellTidakHadir.alignment = { vertical: 'middle', horizontal: 'center' };
+            cellTidakHadir.border = dataBorder;
+            cellTidakHadir.font = { name: 'Calibri', size: 10, bold: true, color: tidakHadirOrg > 0 ? { argb: 'FFE11D48' } : { argb: 'FF64748B' } };
+
+            const colTidakHadirLetter = getColLetter(colTidakHadir);
+            const cellDenda = ws.getCell(rowNum, colDenda);
+            const dendaVal = tidakHadirOrg * 10000;
+            cellDenda.value = { formula: `${colTidakHadirLetter}${rowNum}*10000`, result: dendaVal };
+            cellDenda.numFmt = '"Rp "#,##0;;"Rp -"';
+            cellDenda.alignment = { vertical: 'middle', horizontal: 'right' };
+            cellDenda.border = dataBorder;
+            cellDenda.font = { name: 'Calibri', size: 10, bold: dendaVal > 0, color: dendaVal > 0 ? { argb: 'FFE11D48' } : { argb: 'FF334155' } };
+
+            const cellKet = ws.getCell(rowNum, colKeterangan);
+            cellKet.value = dendaVal === 0 ? '' : 'Belum Lunas';
+            cellKet.alignment = { vertical: 'middle', horizontal: 'center' };
+            cellKet.border = dataBorder;
+            cellKet.font = { name: 'Calibri', size: 9.5, italic: dendaVal === 0, color: { argb: 'FF475569' } };
+
+            allMonthlyStats[mYM][emp.id] = { hadir: totalHadirOrg, tidakHadir: tidakHadirOrg, denda: dendaVal };
+          });
+
+          // Row Summary Total
+          const totalRowNum = startDataRow + employees.length;
+          ws.getRow(totalRowNum).height = 24;
+
+          ws.mergeCells(totalRowNum, 2, totalRowNum, colEndWeeks);
+          const cellTotalLabel = ws.getCell(totalRowNum, 2);
+          cellTotalLabel.value = 'TOTAL KESELURUHAN';
+          cellTotalLabel.alignment = { vertical: 'middle', horizontal: 'center' };
+          cellTotalLabel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+
+          const summaryBorder = { top: { style: 'thin' }, bottom: { style: 'double' }, left: { style: 'thin' }, right: { style: 'thin' } };
+          for (let c = 2; c <= totalColumns; c++) {
+            const cell = ws.getCell(totalRowNum, c);
+            cell.border = summaryBorder;
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
+          }
+
+          const colHadirLetter = getColLetter(colHadir);
+          const cellSumHadir = ws.getCell(totalRowNum, colHadir);
+          cellSumHadir.value = { formula: `SUM(${colHadirLetter}${startDataRow}:${colHadirLetter}${totalRowNum - 1})` };
+          cellSumHadir.alignment = { vertical: 'middle', horizontal: 'center' };
+          cellSumHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
+
+          const colTidakHadirLetter = getColLetter(colTidakHadir);
+          const cellSumTidakHadir = ws.getCell(totalRowNum, colTidakHadir);
+          cellSumTidakHadir.value = { formula: `SUM(${colTidakHadirLetter}${startDataRow}:${colTidakHadirLetter}${totalRowNum - 1})` };
+          cellSumTidakHadir.alignment = { vertical: 'middle', horizontal: 'center' };
+          cellSumTidakHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+
+          const colDendaLetter = getColLetter(colDenda);
+          const cellSumDenda = ws.getCell(totalRowNum, colDenda);
+          cellSumDenda.value = { formula: `SUM(${colDendaLetter}${startDataRow}:${colDendaLetter}${totalRowNum - 1})` };
+          cellSumDenda.numFmt = '"Rp "#,##0;;"Rp -"';
+          cellSumDenda.alignment = { vertical: 'middle', horizontal: 'right' };
+          cellSumDenda.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+        });
+
+        // 2. Buat Sheet Ringkasan: "REKAP DENDA"
+        const wsDenda = workbook.addWorksheet('REKAP DENDA', {
+          views: [{ showGridLines: true }],
+          pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 }
+        });
+
+        wsDenda.getColumn(1).width = 3;  // Col A
+        wsDenda.getColumn(2).width = 6;  // No
+        wsDenda.getColumn(3).width = 28; // Nama
+        wsDenda.getColumn(4).width = 24; // Dept
+
+        let colIdx = 5;
+        const monthColMap = {};
+        months.forEach(mYM => {
+          const [, mStr] = mYM.split('-');
+          const mNum = parseInt(mStr, 10);
+          wsDenda.getColumn(colIdx).width = 11;
+          wsDenda.getColumn(colIdx + 1).width = 15;
+          monthColMap[mYM] = { hadirCol: colIdx, dendaCol: colIdx + 1, name: bulanSingkatIndo[mNum] };
+          colIdx += 2;
+        });
+
+        const colTotHadir = colIdx;
+        const colTotDenda = colIdx + 1;
+        const colStatus = colIdx + 2;
+        const totalDendaCols = colStatus;
+
+        wsDenda.getColumn(colTotHadir).width = 13;
+        wsDenda.getColumn(colTotDenda).width = 16;
+        wsDenda.getColumn(colStatus).width = 16;
+
+        if (logoImageId !== null) {
+          try {
+            wsDenda.addImage(logoImageId, { tl: { col: 1.2, row: 0.2 }, ext: { width: 52, height: 52 } });
+            wsDenda.addImage(logoImageId, { tl: { col: totalDendaCols - 1.6, row: 0.2 }, ext: { width: 52, height: 52 } });
+          } catch (e) {}
+        }
+
+        wsDenda.mergeCells(1, 2, 1, totalDendaCols);
+        wsDenda.getCell(1, 2).value = 'KELOMPOK STUDI PASAR MODAL 2026';
+        wsDenda.getCell(1, 2).font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF1E293B' } };
+        wsDenda.getCell(1, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        wsDenda.mergeCells(2, 2, 2, totalDendaCols);
+        wsDenda.getCell(2, 2).value = 'UNIVERSITAS JENDERAL SOEDIRMAN';
+        wsDenda.getCell(2, 2).font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF334155' } };
+        wsDenda.getCell(2, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        wsDenda.mergeCells(3, 2, 3, totalDendaCols);
+        wsDenda.getCell(3, 2).value = 'Jl. Prof. HR. Boenyamin No. 708, Grendeng, Purwokerto Utara 53122 Galeri Investasi Laboratorium Terpadu Lantai 1 FEB Unsoed';
+        wsDenda.getCell(3, 2).font = { name: 'Calibri', size: 9, italic: true, color: { argb: 'FF64748B' } };
+        wsDenda.getCell(3, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        wsDenda.getRow(4).height = 8;
+
+        wsDenda.mergeCells(5, 2, 5, totalDendaCols);
+        wsDenda.getCell(5, 2).value = 'REKAPITULASI DENDA & KEHADIRAN ANGGOTA KSPM 2026 (SEMUA BULAN)';
+        wsDenda.getCell(5, 2).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF0F172A' } };
+        wsDenda.getCell(5, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+        wsDenda.getCell(5, 2).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE2E8F0' } };
+        wsDenda.getCell(5, 2).border = {
           top: { style: 'medium', color: { argb: 'FF0284C7' } },
           bottom: { style: 'medium', color: { argb: 'FF0284C7' } },
           left: { style: 'medium', color: { argb: 'FF0284C7' } },
           right: { style: 'medium', color: { argb: 'FF0284C7' } }
         };
-        worksheet.getRow(5).height = 24;
+        wsDenda.getRow(5).height = 24;
 
-        worksheet.getRow(6).height = 10;
+        wsDenda.getRow(6).height = 10;
 
-        // --- STYLES HEADER TABEL CYAN/TEAL ---
-        const tealFill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FF26C6DA' } // Vibrant Teal persis gambar
-        };
-        const headerBorder = {
-          top: { style: 'thin', color: { argb: 'FF000000' } },
-          left: { style: 'thin', color: { argb: 'FF000000' } },
-          bottom: { style: 'thin', color: { argb: 'FF000000' } },
-          right: { style: 'thin', color: { argb: 'FF000000' } }
-        };
-        const headerFont = {
-          name: 'Calibri',
-          size: 10,
-          bold: true,
-          color: { argb: 'FF000000' }
+        const tealFillDenda = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF26C6DA' } };
+        const hBorderDenda = { top: { style: 'thin' }, left: { style: 'thin' }, bottom: { style: 'thin' }, right: { style: 'thin' } };
+        const applyHDenda = (c) => {
+          c.fill = tealFillDenda;
+          c.border = hBorderDenda;
+          c.font = { name: 'Calibri', size: 10, bold: true };
+          c.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
         };
 
-        const applyHeaderStyle = (cell) => {
-          cell.fill = tealFill;
-          cell.border = headerBorder;
-          cell.font = headerFont;
-          cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
-        };
+        wsDenda.getRow(7).height = 20;
+        wsDenda.getRow(8).height = 22;
 
-        worksheet.getRow(7).height = 20;
-        worksheet.getRow(8).height = 22;
-        worksheet.getRow(9).height = 20;
+        wsDenda.mergeCells(7, 2, 8, 2);
+        wsDenda.getCell(7, 2).value = 'No.';
+        wsDenda.mergeCells(7, 3, 8, 3);
+        wsDenda.getCell(7, 3).value = 'Nama';
+        wsDenda.mergeCells(7, 4, 8, 4);
+        wsDenda.getCell(7, 4).value = 'Departemen';
 
-        // Col B (No.)
-        worksheet.mergeCells(7, 2, 9, 2);
-        worksheet.getCell(7, 2).value = 'No.';
-
-        // Col C (Nama)
-        worksheet.mergeCells(7, 3, 9, 3);
-        worksheet.getCell(7, 3).value = 'Nama';
-
-        // Col D (Departemen)
-        worksheet.mergeCells(7, 4, 9, 4);
-        worksheet.getCell(7, 4).value = 'Departemen';
-
-        // Col E s/d Col End Weeks ("Minggu ke")
-        worksheet.mergeCells(7, colStartWeeks, 7, colEndWeeks);
-        worksheet.getCell(7, colStartWeeks).value = 'Minggu ke';
-
-        // Header Tiap Minggu
-        weeks.forEach((w, idx) => {
-          const cStart = colStartWeeks + (idx * 2);
-          const cEnd = cStart + 1;
-
-          worksheet.mergeCells(8, cStart, 8, cEnd);
-          worksheet.getCell(8, cStart).value = `${w.week}\n(${w.label})`;
-
-          worksheet.getCell(9, cStart).value = 1;
-          worksheet.getCell(9, cEnd).value = 2;
+        months.forEach(mYM => {
+          const info = monthColMap[mYM];
+          wsDenda.mergeCells(7, info.hadirCol, 7, info.dendaCol);
+          wsDenda.getCell(7, info.hadirCol).value = `Bulan ${info.name}`;
+          wsDenda.getCell(8, info.hadirCol).value = 'Hadir';
+          wsDenda.getCell(8, info.dendaCol).value = 'Denda';
         });
 
-        // Total Kehadiran
-        worksheet.mergeCells(7, colHadir, 8, colTidakHadir);
-        worksheet.getCell(7, colHadir).value = 'Total Kehadiran';
-        worksheet.getCell(9, colHadir).value = 'Hadir';
-        worksheet.getCell(9, colTidakHadir).value = 'Tidak Hadir';
+        wsDenda.mergeCells(7, colTotHadir, 8, colTotHadir);
+        wsDenda.getCell(7, colTotHadir).value = 'Total Hadir';
 
-        // Total Denda
-        worksheet.mergeCells(7, colDenda, 9, colDenda);
-        worksheet.getCell(7, colDenda).value = 'Total Denda';
+        wsDenda.mergeCells(7, colTotDenda, 8, colTotDenda);
+        wsDenda.getCell(7, colTotDenda).value = 'Total Denda';
 
-        // Keterangan
-        worksheet.mergeCells(7, colKeterangan, 9, colKeterangan);
-        worksheet.getCell(7, colKeterangan).value = 'Keterangan\n(Lunas/Belum Lunas)';
+        wsDenda.mergeCells(7, colStatus, 8, colStatus);
+        wsDenda.getCell(7, colStatus).value = 'Status';
 
-        // Terapkan style teal ke semua sel header
-        for (let r = 7; r <= 9; r++) {
-          for (let c = 2; c <= totalColumns; c++) {
-            applyHeaderStyle(worksheet.getCell(r, c));
+        for (let r = 7; r <= 8; r++) {
+          for (let c = 2; c <= totalDendaCols; c++) {
+            applyHDenda(wsDenda.getCell(r, c));
           }
         }
 
-        // --- DATA ANGGOTA ---
-        const dataBorder = {
-          top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
-        };
+        const dataBorderDenda = { top: { style: 'thin', color: { argb: 'FFCBD5E1' } }, left: { style: 'thin', color: { argb: 'FFCBD5E1' } }, bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } }, right: { style: 'thin', color: { argb: 'FFCBD5E1' } } };
+        const startRowDenda = 9;
 
-        const startDataRow = 10;
-        employees.forEach((emp, eIdx) => {
-          const rowNum = startDataRow + eIdx;
-          worksheet.getRow(rowNum).height = 21;
+        employees.forEach((emp, idx) => {
+          const rowNum = startRowDenda + idx;
+          wsDenda.getRow(rowNum).height = 21;
 
-          const cNo = worksheet.getCell(rowNum, 2);
-          cNo.value = eIdx + 1;
-          cNo.alignment = { vertical: 'middle', horizontal: 'center' };
-          cNo.border = dataBorder;
-          cNo.font = { name: 'Calibri', size: 10 };
+          wsDenda.getCell(rowNum, 2).value = idx + 1;
+          wsDenda.getCell(rowNum, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+          wsDenda.getCell(rowNum, 2).border = dataBorderDenda;
 
-          const cName = worksheet.getCell(rowNum, 3);
-          cName.value = emp.name;
-          cName.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-          cName.border = dataBorder;
-          cName.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+          wsDenda.getCell(rowNum, 3).value = emp.name;
+          wsDenda.getCell(rowNum, 3).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+          wsDenda.getCell(rowNum, 3).border = dataBorderDenda;
+          wsDenda.getCell(rowNum, 3).font = { name: 'Calibri', size: 10, bold: true };
 
-          const cDept = worksheet.getCell(rowNum, 4);
-          cDept.value = emp.dept || '-';
-          cDept.alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
-          cDept.border = dataBorder;
-          cDept.font = { name: 'Calibri', size: 9.5, color: { argb: 'FF475569' } };
+          wsDenda.getCell(rowNum, 4).value = emp.dept || '-';
+          wsDenda.getCell(rowNum, 4).alignment = { vertical: 'middle', horizontal: 'left', indent: 1 };
+          wsDenda.getCell(rowNum, 4).border = dataBorderDenda;
+          wsDenda.getCell(rowNum, 4).font = { name: 'Calibri', size: 9.5, color: { argb: 'FF475569' } };
 
-          let totalHadirOrg = 0;
-          weeks.forEach((w, wIdx) => {
-            const cStart = colStartWeeks + (wIdx * 2);
-            const cEnd = cStart + 1;
+          let totalHadirAll = 0;
+          let totalDendaAll = 0;
 
-            const sessionsCount = AttendanceDB.countCompletedSessions(emp.id, allLogs, w.monday, w.friday);
+          months.forEach(mYM => {
+            const info = monthColMap[mYM];
+            const stats = (allMonthlyStats[mYM] && allMonthlyStats[mYM][emp.id]) || { hadir: 0, denda: 0 };
+            totalHadirAll += stats.hadir;
+            totalDendaAll += stats.denda;
 
-            const cellS1 = worksheet.getCell(rowNum, cStart);
-            cellS1.border = dataBorder;
-            cellS1.alignment = { vertical: 'middle', horizontal: 'center' };
-            if (sessionsCount >= 1) {
-              cellS1.value = '✓';
-              cellS1.font = { name: 'Segoe UI Symbol', size: 11, bold: true, color: { argb: 'FF107C41' } };
-              totalHadirOrg++;
-            } else {
-              cellS1.value = '';
-            }
+            const cHadir = wsDenda.getCell(rowNum, info.hadirCol);
+            cHadir.value = stats.hadir;
+            cHadir.alignment = { vertical: 'middle', horizontal: 'center' };
+            cHadir.border = dataBorderDenda;
+            cHadir.font = { name: 'Calibri', size: 10, bold: stats.hadir > 0, color: { argb: 'FF107C41' } };
 
-            const cellS2 = worksheet.getCell(rowNum, cEnd);
-            cellS2.border = dataBorder;
-            cellS2.alignment = { vertical: 'middle', horizontal: 'center' };
-            if (sessionsCount >= 2) {
-              cellS2.value = '✓';
-              cellS2.font = { name: 'Segoe UI Symbol', size: 11, bold: true, color: { argb: 'FF107C41' } };
-              totalHadirOrg++;
-            } else {
-              cellS2.value = '';
-            }
+            const cDenda = wsDenda.getCell(rowNum, info.dendaCol);
+            cDenda.value = stats.denda;
+            cDenda.numFmt = '"Rp "#,##0;;"Rp -"';
+            cDenda.alignment = { vertical: 'middle', horizontal: 'right' };
+            cDenda.border = dataBorderDenda;
+            cDenda.font = { name: 'Calibri', size: 10, color: stats.denda > 0 ? { argb: 'FFE11D48' } : { argb: 'FF334155' } };
           });
 
-          // Hadir
-          const cellHadir = worksheet.getCell(rowNum, colHadir);
-          const rangeSesi = `${getColLetter(colStartWeeks)}${rowNum}:${getColLetter(colEndWeeks)}${rowNum}`;
-          cellHadir.value = {
-            formula: `COUNTIF(${rangeSesi},"✓")`,
-            result: totalHadirOrg
-          };
-          cellHadir.alignment = { vertical: 'middle', horizontal: 'center' };
-          cellHadir.border = dataBorder;
-          cellHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
+          const cTotH = wsDenda.getCell(rowNum, colTotHadir);
+          cTotH.value = totalHadirAll;
+          cTotH.alignment = { vertical: 'middle', horizontal: 'center' };
+          cTotH.border = dataBorderDenda;
+          cTotH.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
 
-          // Tidak Hadir
-          const cellTidakHadir = worksheet.getCell(rowNum, colTidakHadir);
-          const colHadirLetter = getColLetter(colHadir);
-          const tidakHadirOrg = Math.max(0, totalSessionSlots - totalHadirOrg);
-          cellTidakHadir.value = {
-            formula: `${totalSessionSlots}-${colHadirLetter}${rowNum}`,
-            result: tidakHadirOrg
-          };
-          cellTidakHadir.alignment = { vertical: 'middle', horizontal: 'center' };
-          cellTidakHadir.border = dataBorder;
-          cellTidakHadir.font = { name: 'Calibri', size: 10, bold: true, color: tidakHadirOrg > 0 ? { argb: 'FFE11D48' } : { argb: 'FF64748B' } };
+          const cTotD = wsDenda.getCell(rowNum, colTotDenda);
+          cTotD.value = totalDendaAll;
+          cTotD.numFmt = '"Rp "#,##0;;"Rp -"';
+          cTotD.alignment = { vertical: 'middle', horizontal: 'right' };
+          cTotD.border = dataBorderDenda;
+          cTotD.font = { name: 'Calibri', size: 10, bold: totalDendaAll > 0, color: totalDendaAll > 0 ? { argb: 'FFE11D48' } : { argb: 'FF334155' } };
 
-          // Total Denda (Rp 10.000 / slot tidak hadir)
-          const cellDenda = worksheet.getCell(rowNum, colDenda);
-          const colTidakHadirLetter = getColLetter(colTidakHadir);
-          const dendaVal = tidakHadirOrg * 10000;
-          cellDenda.value = {
-            formula: `${colTidakHadirLetter}${rowNum}*10000`,
-            result: dendaVal
-          };
-          cellDenda.numFmt = '"Rp "#,##0;;"Rp -"';
-          cellDenda.alignment = { vertical: 'middle', horizontal: 'right' };
-          cellDenda.border = dataBorder;
-          cellDenda.font = { name: 'Calibri', size: 10, bold: dendaVal > 0, color: dendaVal > 0 ? { argb: 'FFE11D48' } : { argb: 'FF334155' } };
-
-          // Keterangan
-          const cellKet = worksheet.getCell(rowNum, colKeterangan);
-          cellKet.value = dendaVal === 0 ? '' : 'Belum Lunas';
-          cellKet.alignment = { vertical: 'middle', horizontal: 'center' };
-          cellKet.border = dataBorder;
-          cellKet.font = { name: 'Calibri', size: 9.5, italic: dendaVal === 0, color: { argb: 'FF475569' } };
+          const cStat = wsDenda.getCell(rowNum, colStatus);
+          cStat.value = totalDendaAll === 0 ? 'Lunas' : 'Belum Lunas';
+          cStat.alignment = { vertical: 'middle', horizontal: 'center' };
+          cStat.border = dataBorderDenda;
+          cStat.font = { name: 'Calibri', size: 9.5, bold: true, color: totalDendaAll === 0 ? { argb: 'FF107C41' } : { argb: 'FFE11D48' } };
         });
 
-        // --- ROW SUMMARY TOTAL ---
-        const totalRowNum = startDataRow + employees.length;
-        worksheet.getRow(totalRowNum).height = 24;
+        const totalRowDenda = startRowDenda + employees.length;
+        wsDenda.getRow(totalRowDenda).height = 24;
+        wsDenda.mergeCells(totalRowDenda, 2, totalRowDenda, 4);
+        wsDenda.getCell(totalRowDenda, 2).value = 'TOTAL KESELURUHAN';
+        wsDenda.getCell(totalRowDenda, 2).alignment = { vertical: 'middle', horizontal: 'center' };
+        wsDenda.getCell(totalRowDenda, 2).font = { name: 'Calibri', size: 10, bold: true };
 
-        worksheet.mergeCells(totalRowNum, 2, totalRowNum, colEndWeeks);
-        const cellTotalLabel = worksheet.getCell(totalRowNum, 2);
-        cellTotalLabel.value = 'TOTAL KESELURUHAN';
-        cellTotalLabel.alignment = { vertical: 'middle', horizontal: 'center' };
-        cellTotalLabel.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF0F172A' } };
-
-        const summaryBorder = {
-          top: { style: 'thin', color: { argb: 'FF000000' } },
-          bottom: { style: 'double', color: { argb: 'FF000000' } },
-          left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
-          right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
-        };
-
-        for (let c = 2; c <= totalColumns; c++) {
-          const cell = worksheet.getCell(totalRowNum, c);
-          cell.border = summaryBorder;
-          cell.fill = {
-            type: 'pattern',
-            pattern: 'solid',
-            fgColor: { argb: 'FFF1F5F9' }
-          };
+        const summaryBorderDenda = { top: { style: 'thin' }, bottom: { style: 'double' }, left: { style: 'thin' }, right: { style: 'thin' } };
+        for (let c = 2; c <= totalDendaCols; c++) {
+          const cell = wsDenda.getCell(totalRowDenda, c);
+          cell.border = summaryBorderDenda;
+          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF1F5F9' } };
         }
 
-        const colHadirLetter = getColLetter(colHadir);
-        const cellSumHadir = worksheet.getCell(totalRowNum, colHadir);
-        cellSumHadir.value = {
-          formula: `SUM(${colHadirLetter}${startDataRow}:${colHadirLetter}${totalRowNum - 1})`
-        };
-        cellSumHadir.alignment = { vertical: 'middle', horizontal: 'center' };
-        cellSumHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
+        months.forEach(mYM => {
+          const info = monthColMap[mYM];
+          const colHLetter = getColLetter(info.hadirCol);
+          const colDLetter = getColLetter(info.dendaCol);
 
-        const colTidakHadirLetter = getColLetter(colTidakHadir);
-        const cellSumTidakHadir = worksheet.getCell(totalRowNum, colTidakHadir);
-        cellSumTidakHadir.value = {
-          formula: `SUM(${colTidakHadirLetter}${startDataRow}:${colTidakHadirLetter}${totalRowNum - 1})`
-        };
-        cellSumTidakHadir.alignment = { vertical: 'middle', horizontal: 'center' };
-        cellSumTidakHadir.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+          const sH = wsDenda.getCell(totalRowDenda, info.hadirCol);
+          sH.value = { formula: `SUM(${colHLetter}${startRowDenda}:${colHLetter}${totalRowDenda - 1})` };
+          sH.alignment = { vertical: 'middle', horizontal: 'center' };
+          sH.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
 
-        const colDendaLetter = getColLetter(colDenda);
-        const cellSumDenda = worksheet.getCell(totalRowNum, colDenda);
-        cellSumDenda.value = {
-          formula: `SUM(${colDendaLetter}${startDataRow}:${colDendaLetter}${totalRowNum - 1})`
-        };
-        cellSumDenda.numFmt = '"Rp "#,##0;;"Rp -"';
-        cellSumDenda.alignment = { vertical: 'middle', horizontal: 'right' };
-        cellSumDenda.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+          const sD = wsDenda.getCell(totalRowDenda, info.dendaCol);
+          sD.value = { formula: `SUM(${colDLetter}${startRowDenda}:${colDLetter}${totalRowDenda - 1})` };
+          sD.numFmt = '"Rp "#,##0;;"Rp -"';
+          sD.alignment = { vertical: 'middle', horizontal: 'right' };
+          sD.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+        });
 
-        // Generate file buffer & download
+        const totHLetter = getColLetter(colTotHadir);
+        const sTotH = wsDenda.getCell(totalRowDenda, colTotHadir);
+        sTotH.value = { formula: `SUM(${totHLetter}${startRowDenda}:${totHLetter}${totalRowDenda - 1})` };
+        sTotH.alignment = { vertical: 'middle', horizontal: 'center' };
+        sTotH.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF107C41' } };
+
+        const totDLetter = getColLetter(colTotDenda);
+        const sTotD = wsDenda.getCell(totalRowDenda, colTotDenda);
+        sTotD.value = { formula: `SUM(${totDLetter}${startRowDenda}:${totDLetter}${totalRowDenda - 1})` };
+        sTotD.numFmt = '"Rp "#,##0;;"Rp -"';
+        sTotD.alignment = { vertical: 'middle', horizontal: 'right' };
+        sTotD.font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFE11D48' } };
+
         const buffer = await workbook.xlsx.writeBuffer();
         const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `REKAP_PIKET_KSPM_${namaBulan.toUpperCase()}_${year}.xlsx`;
+        const monthNamesList = months.map(m => namaBulanIndo[parseInt(m.split('-')[1], 10)].toUpperCase()).join('_');
+        a.download = `REKAP_PIKET_KSPM_${monthNamesList}_2026.xlsx`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -3986,9 +4161,9 @@
         if (typeof Swal !== 'undefined') {
           Swal.fire({
             title: 'Berhasil Diekspor!',
-            text: `File Excel resmi ${sheetName} berhasil diunduh.`,
+            html: `<p class="text-sm">File Excel resmi dengan <b>${months.length} sheet bulan</b> (${months.map(m => namaBulanIndo[parseInt(m.split('-')[1], 10)]).join(', ')}) dan sheet <b>REKAP DENDA</b> berhasil diunduh!</p>`,
             icon: 'success',
-            timer: 2500,
+            timer: 4000,
             showConfirmButton: false
           });
         }
