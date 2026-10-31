@@ -94,3 +94,44 @@ self.addEventListener('fetch', event => {
     })
   );
 });
+
+// 3. Tangani Klik Notifikasi (Buka Halaman Presensi)
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : './absen.html';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if (client.url.includes('absen.html') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+// 4. Tangani Remote Push Event (Sinyal Web Push)
+self.addEventListener('push', event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { title: 'Presensi KSPM', body: event.data ? event.data.text() : '' };
+  }
+
+  const title = data.title || 'Pengingat Piket KSPM';
+  const options = {
+    body: data.body || 'Waktunya presensi piket di Galeri Investasi.',
+    icon: 'assets/logo.png',
+    badge: 'assets/logo_white.png',
+    vibrate: [200, 100, 200, 100, 200],
+    data: { url: data.url || './absen.html' },
+    requireInteraction: true
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});

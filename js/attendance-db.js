@@ -1859,6 +1859,9 @@ const AttendanceDB = {
           mLog.status = 'SELESAI';
         });
         this.patchToSupabase('attendance', `emp_id=eq.${empId}&date=eq.${recordDate}&type=eq.MASUK`, { status: 'SELESAI' });
+        // Bersihkan alarm kepulangan karena anggota sudah sukses presensi pulang
+        localStorage.removeItem('kspm_alarm_time');
+        localStorage.removeItem('kspm_alarm_name');
       }
     }
 
@@ -2477,25 +2480,132 @@ const AttendanceDB = {
     localStorage.removeItem('kspm_saved_identity');
   },
 
-  initAlarmDaemon() {
-    setInterval(() => {
+  // --- SISTEM NOTIFIKASI PWA KSPM (ALARM 2 JAM & PENGINGAT JADWAL PIKET) ---
+  async requestNotificationPermission() {
+    if (!('Notification' in window)) {
+      alert('Browser ini belum mendukung fitur Notifikasi Web.');
+      return 'unsupported';
+    }
+    try {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        localStorage.setItem('kspm_alarm_pref', 'always');
+        this.sendNotification('Notifikasi Piket KSPM Aktif! 🔔', {
+          body: 'Kamu akan menerima alarm 2 jam selesai piket dan pengingat jadwal piket.',
+          tag: 'welcome-kspm'
+        });
+      }
+      return perm;
+    } catch (e) {
+      return 'denied';
+    }
+  },
+
+  async sendNotification(title, options = {}) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return false;
+
+    const defaultOptions = {
+      icon: 'assets/logo.png',
+      badge: 'assets/logo_white.png',
+      vibrate: [200, 100, 200, 100, 200],
+      requireInteraction: true,
+      data: { url: './absen.html' },
+      ...options
+    };
+
+    // Prioritas 1: Gunakan Service Worker Registration jika tersedia (tampil di level OS / Layar Kunci HP)
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        if (reg && reg.showNotification) {
+          await reg.showNotification(title, defaultOptions);
+          return true;
+        }
+      } catch (e) {}
+    }
+
+    // Prioritas 2: Fallback ke window Notification API
+    try {
+      new Notification(title, defaultOptions);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  },
+
+  // Periksa jadwal piket hari ini untuk pengingat pagi
+  checkDailyDutyReminder() {
+    try {
+      const saved = this.getSavedIdentity();
+      if (!saved || !saved.empId) return;
+
+      const todayStr = getTodayString(0);
+      const notifKey = `kspm_duty_notif_${todayStr}_${saved.empId}`;
+      if (localStorage.getItem(notifKey)) return; // Sudah dikirim hari ini
+
+      const emp = this.getEmployeeById(saved.empId);
+      if (!emp) return;
+
+      const schedules = this.getSchedules(todayStr);
+      const mySchedule = schedules.find(s => s.empId === saved.empId);
+      if (!mySchedule) return;
+
+      // Cek apakah sudah absen masuk hari ini
+      const logs = this.getAttendanceLogs(todayStr).filter(l => l.empId === saved.empId);
+      const hasMasuk = logs.some(l => l.type === 'MASUK');
+      if (hasMasuk) return;
+
+      const shifts = this.getShifts();
+      const shift = shifts.find(s => s.id === mySchedule.shiftId) || shifts[0];
+
+      // Kirim Notifikasi Pengingat Jadwal Hari Ini
+      this.sendNotification('📢 Jadwal Piket Hari Ini!', {
+        body: `Hai ${emp.name}, hari ini kamu terjadwal piket ${shift.name} (${shift.start} - ${shift.end}) di Galeri Investasi.`,
+        tag: `duty-${todayStr}`,
+        data: { url: './absen.html' }
+      });
+
+      localStorage.setItem(notifKey, 'sent');
+    } catch (e) {
+      console.warn('Duty reminder check error:', e);
+    }
+  },
+
+  // Periksa alarm 2 jam selesai piket
+  checkCheckoutAlarm() {
+    try {
       const alarmTimeStr = localStorage.getItem('kspm_alarm_time');
       if (!alarmTimeStr) return;
-      
+
       const alarmTime = parseInt(alarmTimeStr, 10);
       if (Date.now() >= alarmTime) {
         localStorage.removeItem('kspm_alarm_time');
         const empName = localStorage.getItem('kspm_alarm_name') || 'Kak';
-        
-        if (Notification.permission === 'granted') {
-          new Notification('Waktunya Absen Pulang!', {
-            body: `Hai ${empName}, sepertinya sudah 2 jam sejak kamu piket. Jangan lupa ambil foto absen pulang sekarang ya!`,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2874/2874808.png', // Default icon bell
-            requireInteraction: true
-          });
-        }
+
+        this.sendNotification('⏰ Waktunya Absen Pulang!', {
+          body: `Hai ${empName}, sudah 2 jam nih! Jangan lupa ambil foto absen pulang sekarang ya.`,
+          tag: 'checkout-alarm',
+          requireInteraction: true,
+          data: { url: './absen.html' }
+        });
       }
-    }, 60000); // Cek tiap 1 menit
+    } catch (e) {
+      console.warn('Checkout alarm check error:', e);
+    }
+  },
+
+  initAlarmDaemon() {
+    // Jalankan pengecekan pertama saat web dibuka
+    setTimeout(() => {
+      this.checkCheckoutAlarm();
+      this.checkDailyDutyReminder();
+    }, 2000);
+
+    // Rutin cek tiap 30 detik
+    setInterval(() => {
+      this.checkCheckoutAlarm();
+      this.checkDailyDutyReminder();
+    }, 30000);
   }
 };
 

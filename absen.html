@@ -1919,12 +1919,14 @@
         document.getElementById('alarmOfferBox').classList.remove('hidden');
         
         document.getElementById('btnAlarmYes').onclick = async () => {
-          const perm = await Notification.requestPermission();
+          const perm = await AttendanceDB.requestNotificationPermission();
           if (perm === 'granted') {
             localStorage.setItem('kspm_alarm_pref', 'always');
             setAlarm();
-            // Test notification
-            new Notification('Alarm Diaktifkan!', { body: 'Kami akan mengingatkanmu 2 jam lagi.', icon: 'img/logo.png' });
+            AttendanceDB.sendNotification('Alarm 2 Jam Diaktifkan! ⏰', { 
+              body: 'Kami akan mengingatkanmu saat 2 jam piket selesai untuk presensi pulang.',
+              icon: 'assets/logo.png' 
+            });
           }
           startCountdown();
         };

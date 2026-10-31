@@ -98,6 +98,14 @@
 
 
 
+        <!-- Tombol Lonceng Notifikasi PWA -->
+        <button id="btnNotifToggle" onclick="handleNotifToggleClick()"
+          class="px-2.5 sm:px-3 py-1.5 rounded-full header-glass-btn text-xs font-bold text-gray-700 dark:text-gray-200 hover:text-red-500 transition flex items-center gap-1.5 shadow-xs flex-shrink-0"
+          title="Aktifkan Notifikasi Jadwal & Alarm Piket">
+          <i data-feather="bell" id="notifIcon" class="w-3.5 h-3.5 text-red-500"></i>
+          <span class="hidden md:inline text-[11px]" id="notifLabel">Notifikasi</span>
+        </button>
+
         <!-- TOMBOL ADMIN KECIL -->
         <a href="dashboard.html"
           class="px-3 sm:px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white border border-red-500/40 text-xs font-extrabold transition flex items-center gap-1.5 shadow-md shadow-red-600/20 active:scale-95 flex-shrink-0"
@@ -413,6 +421,7 @@
 
     document.addEventListener('DOMContentLoaded', () => {
       feather.replace();
+      updateNotifBtnUI();
 
 
 
@@ -855,6 +864,43 @@
           </div>
         `;
       }).join('');
+    }
+
+    // --- HELPER NOTIFIKASI PWA ---
+    function updateNotifBtnUI() {
+      const btn = document.getElementById('btnNotifToggle');
+      const icon = document.getElementById('notifIcon');
+      const label = document.getElementById('notifLabel');
+      if (!btn || !icon || !label) return;
+
+      if (!('Notification' in window)) {
+        btn.classList.add('hidden');
+        return;
+      }
+
+      if (Notification.permission === 'granted') {
+        icon.classList.remove('text-red-500');
+        icon.classList.add('text-emerald-500');
+        label.textContent = 'Notif Aktif';
+        btn.title = 'Notifikasi Pengingat Piket Aktif';
+      } else {
+        icon.classList.remove('text-emerald-500');
+        icon.classList.add('text-red-500');
+        label.textContent = 'Notifikasi';
+        btn.title = 'Aktifkan Notifikasi Pengingat Piket';
+      }
+    }
+
+    async function handleNotifToggleClick() {
+      if (Notification.permission === 'granted') {
+        AttendanceDB.sendNotification('Notifikasi Piket KSPM 🔔', {
+          body: 'Notifikasi kamu sudah aktif! Kami akan mengingatkanmu saat ada jadwal piket & alarm 2 jam.'
+        });
+      } else {
+        const res = await AttendanceDB.requestNotificationPermission();
+        updateNotifBtnUI();
+        if (window.feather) feather.replace();
+      }
     }
   </script>
 
